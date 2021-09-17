@@ -22,12 +22,25 @@ namespace Timinute.Server.Controllers
             this.mapper = mapper;
         }
 
-        // GET: api/Categories
-        [HttpGet(Name = "GetCompanies")]
+        // GET: api/GetCompanies
+        [HttpGet(Name = "Companies")]
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetAllCompanies()
         {
             var companyList = await companyRepository.Get();
             return Ok(mapper.Map<IEnumerable<CompanyDto>>(companyList));
         }
+
+        // GET: api/Company
+        [HttpGet("{id}")]
+        public async Task<ActionResult<CompanyDto>> GetCompany(string id)
+        {
+            var company = await companyRepository.GetById(id);
+            if (company == null)
+            {
+                return NotFound("Company not found!");
+            }
+            return Ok(mapper.Map<CompanyDto>(company));
+        }
+
     }
 }
