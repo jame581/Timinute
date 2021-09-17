@@ -12,5 +12,7 @@ namespace Timinute.Server.Models
         public string LastName { get; set; } = null!;
 
         public DateTimeOffset? LastLoginDate { get; set; }
+
+        public ICollection<TrackedTask>? TrackedTasks { get; set; }
     }
 }
