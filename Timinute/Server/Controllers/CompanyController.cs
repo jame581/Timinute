@@ -23,7 +23,7 @@ namespace Timinute.Server.Controllers
         }
 
         // GET: api/Categories
-        [HttpGet(Name = "GetAllCategories")]
+        [HttpGet(Name = "GetCompanies")]
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetAllCompanies()
         {
             var companyList = await companyRepository.Get();
