@@ -4,6 +4,7 @@ using Timinute.Server.Data;
 using Timinute.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Timinute.Server.Areas.Identity;
+using Timinute.Server.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,9 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// DI
+builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
 
 var app = builder.Build();
 
