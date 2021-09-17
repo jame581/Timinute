@@ -8,10 +8,24 @@ namespace Timinute.Server.Data
 {
     public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
     {
+        public DbSet<Company> Companies {  get; set; }
+
         public ApplicationDbContext(
             DbContextOptions options,
             IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Company>()
+                .Property(x => x.CompanyId)
+                .ValueGeneratedOnAdd()
+                .IsRequired();
+
+            builder.Entity<Company>().HasKey(t => t.CompanyId);
         }
     }
 }
