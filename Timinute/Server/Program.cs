@@ -5,6 +5,8 @@ using Timinute.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Timinute.Server.Areas.Identity;
 using Timinute.Server.Repository;
+using AutoMapper;
+using Timinute.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +49,14 @@ builder.Services.AddRazorPages();
 
 // DI
 builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
+
+// Auto Mapper Configurations
+var mappingConfig = new MapperConfiguration(mc =>
+{
+    mc.AddProfile(new MappingProfile());
+});
+
+builder.Services.AddSingleton(mappingConfig.CreateMapper());
 
 var app = builder.Build();
 
