@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
-using Timinute.Shared.Dtos;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Server.Controllers

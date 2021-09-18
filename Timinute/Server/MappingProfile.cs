@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Timinute.Server.Models;
 using Timinute.Shared.Dtos;
+using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Server
 {
@@ -15,6 +16,12 @@ namespace Timinute.Server
             // TrackedTask model
             CreateMap<TrackedTask, TrackedTaskDto>();
             CreateMap<TrackedTaskDto, TrackedTask>();
+
+            CreateMap<TrackedTask, CreateTrackedTaskDto>();
+            CreateMap<CreateTrackedTaskDto, TrackedTask>();
+
+            CreateMap<TrackedTask, UpdateTrackedTaskDto>();
+            CreateMap<UpdateTrackedTaskDto, TrackedTask>();
         }
     }
 }
