@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 
 namespace Timinute.Server.Areas.Identity.Pages.Account
@@ -119,6 +120,8 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
+
+                await _userManager.AddToRoleAsync(user, Constants.Roles.Basic);
 
                 if (result.Succeeded)
                 {
