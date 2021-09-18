@@ -7,6 +7,7 @@ using Timinute.Server.Areas.Identity;
 using Timinute.Server.Repository;
 using AutoMapper;
 using Timinute.Server;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,14 @@ var mappingConfig = new MapperConfiguration(mc =>
 
 builder.Services.AddSingleton(mappingConfig.CreateMapper());
 
+// Swagger setup
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Timinute API", Description = "Docs for Timinute API", Version = "v1" });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -88,5 +97,13 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+
+// Swagger middleware
+app.UseSwagger();
+
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+});
 
 app.Run();
