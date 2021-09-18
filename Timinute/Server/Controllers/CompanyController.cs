@@ -26,7 +26,7 @@ namespace Timinute.Server.Controllers
         [HttpGet(Name = "Companies")]
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetCompanies()
         {
-            var companyList = await companyRepository.Get(x => x.CompanyId);
+            var companyList = await companyRepository.Get();
             return Ok(mapper.Map<IEnumerable<CompanyDto>>(companyList));
         }
 
