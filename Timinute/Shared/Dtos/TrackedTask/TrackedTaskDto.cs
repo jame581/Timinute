@@ -1,4 +1,4 @@
-﻿namespace Timinute.Shared.Dtos
+﻿namespace Timinute.Shared.Dtos.TrackedTask
 {
     public class TrackedTaskDto
     {
