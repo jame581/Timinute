@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Timinute.Server.Data;
 using Timinute.Server.Models;
+using Microsoft.AspNetCore.Identity;
+using Timinute.Server.Areas.Identity;
+using Timinute.Server.Repository;
+using AutoMapper;
+using Timinute.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +16,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+
+        options.Password.RequiredLength = 8;
+        options.Password.RequiredUniqueChars = 4;
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = true;
+
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.AllowedForNewUsers = true;
+
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddRoles<ApplicationRole>()
+    .AddDefaultTokenProviders()
+    .AddDefaultUI()
+    .AddSignInManager<AppSingInManager>();
 
 builder.Services.AddIdentityServer()
     .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
@@ -23,6 +46,17 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// DI
+builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
+
+// Auto Mapper Configurations
+var mappingConfig = new MapperConfiguration(mc =>
+{
+    mc.AddProfile(new MappingProfile());
+});
+
+builder.Services.AddSingleton(mappingConfig.CreateMapper());
 
 var app = builder.Build();
 
