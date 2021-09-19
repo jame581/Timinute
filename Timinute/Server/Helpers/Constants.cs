@@ -7,5 +7,11 @@
             public const string Admin = "Admin";
             public const string Basic = "Basic";
         }
+
+        public static class Claims
+        {
+            public const string UserId = "sub";
+            
+        }
     }
 }

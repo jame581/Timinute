@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Shared.Dtos.TrackedTask;
@@ -9,46 +11,74 @@ namespace Timinute.Server.Controllers
 {
     [Authorize]
     [ApiController]
-    [ValidateAntiForgeryToken]
+    //[ValidateAntiForgeryToken]
     [Route("[controller]")]
     public class TrackedTaskController : ControllerBase
     {
+        private readonly IRepositoryFactory repositoryFactory;
+
         private readonly IRepository<TrackedTask> taskRepository;
         private readonly IMapper mapper;
         private readonly ILogger<TrackedTaskController> logger;
 
-        public TrackedTaskController(IRepository<TrackedTask> taskRepository, IMapper mapper, ILogger<TrackedTaskController> logger)
+        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger)
         {
-            this.taskRepository = taskRepository;
+            this.repositoryFactory = repositoryFactory;
             this.mapper = mapper;
             this.logger = logger;
+
+            taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }
 
         // GET: api/TrackedTasks
         [HttpGet(Name = "TrackedTasks")]
         public async Task<ActionResult<IEnumerable<TrackedTaskDto>>> GetTrackedTasks()
         {
-            var companyList = await taskRepository.Get();
-            return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(companyList));
+            // get current user ID
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var trackedTaskList = await taskRepository.Get(x => x.UserId == userId);
+            return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(trackedTaskList));
         }
 
         // GET: api/TrackedTask
         [HttpGet("{id}")]
         public async Task<ActionResult<TrackedTaskDto>> GetTrackedTask(string id)
         {
-            var company = await taskRepository.GetById(id);
-            if (company == null)
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var trackedTask = await taskRepository.GetById(id);
+            if (trackedTask == null)
             {
                 return NotFound("Tracked task not found!");
             }
-            return Ok(mapper.Map<TrackedTaskDto>(company));
+            return Ok(mapper.Map<TrackedTaskDto>(trackedTask));
         }
 
         // CREATE: api/TrackedTask
         [HttpPost]
         public async Task<ActionResult<TrackedTaskDto>> CreateTrackedTask([FromBody] CreateTrackedTaskDto trackedTask)
         {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
             var newTrackedTask = mapper.Map<TrackedTask>(trackedTask);
+            newTrackedTask.UserId = userId;
+            newTrackedTask.Duration = newTrackedTask.EndDate - trackedTask.StartDate;
 
             try
             {
@@ -69,7 +99,14 @@ namespace Timinute.Server.Controllers
         {
             try
             {
-                var trackedTaskToDelete = await taskRepository.GetById(id);
+                var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
+                var trackedTaskToDelete = await taskRepository.GetByIdInclude(x => x.TaskId == id && x.UserId == userId);
                 if (trackedTaskToDelete == null)
                 {
                     logger.LogError("Tracked task was not found");
@@ -95,7 +132,14 @@ namespace Timinute.Server.Controllers
         {
             try
             {
-                var foundTrackedTask = await taskRepository.GetById(trackedTask.TaskId);
+                var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
+                var foundTrackedTask = await taskRepository.GetByIdInclude(x => x.TaskId == trackedTask.TaskId && x.UserId == userId);
 
                 if (foundTrackedTask == null)
                 {
