@@ -8,6 +8,7 @@ using Timinute.Server.Repository;
 using AutoMapper;
 using Timinute.Server;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +46,8 @@ builder.Services.AddIdentityServer()
 builder.Services.AddAuthentication()
     .AddIdentityServerJwt();
 
-builder.Services.AddControllersWithViews();
+builder.Logging.AddConsole();
+
 builder.Services.AddRazorPages();
 
 // DI
@@ -79,6 +81,15 @@ if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
     app.UseWebAssemblyDebugging();
+    app.UseDeveloperExceptionPage();
+   
+    // Swagger middleware
+    app.UseSwagger();
+
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Timinute API V1");
+    });
 }
 else
 {
@@ -102,13 +113,5 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
-
-// Swagger middleware
-app.UseSwagger();
-
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Timinute API V1");
-});
 
 app.Run();
