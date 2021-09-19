@@ -8,7 +8,6 @@ using Timinute.Server.Repository;
 using AutoMapper;
 using Timinute.Server;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,4 +1,6 @@
-﻿namespace Timinute.Shared.Dtos.TrackedTask
+﻿using Timinute.Shared.Dtos.Project;
+
+namespace Timinute.Shared.Dtos.TrackedTask
 {
     public class CreateTrackedTaskDto
     {
