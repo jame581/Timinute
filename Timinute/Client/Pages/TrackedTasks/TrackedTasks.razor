@@ -1,0 +1,39 @@
+﻿@page "/trackedtasks"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>Weather forecast</PageTitle>
+
+<h3>Tracked Tasks</h3>
+
+<div class="container">
+	<h3 class="p-3 text-center">Display a list of tracked tasks</h3>
+	<table class="table table-table-striped table-bordered">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>Name</th>
+				<th>Duration</th>
+				<th>Start date</th>
+				<th>End date</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach(var trackedTask in TrackedTasksList)
+			{
+				<tr>
+					<td>@trackedTask.TaskId</td>
+					<td>@trackedTask.Name</td>
+					<td>@trackedTask.Duration</td>
+					<td>@trackedTask.StartDate</td>
+					<td>@trackedTask.EndDate</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+
+</div>
+
+@code {
+
+}
