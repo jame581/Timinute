@@ -10,7 +10,7 @@
             {                
                 public const string Api = "TrackedTask";
 
-                public const string GetAll = "TrackedTasks";
+                public const string GetAll = "TrackedTask";
 
                 public const string GetById = $"{Api}/";
 

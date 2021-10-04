@@ -11,6 +11,7 @@
 	</div>
 
 	<h3 class="p-3 text-center">Display a list of tracked tasks</h3>
+	<button onclick="@RefreshTable">Refresh table</button>
 	<table class="table table-table-striped table-bordered">
 		<thead>
 			<tr>
@@ -34,6 +35,10 @@
 			}
 		</tbody>
 	</table>
+		
+	<p>
+		@exceptionMessage
+	</p>
 
 </div>
 
