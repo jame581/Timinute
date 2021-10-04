@@ -1,12 +1,15 @@
 ﻿@page "/trackedtasks"
-@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 
-<PageTitle>Weather forecast</PageTitle>
+<PageTitle>Tracked Tasks</PageTitle>
 
-<h3>Tracked Tasks</h3>
 
 <div class="container">
+	
+	<div class="d-flex justify-content-center">
+		<AddTrackedTask />
+	</div>
+
 	<h3 class="p-3 text-center">Display a list of tracked tasks</h3>
 	<table class="table table-table-striped table-bordered">
 		<thead>
@@ -19,7 +22,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			@foreach(var trackedTask in TrackedTasksList)
+			@foreach (var trackedTask in TrackedTasksList)
 			{
 				<tr>
 					<td>@trackedTask.TaskId</td>

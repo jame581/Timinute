@@ -19,7 +19,7 @@ namespace Timinute.Client.Pages.TrackedTasks
             var authState = await authenticationStateTask;
             var user = authState.User;
 
-            if (!user.Identity.IsAuthenticated)
+            if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
             TrackedTasksList.Add(new TrackedTask { TaskId = "1", Name = "Task 1", Duration = TimeSpan.FromMinutes(120), StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(120) });
