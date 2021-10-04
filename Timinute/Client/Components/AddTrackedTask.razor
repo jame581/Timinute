@@ -1,22 +1,21 @@
 ﻿<div class="row">
 	<h3 class="text-center">Add Tracked Task</h3>
-	<EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit">
+	<EditForm Model="@editContext" OnValidSubmit="@HandleValidSubmit">
 		<DataAnnotationsValidator />
 		<ValidationSummary />
 
 		<InputText DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" />
 
-		<InputDate DisplayName="Start Date" @bind-Value="trackedTask.StartDate" />
-		<InputDate DisplayName="End Date" @bind-Value="trackedTask.EndDate" />
-
-		@*<input type="time" @bind="@DurationProxy" min="00:00:00" max="24:00:00" />*@
+		<InputDate DisplayName="Date" @bind-Value="trackedTask.StartDate" />
 
 		<InputText DisplayName="Duration" @bind-Value="@DurationProxy" />
-
-		@*<InputText DisplayName="Duration" @bind-Value="@DurationProxy" />*@
 
 		<button type="submit">Submit</button>
 
 	</EditForm>
+
+	<p>
+		@exceptionMessage
+	</p>
 
 </div>

@@ -11,6 +11,7 @@ namespace Timinute.Client.Models
         [StringLength(50, ErrorMessage = "Name is too long.")]
         public string Name { get; set; } = null!;
         
+        [Required]
         public TimeSpan Duration { get; set; }
 
         [Required]
