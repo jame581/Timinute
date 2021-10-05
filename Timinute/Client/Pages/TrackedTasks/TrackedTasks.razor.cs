@@ -29,18 +29,13 @@ namespace Timinute.Client.Pages.TrackedTasks
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
-
-           // TrackedTasksList.Add(new TrackedTask { TaskId = "1", Name = "Task 1", Duration = TimeSpan.FromMinutes(120), StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(120) });
-           // TrackedTasksList.Add(new TrackedTask { TaskId = "2", Name = "Task 2", Duration = TimeSpan.FromMinutes(60), StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(60) });
-           // TrackedTasksList.Add(new TrackedTask { TaskId = "3", Name = "Task 3", Duration = TimeSpan.FromMinutes(180), StartDate = DateTime.Now, EndDate = DateTime.Now.AddMinutes(180) });
-
-           //// ApiPath = $"{Navigation.BaseUri}api/ApplicationUserRead";
            
            await RefreshTable();
         }
 
         private async Task RefreshTable()
         {
+            exceptionMessage = "";
             var client = clientFactory.CreateClient(Constants.API.ClientName);
 
             try
