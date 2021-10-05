@@ -4,11 +4,20 @@
 		<DataAnnotationsValidator />
 		<ValidationSummary />
 
-		<InputText DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" />
+		<label>
+			Task Name:
+			<InputText DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" />
+		</label>
 
-		<InputDate DisplayName="Date" @bind-Value="trackedTask.StartDate" />
+		<label>
+			Start Date:
+			<InputDate DisplayName="Date" @bind-Value="trackedTask.StartDate" />
+		</label>
 
-		<InputText DisplayName="Duration" @bind-Value="@DurationProxy" />
+		<label>
+			Duration:
+			<InputText DisplayName="Duration" @bind-Value="@DurationProxy" />
+		</label>
 
 		<button type="submit">Submit</button>
 
