@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timinute.Client", "Timinute
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timinute.Shared", "Timinute\Shared\Timinute.Shared.csproj", "{A3052FD3-BA00-44B9-8D4E-0FE2A7DCB4A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Timinute.Server.Tests", "Timinute.Server.Tests\Timinute.Server.Tests.csproj", "{51487A9D-EECE-4B3C-B66A-B67C464D8A2C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{A3052FD3-BA00-44B9-8D4E-0FE2A7DCB4A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3052FD3-BA00-44B9-8D4E-0FE2A7DCB4A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3052FD3-BA00-44B9-8D4E-0FE2A7DCB4A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51487A9D-EECE-4B3C-B66A-B67C464D8A2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51487A9D-EECE-4B3C-B66A-B67C464D8A2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51487A9D-EECE-4B3C-B66A-B67C464D8A2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51487A9D-EECE-4B3C-B66A-B67C464D8A2C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
