@@ -69,9 +69,23 @@ namespace Timinute.Server.Tests.Helpers
                 new TrackedTask { TaskId = "TrackedTaskId7", Name = "Task 7", User = applicationUsers[2], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 15, 0, 0), Duration = TimeSpan.FromHours(7) },
             };
 
+            var projects = new List<Project>
+            {
+                new Project { ProjectId = "ProjectId1", Name = "Project 1", CompanyId = "CompanyId1", TrackedTasks = new List<TrackedTask>() { trackedTasks[0], trackedTasks[1] } },
+                new Project { ProjectId = "ProjectId2", Name = "Project 2", CompanyId = "CompanyId1", TrackedTasks = new List<TrackedTask>() { trackedTasks[2], trackedTasks[3] } },
+                new Project { ProjectId = "ProjectId3", Name = "Project 3", CompanyId = "CompanyId1", TrackedTasks = new List<TrackedTask>() { trackedTasks[4], trackedTasks[5] } },
+            };
+
+            var companies = new List<Company>
+            {
+                new Company { CompanyId = "CompanyId1", Name = "Company 1", Projects = projects },
+            };
+
             context.Roles.AddRange(roles);
             context.Users.AddRange(applicationUsers);
             context.TrackedTasks.AddRange(trackedTasks);
+            context.Projects.AddRange(projects);
+            context.Companies.AddRange(companies);
 
             await context.SaveChangesAsync();
         }
