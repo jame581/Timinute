@@ -33,6 +33,10 @@ namespace Timinute.Server
 
             CreateMap<Project, UpdateProjectDto>();
             CreateMap<UpdateProjectDto, Project>();
+
+            // Application User model
+            CreateMap<ApplicationUser, ApplicationUserDto>();
+            CreateMap<ApplicationUserDto, ApplicationUser>();
         }
     }
 }
