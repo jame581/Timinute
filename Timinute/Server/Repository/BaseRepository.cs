@@ -21,6 +21,7 @@ namespace Timinute.Server.Repository
             {
                 dbSet.Attach(entityToDelete);
             }
+
             dbSet.Remove(entityToDelete);
             await context.SaveChangesAsync();
         }
@@ -29,6 +30,11 @@ namespace Timinute.Server.Repository
         {
             TEntity entityToDelete = await dbSet.FindAsync(id);
             await Delete(entityToDelete);
+        }
+
+        public async Task<TEntity?> Find(object id)
+        {
+            return await dbSet.FindAsync(id);
         }
 
         public async Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>>? filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, string includeProperties = "")
@@ -107,7 +113,6 @@ namespace Timinute.Server.Repository
 
         public async Task Update(TEntity entityToUpdate)
         {
-            context.Update(entityToUpdate);
             await context.SaveChangesAsync();
         }
     }
