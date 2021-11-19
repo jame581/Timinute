@@ -113,6 +113,7 @@ namespace Timinute.Server.Repository
 
         public async Task Update(TEntity entityToUpdate)
         {
+            dbSet.Update(entityToUpdate);
             await context.SaveChangesAsync();
         }
     }

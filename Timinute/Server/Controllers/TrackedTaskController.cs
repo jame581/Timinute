@@ -145,12 +145,17 @@ namespace Timinute.Server.Controllers
                     return Unauthorized();
                 }
 
-                var foundTrackedTask = await taskRepository.GetByIdInclude(x => x.TaskId == trackedTask.TaskId && x.UserId == userId);
+                var foundTrackedTask = await taskRepository.Find(trackedTask.TaskId);
 
                 if (foundTrackedTask == null)
                 {
                     logger.LogError("Tracked task was not found");
                     return NotFound("Tracked task not found!");
+                }
+
+                if (foundTrackedTask.UserId != userId)
+                {
+                    return Unauthorized();
                 }
 
                 var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
