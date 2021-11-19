@@ -107,16 +107,21 @@ namespace Timinute.Server.Controllers
                     return Unauthorized();
                 }
 
-                var trackedTaskToDelete = await taskRepository.GetByIdInclude(x => x.TaskId == id && x.UserId == userId);
+                var trackedTaskToDelete = await taskRepository.Find(id);
                 if (trackedTaskToDelete == null)
                 {
                     logger.LogError("Tracked task was not found");
                     return NotFound("Tracked task not found!");
                 }
 
-                await taskRepository.Delete(trackedTaskToDelete);
+                if (trackedTaskToDelete.UserId != userId)
+                {
+                    return Unauthorized();
+                }
 
-                logger.LogInformation($"Tracked task with Id {trackedTaskToDelete.TaskId}, Name {trackedTaskToDelete.Name} was deleted.");
+                await taskRepository.Delete(id);
+
+                logger.LogInformation($"Tracked task with Id {id} was deleted.");
                 return NoContent();
             }
             catch (Exception ex)
@@ -150,6 +155,7 @@ namespace Timinute.Server.Controllers
 
                 var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
 
+                //taskRepository.
                 await taskRepository.Update(updatedTrackedTask);
 
                 return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTask));
