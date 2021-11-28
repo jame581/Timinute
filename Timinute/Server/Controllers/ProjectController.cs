@@ -136,7 +136,7 @@ namespace Timinute.Server.Controllers
                     return Unauthorized();
                 }
 
-                var foundProject = await projectRepository.GetById(project);
+                var foundProject = await projectRepository.GetById(project.ProjectId);
 
                 if (foundProject == null)
                 {
