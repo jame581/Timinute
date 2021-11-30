@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Pages
 {
@@ -14,6 +15,10 @@ namespace Timinute.Client.Pages
         [Inject]
         private IHttpClientFactory clientFactory { get; set; }
 
+        //private EditContext? editContext;
+
+        private CreateTrackedTaskDto createTrackedTask;
+
         protected override async Task OnInitializedAsync()
         {
             var authState = await authenticationStateTask;
@@ -21,6 +26,24 @@ namespace Timinute.Client.Pages
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
+
+            //editContext = new(createTrackedTask);
         }
+
+        //private async Task HandleSubmit()
+        //{
+        //    if (editContext != null && editContext.Validate())
+        //    {
+        //        //Logger.LogInformation("HandleSubmit called: Form is valid");
+
+        //        // Process the valid form
+        //        // await ...
+        //        await Task.CompletedTask;
+        //    }
+        //    else
+        //    {
+        //        //Logger.LogInformation("HandleSubmit called: Form is INVALID");
+        //    }
+        //}
     }
 }
