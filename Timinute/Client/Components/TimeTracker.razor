@@ -1,1 +1,18 @@
-﻿<h3>TimeTracker</h3>
+﻿<EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <form class="row g-3">
+        <div class="col-auto">
+            <label for="projectName" class="visually-hidden">What are you working on?</label>
+            <input type="text" class="form-control" id="projectName" placeholder="What are you working on?">
+        </div>
+        <div class="col-auto">
+            <label for="time" class="visually-hidden">Time</label>
+            <input type="datetime" class="form-control" id="time" placeholder="00:00:00">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-3">Start</button>
+        </div>
+    </form>
+</EditForm>
