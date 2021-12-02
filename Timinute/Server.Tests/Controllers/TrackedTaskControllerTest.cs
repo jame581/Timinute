@@ -43,15 +43,15 @@ namespace Timinute.Server.Tests.Controllers
             var okResult = actionResult.Result as OkObjectResult;
 
             Assert.NotNull(okResult);
-            Assert.IsAssignableFrom<IEnumerable<TrackedTaskDto>>(okResult.Value);
+            Assert.IsAssignableFrom<IEnumerable<TrackedTaskDto>>(okResult!.Value);
             var trackedTasks = okResult.Value as IList<TrackedTaskDto>;
 
             Assert.NotNull(trackedTasks);
 
             Assert.Collection(trackedTasks,
-            item => Assert.Contains("TrackedTaskId1", trackedTasks[0].TaskId),
-            item => Assert.Contains("TrackedTaskId2", trackedTasks[1].TaskId),
-            item => Assert.Contains("TrackedTaskId3", trackedTasks[2].TaskId));
+            item => Assert.Contains("TrackedTaskId1", trackedTasks![0].TaskId),
+            item => Assert.Contains("TrackedTaskId2", trackedTasks![1].TaskId),
+            item => Assert.Contains("TrackedTaskId3", trackedTasks![2].TaskId));
         }
 
         [Fact]
@@ -66,11 +66,11 @@ namespace Timinute.Server.Tests.Controllers
             var okResult = actionResult.Result as OkObjectResult;
 
             Assert.NotNull(okResult);
-            Assert.IsAssignableFrom<TrackedTaskDto>(okResult.Value);
+            Assert.IsAssignableFrom<TrackedTaskDto>(okResult!.Value);
             var trackedTask = okResult.Value as TrackedTaskDto;
 
             Assert.NotNull(trackedTask);
-            Assert.Equal("TrackedTaskId1", trackedTask.TaskId);
+            Assert.Equal("TrackedTaskId1", trackedTask!.TaskId);
             Assert.Equal("Task 1", trackedTask.Name);
         }
 
@@ -87,7 +87,7 @@ namespace Timinute.Server.Tests.Controllers
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
             Assert.NotNull(notFoundResult);
 
-            Assert.Equal(404, notFoundResult.StatusCode);
+            Assert.Equal(404, notFoundResult!.StatusCode);
             Assert.Equal("Tracked task not found!", notFoundResult.Value);
         }
 
@@ -117,7 +117,7 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(actionResult);
             Assert.IsType<NotFoundObjectResult>(actionResult);
             var typedResult = actionResult as NotFoundObjectResult;
-            Assert.Equal("Tracked task not found!", typedResult.Value);
+            Assert.Equal("Tracked task not found!", typedResult!.Value);
             Assert.Equal(404, typedResult.StatusCode);
         }
 
@@ -145,12 +145,12 @@ namespace Timinute.Server.Tests.Controllers
 
             var updatedOkResult = actionResult.Result as OkObjectResult;
             Assert.NotNull(updatedOkResult);
-            Assert.IsAssignableFrom<TrackedTaskDto>(updatedOkResult.Value);
+            Assert.IsAssignableFrom<TrackedTaskDto>(updatedOkResult!.Value);
 
             var updatedTrackedTask = updatedOkResult.Value as TrackedTaskDto;
             Assert.NotNull(updatedTrackedTask);
 
-            Assert.Equal(trackedTaskToUpdate.TaskId, updatedTrackedTask.TaskId);
+            Assert.Equal(trackedTaskToUpdate.TaskId, updatedTrackedTask!.TaskId);
             Assert.Equal(trackedTaskToUpdate.Name, updatedTrackedTask.Name);
             Assert.Equal(trackedTaskToUpdate.StartDate, updatedTrackedTask.StartDate.ToLocalTime());
         }
@@ -177,7 +177,8 @@ namespace Timinute.Server.Tests.Controllers
             Assert.IsType<NotFoundObjectResult>(actionResult.Result);
 
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
-            Assert.Equal(404, notFoundResult.StatusCode);
+            Assert.NotNull(notFoundResult);
+            Assert.Equal(404, notFoundResult!.StatusCode);
             Assert.Equal("Tracked task not found!", notFoundResult.Value);
         }
 
@@ -204,16 +205,16 @@ namespace Timinute.Server.Tests.Controllers
             var okActionResult = actionResult.Result as OkObjectResult;
             Assert.NotNull(okActionResult);
 
-            Assert.IsAssignableFrom<TrackedTaskDto>(okActionResult.Value);
-            var newlyCreatedTrackedTask = okActionResult.Value as TrackedTaskDto;
+            Assert.IsAssignableFrom<TrackedTaskDto>(okActionResult!.Value);
+            var newlyCreatedTrackedTask = okActionResult!.Value as TrackedTaskDto;
             Assert.NotNull(newlyCreatedTrackedTask);
 
-            Assert.Equal(trackedTaskToCreate.Name, newlyCreatedTrackedTask.Name);
-            Assert.Equal(trackedTaskToCreate.StartDate, newlyCreatedTrackedTask.StartDate.ToLocalTime());
-            Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask.Duration);
+            Assert.Equal(trackedTaskToCreate.Name, newlyCreatedTrackedTask!.Name);
+            Assert.Equal(trackedTaskToCreate.StartDate, newlyCreatedTrackedTask!.StartDate.ToLocalTime());
+            Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
         }
 
-        protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext applicationDbContext = null)
+        protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null)
         {
             if (applicationDbContext == null)
             {

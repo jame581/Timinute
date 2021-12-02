@@ -159,9 +159,9 @@ namespace Timinute.Server.Tests.Repositories
             using (var cleanContextInstance = await TestHelper.GetDefaultApplicationDbContext(dbName, false, false))
             {
                 // Check beofre
-                var changedTrackedTask = cleanContextInstance.TrackedTasks.FirstOrDefault(x => x.TaskId == "TrackedTaskId1");
+                TrackedTask? changedTrackedTask = cleanContextInstance.TrackedTasks.FirstOrDefault(x => x.TaskId == "TrackedTaskId1");
                 Assert.NotNull(changedTrackedTask);
-                Assert.Equal("newName", changedTrackedTask.Name);
+                Assert.Equal("newName", changedTrackedTask!.Name);
             }
         }
 

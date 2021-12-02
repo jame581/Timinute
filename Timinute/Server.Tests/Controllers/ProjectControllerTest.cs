@@ -43,15 +43,15 @@ namespace Timinute.Server.Tests.Controllers
             var okResult = actionResult.Result as OkObjectResult;
 
             Assert.NotNull(okResult);
-            Assert.IsAssignableFrom<IEnumerable<ProjectDto>>(okResult.Value);
+            Assert.IsAssignableFrom<IEnumerable<ProjectDto>>(okResult!.Value);
             var projectDtos = okResult.Value as IList<ProjectDto>;
 
             Assert.NotNull(projectDtos);
 
             Assert.Collection(projectDtos,
-            item => Assert.Contains("ProjectId1", projectDtos[0].ProjectId),
-            item => Assert.Contains("ProjectId2", projectDtos[1].ProjectId),
-            item => Assert.Contains("ProjectId3", projectDtos[2].ProjectId));
+            item => Assert.Contains("ProjectId1", projectDtos![0].ProjectId),
+            item => Assert.Contains("ProjectId2", projectDtos![1].ProjectId),
+            item => Assert.Contains("ProjectId3", projectDtos![2].ProjectId));
         }
 
         [Fact]
@@ -66,12 +66,12 @@ namespace Timinute.Server.Tests.Controllers
             var okResult = actionResult.Result as OkObjectResult;
 
             Assert.NotNull(okResult);
-            Assert.IsAssignableFrom<ProjectDto>(okResult.Value);
+            Assert.IsAssignableFrom<ProjectDto>(okResult!.Value);
             var project = okResult.Value as ProjectDto;
 
             Assert.NotNull(project);
-            Assert.Equal("ProjectId1", project.ProjectId);
-            Assert.Equal("Project 1", project.Name);
+            Assert.Equal("ProjectId1", project!.ProjectId);
+            Assert.Equal("Project 1", project!.Name);
         }
 
         [Fact]
@@ -87,8 +87,8 @@ namespace Timinute.Server.Tests.Controllers
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
             Assert.NotNull(notFoundResult);
 
-            Assert.Equal(404, notFoundResult.StatusCode);
-            Assert.Equal("Project not found!", notFoundResult.Value);
+            Assert.Equal(404, notFoundResult!.StatusCode);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
         }
 
         [Fact]
@@ -117,7 +117,8 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(actionResult);
             Assert.IsType<NotFoundObjectResult>(actionResult);
             var typedResult = actionResult as NotFoundObjectResult;
-            Assert.Equal("Project not found!", typedResult.Value);
+            Assert.NotNull(typedResult);
+            Assert.Equal("Project not found!", typedResult!.Value);
             Assert.Equal(404, typedResult.StatusCode);
         }
 
@@ -141,13 +142,13 @@ namespace Timinute.Server.Tests.Controllers
 
             var updatedOkResult = actionResult.Result as OkObjectResult;
             Assert.NotNull(updatedOkResult);
-            Assert.IsAssignableFrom<ProjectDto>(updatedOkResult.Value);
+            Assert.IsAssignableFrom<ProjectDto>(updatedOkResult!.Value);
 
             var updatedProjectTask = updatedOkResult.Value as ProjectDto;
             Assert.NotNull(updatedProjectTask);
 
-            Assert.Equal(projectToUpdate.ProjectId, updatedProjectTask.ProjectId);
-            Assert.Equal(projectToUpdate.Name, updatedProjectTask.Name);
+            Assert.Equal(projectToUpdate.ProjectId, updatedProjectTask!.ProjectId);
+            Assert.Equal(projectToUpdate.Name, updatedProjectTask!.Name);
         }
 
         [Fact]
@@ -168,7 +169,8 @@ namespace Timinute.Server.Tests.Controllers
             Assert.IsType<NotFoundObjectResult>(actionResult.Result);
 
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
-            Assert.Equal(404, notFoundResult.StatusCode);
+            Assert.NotNull(notFoundResult);
+            Assert.Equal(404, notFoundResult!.StatusCode);
             Assert.Equal("Project not found!", notFoundResult.Value);
         }
 
@@ -190,14 +192,14 @@ namespace Timinute.Server.Tests.Controllers
             var okActionResult = actionResult.Result as OkObjectResult;
             Assert.NotNull(okActionResult);
 
-            Assert.IsAssignableFrom<ProjectDto>(okActionResult.Value);
+            Assert.IsAssignableFrom<ProjectDto>(okActionResult!.Value);
             var newlyCreatedProject = okActionResult.Value as ProjectDto;
             Assert.NotNull(newlyCreatedProject);
 
-            Assert.Equal(projectToCreate.Name, newlyCreatedProject.Name);
+            Assert.Equal(projectToCreate.Name, newlyCreatedProject!.Name);
         }
 
-        protected override async Task<ProjectController> CreateController(ApplicationDbContext applicationDbContext = null)
+        protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null)
         {
             if (applicationDbContext == null)
             {

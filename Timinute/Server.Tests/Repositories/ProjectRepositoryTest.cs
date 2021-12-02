@@ -167,7 +167,7 @@ namespace Timinute.Server.Tests.Repositories
                 // Check beofre
                 var changedProject = cleanContextInstance.Projects.FirstOrDefault(x => x.ProjectId == "ProjectId1");
                 Assert.NotNull(changedProject);
-                Assert.Equal("newName", changedProject.Name);
+                Assert.Equal("newName", changedProject!.Name);
             }
         }
 
