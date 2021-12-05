@@ -159,8 +159,14 @@ namespace Timinute.Server.Controllers
                 }
 
                 var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
+                updatedTrackedTask.StartDate = updatedTrackedTask.StartDate.ToUniversalTime();
 
-                //taskRepository.
+                if (updatedTrackedTask.EndDate.HasValue)
+                {
+                    updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
+                    updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
+                }
+
                 await taskRepository.Update(updatedTrackedTask);
 
                 return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTask));
