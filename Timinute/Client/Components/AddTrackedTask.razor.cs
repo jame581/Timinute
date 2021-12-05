@@ -46,18 +46,6 @@ namespace Timinute.Client.Components
                 {
                     var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createTrackedTaskDto);
                     responseMessage.EnsureSuccessStatusCode();
-
-                    //string response = await responseMessage.Content.ReadAsStringAsync();
-                    //if (!string.IsNullOrEmpty(response))
-                    //{
-                    //    TrackedTaskDto trackedTaskDto = JsonSerializer.Deserialize<TrackedTaskDto>(response);
-
-                    //    if (trackedTaskDto != null)
-                    //    {
-
-                    //    }
-                    //}
-
                 }
                 catch (Exception ex)
                 {
@@ -71,6 +59,7 @@ namespace Timinute.Client.Components
         protected override void OnInitialized()
         {
             editContext = new(trackedTask);
+            editContext.EnableDataAnnotationsValidation();
         }
     }
 }
