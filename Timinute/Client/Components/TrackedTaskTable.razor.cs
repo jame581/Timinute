@@ -43,6 +43,8 @@ namespace Timinute.Client.Components
                     {
                         TrackedTasksDictionary.Add(group.Key, group.Value);
                     }
+
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
