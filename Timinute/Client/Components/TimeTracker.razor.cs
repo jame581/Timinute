@@ -18,6 +18,9 @@ namespace Timinute.Client.Components
 
         private string exceptionMessage { get; set; }
 
+        [Parameter]
+        public EventCallback<TrackedTaskDto> OnAddTrackedTask { get; set; }
+
         [Inject]
         private IHttpClientFactory clientFactory { get; set; }
 
@@ -106,6 +109,8 @@ namespace Timinute.Client.Components
             {
                 var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateTrackedTaskDto);
                 responseMessage.EnsureSuccessStatusCode();    
+
+                await OnAddTrackedTask.InvokeAsync(trackedTask);
                 
                 trackedTask = new();
                 stopWatchRunning = false;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Timinute.Client.Components;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Pages
@@ -9,15 +10,10 @@ namespace Timinute.Client.Pages
         [CascadingParameter]
         private Task<AuthenticationState> authenticationStateTask { get; set; }
 
+        private TrackedTaskTable trackedTaskTableComponent;
+
         [Inject]
         protected NavigationManager Navigation { get; set; }
-
-        [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
-
-        //private EditContext? editContext;
-
-        private CreateTrackedTaskDto createTrackedTask;
 
         protected override async Task OnInitializedAsync()
         {
@@ -26,24 +22,11 @@ namespace Timinute.Client.Pages
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
-
-            //editContext = new(createTrackedTask);
         }
 
-        //private async Task HandleSubmit()
-        //{
-        //    if (editContext != null && editContext.Validate())
-        //    {
-        //        //Logger.LogInformation("HandleSubmit called: Form is valid");
-
-        //        // Process the valid form
-        //        // await ...
-        //        await Task.CompletedTask;
-        //    }
-        //    else
-        //    {
-        //        //Logger.LogInformation("HandleSubmit called: Form is INVALID");
-        //    }
-        //}
+        private async Task HandleTrackedTaskAdded(TrackedTaskDto trackedTaskDto)
+        {
+           await trackedTaskTableComponent.RefreshTable();
+        }
     }
 }

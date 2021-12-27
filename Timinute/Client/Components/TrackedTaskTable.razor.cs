@@ -38,11 +38,7 @@ namespace Timinute.Client.Components
                     foreach (var trackedTaskDto in trackedTaskDtoList)
                         trackedTaskList.Add(new TrackedTask(trackedTaskDto));
 
-                    var groups = trackedTaskList.GroupBy(x => x.StartDate.ToLongDateString()).ToDictionary(x => x.Key, y => y.ToList());
-                    foreach (var group in groups)
-                    {
-                        TrackedTasksDictionary.Add(group.Key, group.Value);
-                    }
+                    GroupTraskedTasks(trackedTaskList);
 
                     StateHasChanged();
                 }
@@ -52,5 +48,19 @@ namespace Timinute.Client.Components
                 exceptionMessage = ex.Message;
             }
         }
+
+        private void GroupTraskedTasks(List<TrackedTask> trackedTaskList)
+        {
+            var groups = trackedTaskList.GroupBy(x => x.StartDate.ToLongDateString()).ToDictionary(x => x.Key, y => y.ToList());
+            foreach (var group in groups)
+            {
+                TrackedTasksDictionary.Add(group.Key, group.Value);
+            }
+        }
+
+        public async Task RefreshTable()
+        {
+            await LoadTrackedTasks();
+        } 
     }
 }
