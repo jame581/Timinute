@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Timinute.Client.Helpers;
-using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Components
@@ -70,10 +68,6 @@ namespace Timinute.Client.Components
                     trackedTask.TaskId = trackedTaskDto.TaskId;
                     stopWatchRunning = true;
                 }
-                //if (!string.IsNullOrEmpty(response))
-                //{
-                //    TrackedTaskDto trackedTaskDto = JsonSerializer.Deserialize<TrackedTaskDto>(response);
-                //}
 
             }
             catch (Exception ex)
