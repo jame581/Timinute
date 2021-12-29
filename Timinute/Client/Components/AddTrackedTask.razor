@@ -1,30 +1,39 @@
 ﻿<div class="row">
-	<h3 class="text-center">Add Tracked Task</h3>
-	<EditForm Model="@editContext" OnValidSubmit="@HandleValidSubmit">
-		<DataAnnotationsValidator />
-		<ValidationSummary />
+    <h3 class="text-center">Add Tracked Task</h3>
+    <EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+        <DataAnnotationsValidator />
 
-		<label>
-			Task Name:
-			<InputText DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" />
-		</label>
+        <label>
+            Task Name:
+            <InputText DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" placeholder="enter first task name..." />
+            <ValidationMessage For="() => trackedTask.Name" />
+        </label>
 
-		<label>
-			Start Date:
-			<InputDate DisplayName="Date" @bind-Value="trackedTask.StartDate" />
-		</label>
+        <label>
+            Start Date:
+            <InputDate DisplayName="Date" @bind-Value="trackedTask.StartDate" placeholder="Start Date..." />
+            <ValidationMessage For="() => trackedTask.StartDate" />
+        </label>
 
-		<label>
-			Duration:
-			<InputText DisplayName="Duration" @bind-Value="@DurationProxy" />
-		</label>
+        <label>
+            Duration:
+            <InputText DisplayName="Duration" @bind-Value="@DurationProxy" />
+        </label>
 
-		<button type="submit">Submit</button>
+        <button type="submit">Submit</button>
 
-	</EditForm>
+        @if (displayValidationErrorMessages)
+        {
+            <div class="col-md-4" style="margin-top:10px">
+                <label>Validation Messages: </label>
+                <ValidationSummary />
+            </div>
+        }
 
-	<p>
-		@exceptionMessage
-	</p>
+    </EditForm>
+
+    <p>
+        @exceptionMessage
+    </p>
 
 </div>

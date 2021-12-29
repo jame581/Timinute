@@ -11,9 +11,9 @@ namespace Timinute.Client.Components
     {
         private TrackedTask trackedTask { get; set; } = new() { StartDate = DateTime.Now };
 
-        private EditContext editContext { get; set; }
-
         private string exceptionMessage;
+
+        bool displayValidationErrorMessages = false;
 
         public string DurationProxy
         {
@@ -31,35 +31,32 @@ namespace Timinute.Client.Components
 
         private async Task HandleValidSubmit()
         {
-            if (editContext.Validate())
+            var client = clientFactory.CreateClient(Constants.API.ClientName);
+
+            CreateTrackedTaskDto createTrackedTaskDto = new()
             {
-                var client = clientFactory.CreateClient(Constants.API.ClientName);
+                Name = trackedTask.Name,
+                StartDate = trackedTask.StartDate,
+                Duration = trackedTask.Duration
+            };
 
-                CreateTrackedTaskDto createTrackedTaskDto = new()
-                {
-                    Name = trackedTask.Name,
-                    StartDate = trackedTask.StartDate,
-                    Duration = trackedTask.Duration
-                };
+            try
+            {
+                var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createTrackedTaskDto);
+                responseMessage.EnsureSuccessStatusCode();
 
-                try
-                {
-                    var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createTrackedTaskDto);
-                    responseMessage.EnsureSuccessStatusCode();
-                }
-                catch (Exception ex)
-                {
-                    exceptionMessage = ex.Message;
-                }
-
+                displayValidationErrorMessages = false;
             }
-
+            catch (Exception ex)
+            {
+                exceptionMessage = ex.Message;
+                displayValidationErrorMessages = true;
+            }
         }
 
-        protected override void OnInitialized()
+        private void HandleInvalidSubmit(EditContext context)
         {
-            editContext = new(trackedTask);
-            editContext.EnableDataAnnotationsValidation();
+            displayValidationErrorMessages = true;
         }
     }
 }
