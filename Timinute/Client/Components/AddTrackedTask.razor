@@ -5,22 +5,22 @@
 
         <label>
             Task Name:
-            <InputText DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" placeholder="enter first task name..." />
-            <ValidationMessage For="() => trackedTask.Name" />
+            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" placeholder="Enter task name..." />
+@*            <ValidationMessage For="() => trackedTask.Name" />*@
         </label>
 
         <label>
             Start Date:
-            <InputDate DisplayName="Date" @bind-Value="trackedTask.StartDate" placeholder="Start Date..." />
-            <ValidationMessage For="() => trackedTask.StartDate" />
+            <InputDate class="form-control" DisplayName="Date" @bind-Value="trackedTask.StartDate" placeholder="Start Date..." />
+@*            <ValidationMessage For="() => trackedTask.StartDate" />*@
         </label>
 
         <label>
             Duration:
-            <InputText DisplayName="Duration" @bind-Value="@DurationProxy" />
+            <InputText type="text" class="form-control" DisplayName="Duration" @bind-Value="@DurationProxy" />
         </label>
 
-        <button type="submit">Submit</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
 
         @if (displayValidationErrorMessages)
         {
