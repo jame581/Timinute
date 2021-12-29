@@ -2,15 +2,16 @@
 using Microsoft.AspNetCore.Components.Forms;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
+using Timinute.Client.Models;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Components
 {
     public partial class TimeTracker
     {
-        private TrackedTaskDto trackedTask = new();
+        private TrackedTask trackedTask = new();
 
-        private EditContext editContext { get; set; }
+        //private EditContext editContext { get; set; }
 
         private bool stopWatchRunning = false;
 
@@ -18,32 +19,31 @@ namespace Timinute.Client.Components
 
         private string exceptionMessage { get; set; }
 
+        bool displayValidationErrorMessages = false;
+
         [Parameter]
-        public EventCallback<TrackedTaskDto> OnAddTrackedTask { get; set; }
+        public EventCallback<TrackedTask> OnAddTrackedTask { get; set; }
 
         [Inject]
         private IHttpClientFactory clientFactory { get; set; }
 
-        protected override void OnInitialized()
-        {
-            editContext = new(trackedTask);
-            editContext.EnableDataAnnotationsValidation();
-        }
-
         private async Task HandleValidSubmit()
         {
-            if (editContext != null && editContext.Validate())
-            {
+            displayValidationErrorMessages = false;
 
-                if (stopWatchRunning)
-                {
-                    await StopWatch();
-                }
-                else
-                {
-                    await StartWatch();
-                }
-            }           
+            if (stopWatchRunning)
+            {
+                await StopWatch();
+            }
+            else
+            {
+                await StartWatch();
+            }
+        }
+
+        private async Task HandleInvalidSubmit()
+        {
+            displayValidationErrorMessages = true;
         }
 
         private async Task StartWatch()
@@ -99,19 +99,19 @@ namespace Timinute.Client.Components
             {
                 TaskId = trackedTask.TaskId,
                 Name = trackedTask.Name,
-                Project = trackedTask.Project,
+                //Project = new ProjectDto(trackedTask.Project),
                 ProjectId = trackedTask.ProjectId,
                 StartDate = trackedTask.StartDate,
-                EndDate = trackedTask.StartDate + trackedTask.Duration             
+                EndDate = trackedTask.StartDate + trackedTask.Duration
             };
 
             try
             {
                 var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateTrackedTaskDto);
-                responseMessage.EnsureSuccessStatusCode();    
+                responseMessage.EnsureSuccessStatusCode();
 
                 await OnAddTrackedTask.InvokeAsync(trackedTask);
-                
+
                 trackedTask = new();
                 stopWatchRunning = false;
                 durationProxy = "00:00:00";

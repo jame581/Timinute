@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Timinute.Client.Components;
-using Timinute.Shared.Dtos.TrackedTask;
+using Timinute.Client.Models;
 
 namespace Timinute.Client.Pages
 {
@@ -24,7 +24,7 @@ namespace Timinute.Client.Pages
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
         }
 
-        private async Task HandleTrackedTaskAdded(TrackedTaskDto trackedTaskDto)
+        private async Task HandleTrackedTaskAdded(TrackedTask trackedTaskDto)
         {
            await trackedTaskTableComponent.RefreshTable();
         }

@@ -1,8 +1,6 @@
 ﻿<div class="row">
-    <EditForm Model="@editContext" OnValidSubmit="@HandleValidSubmit">
+    <EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
         <DataAnnotationsValidator />
-        <ValidationSummary />
-
         <div class="mb-3 mt-3 row">
             <div class="col-auto">
                 <label for="projectName" class="visually-hidden">What are you working on?</label>
@@ -30,10 +28,16 @@
                 }
             </div>
         </div>
-
+        
+        @if (displayValidationErrorMessages)
+        {
+            <div class="mb-3 mt-3 row">
+                <ValidationSummary />
+                <p>
+                    @exceptionMessage
+                </p>
+            </div>
+        }
     </EditForm>
 
-    <p>
-		@exceptionMessage
-	</p>
 </div>

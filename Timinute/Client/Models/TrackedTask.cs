@@ -8,7 +8,7 @@ namespace Timinute.Client.Models
         public string TaskId { get; set; } = null!;
 
         [Required]
-        [StringLength(50, ErrorMessage = "Name is too long.")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Name can not have less then 3 characters and more then 50.")]
         public string Name { get; set; } = null!;
         
         [Required]
