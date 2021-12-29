@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -10,8 +9,6 @@ namespace Timinute.Client.Components
     public partial class TimeTracker
     {
         private TrackedTask trackedTask = new();
-
-        //private EditContext editContext { get; set; }
 
         private bool stopWatchRunning = false;
 
