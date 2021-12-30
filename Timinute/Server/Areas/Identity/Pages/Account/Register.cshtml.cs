@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 
 namespace Timinute.Server.Areas.Identity.Pages.Account
@@ -72,6 +73,14 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
+            [Required, MaxLength(50)]
+            [Display(Name = "FirstName")]
+            public string FirstName { get; set; } = null!;
+
+            [Required, MaxLength(50)]
+            [Display(Name = "LastName")]
+            public string LastName { get; set; } = null!;
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -106,10 +115,13 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
-
+                user.FirstName = Input.FirstName;
+                user.LastName = Input.LastName;
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
+
+                await _userManager.AddToRoleAsync(user, Constants.Roles.Basic);
 
                 if (result.Succeeded)
                 {

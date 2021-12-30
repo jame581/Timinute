@@ -1,4 +1,6 @@
-﻿namespace Timinute.Shared.Dtos
+﻿using Timinute.Shared.Dtos.Project;
+
+namespace Timinute.Shared.Dtos
 {
     public class CompanyDto
     {

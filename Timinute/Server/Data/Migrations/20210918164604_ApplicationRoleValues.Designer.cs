@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Timinute.Server.Data;
 
@@ -11,9 +12,10 @@ using Timinute.Server.Data;
 namespace Timinute.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210918164604_ApplicationRoleValues")]
+    partial class ApplicationRoleValues
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -424,7 +426,7 @@ namespace Timinute.Server.Data.Migrations
                     b.Property<TimeSpan>("Duration")
                         .HasColumnType("time");
 
-                    b.Property<DateTime?>("EndDate")
+                    b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
@@ -463,16 +465,16 @@ namespace Timinute.Server.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "6a608857-2afc-4868-9ebd-54ab3383487f",
-                            ConcurrencyStamp = "a2c382a2-82c5-4a3a-88aa-fcfec1eafab5",
+                            Id = "113a9386-9a69-414b-9a8a-77446eaadb6e",
+                            ConcurrencyStamp = "e2ba2eef-f33c-4371-9ea0-cb211b09138a",
                             Name = "Basic",
                             NormalizedName = "BASIC",
                             Description = "Basic role with lowest rights."
                         },
                         new
                         {
-                            Id = "5ffecbc3-b8e7-4b0f-bfa7-a6c92045a239",
-                            ConcurrencyStamp = "7799205b-d265-4b0d-b9fd-39769eb21d42",
+                            Id = "61a0ebb3-22c2-409c-85bb-dd944fc4dcc8",
+                            ConcurrencyStamp = "33d6b824-08a7-40a0-bee9-83b658b6e395",
                             Name = "Admin",
                             NormalizedName = "ADMIN",
                             Description = "Admin role with highest rights."

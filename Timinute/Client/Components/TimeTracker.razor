@@ -1,0 +1,43 @@
+﻿<div class="row">
+    <EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+        <DataAnnotationsValidator />
+        <div class="mb-3 mt-3 row">
+            <div class="col-auto">
+                <label for="projectName" class="visually-hidden">What are you working on?</label>
+                @if (!stopWatchRunning)
+                {
+                    <InputText type="text" class="form-control" id="projectName" @bind-Value="trackedTask.Name" placeholder="What are you working on?" />
+                }
+                else
+                {
+                    <InputText type="text" readonly class="form-control" id="projectName" @bind-Value="trackedTask.Name" placeholder="What are you working on?" />
+                }
+            </div>
+            <div class="col-auto">
+                <label for="time" class="visually-hidden">Time</label>
+                <InputText type="text" readonly class="form-control" id="time" @bind-Value="durationProxy" placeholder="00:00:00" />
+            </div>
+            <div class="col-auto">
+                @if (!stopWatchRunning)
+                {
+                    <button type="submit" class="btn btn-primary mb-3">Start</button>
+                }
+                else
+                {
+                    <button type="submit" class="btn btn-danger mb-3">Stop</button>
+                }
+            </div>
+        </div>
+        
+        @if (displayValidationErrorMessages)
+        {
+            <div class="mb-3 mt-3 row">
+                <ValidationSummary />
+                <p>
+                    @exceptionMessage
+                </p>
+            </div>
+        }
+    </EditForm>
+
+</div>

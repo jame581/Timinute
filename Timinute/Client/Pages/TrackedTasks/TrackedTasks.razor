@@ -1,0 +1,47 @@
+﻿@page "/trackedtasks"
+@attribute [Authorize]
+
+<PageTitle>Tracked Tasks</PageTitle>
+
+
+<div class="container">
+	
+	<div class="d-flex justify-content-center">
+		<AddTrackedTask />
+	</div>
+
+	<h3 class="p-3 text-center">Display a list of tracked tasks</h3>
+	<button class="mb-3" onclick="@RefreshTable">Refresh table</button>
+	<table class="table table-table-striped table-bordered">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>Name</th>
+				<th>Duration</th>
+				<th>Start date</th>
+				<th>End date</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var trackedTask in TrackedTasksList)
+			{
+				<tr>
+					<td>@trackedTask.TaskId</td>
+					<td>@trackedTask.Name</td>
+					<td>@trackedTask.Duration</td>
+					<td>@trackedTask.StartDate</td>
+					<td>@trackedTask.EndDate</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+		
+	<p>
+		@exceptionMessage
+	</p>
+
+</div>
+
+@code {
+
+}

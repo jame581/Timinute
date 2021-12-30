@@ -1,0 +1,10 @@
+﻿@page "/timetracker"
+@attribute [Authorize]
+
+<PageTitle>Time Tracker</PageTitle>
+
+<div class="container">
+    <h3>Time Tracker</h3>
+    <TimeTracker OnAddTrackedTask="@HandleTrackedTaskAdded" /> 
+    <TrackedTaskTable @ref="trackedTaskTableComponent" />
+</div>
