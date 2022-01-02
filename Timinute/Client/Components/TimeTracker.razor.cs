@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Blazored.SessionStorage;
+using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -14,7 +15,7 @@ namespace Timinute.Client.Components
 
         private string durationProxy { get; set; } = "00:00:00";
 
-        private string exceptionMessage { get; set; }
+        private string? exceptionMessage { get; set; }
 
         bool displayValidationErrorMessages = false;
 
@@ -24,13 +25,28 @@ namespace Timinute.Client.Components
         [Inject]
         private IHttpClientFactory clientFactory { get; set; }
 
+        [Inject]
+        private ISessionStorageService sessionStorage { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+            var savedTrackedTask = await sessionStorage.GetItemAsync<TrackedTask>("trackedTask");
+            
+            if (savedTrackedTask != null)
+            {
+                trackedTask = savedTrackedTask;
+                stopWatchRunning = true;
+                await StopWatchTick();
+            }
+        }
+
         private async Task HandleValidSubmit()
         {
             displayValidationErrorMessages = false;
 
             if (stopWatchRunning)
             {
-                await StopWatch();
+                await StopStopWatch();
             }
             else
             {
@@ -38,7 +54,7 @@ namespace Timinute.Client.Components
             }
         }
 
-        private async Task HandleInvalidSubmit()
+        private void HandleInvalidSubmit()
         {
             displayValidationErrorMessages = true;
         }
@@ -61,12 +77,14 @@ namespace Timinute.Client.Components
                 var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createTrackedTaskDto);
                 responseMessage.EnsureSuccessStatusCode();
 
-                var trackedTaskDto = await responseMessage.Content.ReadFromJsonAsync<TrackedTaskDto>();//.ReadAsStringAsync();
+                var trackedTaskDto = await responseMessage.Content.ReadFromJsonAsync<TrackedTaskDto>();
 
                 if (trackedTaskDto != null)
                 {
                     trackedTask.TaskId = trackedTaskDto.TaskId;
                     stopWatchRunning = true;
+
+                    await sessionStorage.SetItemAsync<TrackedTask>("trackedTask", trackedTask);
                 }
 
             }
@@ -75,6 +93,11 @@ namespace Timinute.Client.Components
                 exceptionMessage = ex.Message;
             }
 
+            await StopWatchTick();
+        }
+
+        private async Task StopWatchTick()
+        {
             while (stopWatchRunning)
             {
                 await Task.Delay(1000);
@@ -88,7 +111,7 @@ namespace Timinute.Client.Components
             }
         }
 
-        private async Task StopWatch()
+        private async Task StopStopWatch()
         {
             var client = clientFactory.CreateClient(Constants.API.ClientName);
 
