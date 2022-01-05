@@ -19,7 +19,22 @@
                 public const string Delete = Api;
 
                 public const string Update = Api;
-            }           
+            }
+
+            public static class Project
+            {
+                public const string Api = "Project";
+
+                public const string GetAll = "Project";
+
+                public const string GetById = $"{Api}/";
+
+                public const string Create = Api;
+
+                public const string Delete = Api;
+
+                public const string Update = Api;
+            }
         }
     }
 }
