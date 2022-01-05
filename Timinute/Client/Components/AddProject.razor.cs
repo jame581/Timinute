@@ -15,6 +15,9 @@ namespace Timinute.Client.Components
 
         bool displayValidationErrorMessages = false;
 
+        [Parameter]
+        public EventCallback<Project> OnAddProject { get; set; }
+
         [Inject]
         private IHttpClientFactory clientFactory { get; set; }
 
@@ -33,6 +36,8 @@ namespace Timinute.Client.Components
                 responseMessage.EnsureSuccessStatusCode();
 
                 displayValidationErrorMessages = false;
+
+                await OnAddProject.InvokeAsync(project);
             }
             catch (Exception ex)
             {

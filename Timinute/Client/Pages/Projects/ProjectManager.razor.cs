@@ -55,5 +55,10 @@ namespace Timinute.Client.Pages.Projects
                 exceptionMessage = ex.Message;
             }
         }
+
+        private async Task HandleProjectAdded(Project project)
+        {
+            await RefreshTable();
+        }
     }
 }

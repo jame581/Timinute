@@ -24,7 +24,7 @@ namespace Timinute.Client.Pages
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
         }
 
-        private async Task HandleTrackedTaskAdded(TrackedTask trackedTaskDto)
+        private async Task HandleTrackedTaskAdded(TrackedTask newTrackedTask)
         {
            await trackedTaskTableComponent.RefreshTable();
         }

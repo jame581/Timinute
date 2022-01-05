@@ -7,17 +7,16 @@
 
 <div class="container">
 
-    <AddProject />
-
+    <AddProject OnAddProject="@HandleProjectAdded" />
+    
     <div class="row">
-        <h3>Projects Table</h3>
         <p>
             @exceptionMessage
         </p>
     </div>
 
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    <button class="mb-3" onclick="@RefreshTable">Refresh table</button>
+    @*<button class="mb-3" onclick="@RefreshTable">Refresh table</button>*@
     <table class="table table-table-striped table-bordered">
         <thead>
             <tr>
