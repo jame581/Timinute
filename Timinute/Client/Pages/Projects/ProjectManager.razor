@@ -1,0 +1,40 @@
+﻿@page "/projectmanager"
+@attribute [Authorize]
+
+<PageTitle>Manage Projects</PageTitle>
+
+<h3>Manage Projects</h3>
+
+<div class="container">
+
+    <AddProject />
+
+    <div class="row">
+        <h3>Projects Table</h3>
+        <p>
+            @exceptionMessage
+        </p>
+    </div>
+
+    <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
+    <button class="mb-3" onclick="@RefreshTable">Refresh table</button>
+    <table class="table table-table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Project Id</th>
+                <th>Name</th>
+                <th>Company Id</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in projectsList)
+            {
+                <tr>
+                    <td>@project.ProjectId</td>
+                    <td>@project.Name</td>
+                    <td>@project.CompanyId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

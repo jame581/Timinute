@@ -8,7 +8,7 @@ namespace Timinute.Client.Components
 {
     public partial class TrackedTaskTable
     {
-        public readonly Dictionary<string, List<TrackedTask>> TrackedTasksDictionary = new();
+        public readonly Dictionary<string, List<TrackedTask>> trackedTasksDictionary = new();
 
         private string exceptionMessage { get; set; }
 
@@ -31,7 +31,7 @@ namespace Timinute.Client.Components
 
                 if (trackedTaskDtoList != null)
                 {
-                    TrackedTasksDictionary.Clear();
+                    trackedTasksDictionary.Clear();
 
                     List<TrackedTask> trackedTaskList = new List<TrackedTask>();
 
@@ -54,7 +54,7 @@ namespace Timinute.Client.Components
             var groups = trackedTaskList.GroupBy(x => x.StartDate.ToLongDateString()).ToDictionary(x => x.Key, y => y.ToList());
             foreach (var group in groups)
             {
-                TrackedTasksDictionary.Add(group.Key, group.Value);
+                trackedTasksDictionary.Add(group.Key, group.Value);
             }
         }
 
