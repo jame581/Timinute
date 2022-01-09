@@ -13,7 +13,16 @@
 
         <div class="row mt-3">
             <div class="card" style="padding-right: 0px;padding-left: 0px;">
-                <h5 class="card-header">@trackedTaskPair.Key</h5>
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 style="text-align: start">@trackedTaskPair.Key</h5>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-muted" style="text-align: end">Total time: @time.ToString(@"hh\:mm\:ss")</h5>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
 
@@ -21,7 +30,8 @@
                         {
                             <li class="list-group-item">
                                 <div class="row">
-                                    <div class="col-8">@trackedTask.Name</div>
+                                    <div class="col-4">@trackedTask.Name</div>
+                                    <div class="col-4">@trackedTask.ProjectId</div>
                                     <div class="col-4" style="text-align: end">@trackedTask.Duration.ToString(@"hh\:mm\:ss")</div>
                                 </div>
                             </li>
@@ -29,9 +39,9 @@
                         }
                     </ul>
                 </div>
-                <div class="card-footer text-muted">
+                @*                <div class="card-footer text-muted">
                     Total time: @time.ToString(@"hh\:mm\:ss")
-                </div>
+                    </div>*@
             </div>
         </div>
     }
