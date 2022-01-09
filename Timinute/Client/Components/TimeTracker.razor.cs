@@ -42,6 +42,7 @@ namespace Timinute.Client.Components
             if (savedTrackedTask != null)
             {
                 trackedTask = savedTrackedTask;
+                trackedTask.Duration = DateTime.Now - trackedTask.StartDate;
                 projectId = trackedTask.ProjectId;
                 stopWatchRunning = true;
                 await StopWatchTick();
@@ -71,13 +72,15 @@ namespace Timinute.Client.Components
         {
             trackedTask.StartDate = DateTime.Now;
             trackedTask.Duration = new TimeSpan();
+            trackedTask.ProjectId = projectId;
 
             var client = clientFactory.CreateClient(Constants.API.ClientName);
 
             CreateTrackedTaskDto createTrackedTaskDto = new()
             {
                 Name = trackedTask.Name,
-                StartDate = trackedTask.StartDate
+                StartDate = trackedTask.StartDate,
+                ProjectId = trackedTask.ProjectId
             };
 
             try
@@ -113,7 +116,7 @@ namespace Timinute.Client.Components
                 if (stopWatchRunning)
                 {
                     trackedTask.Duration = trackedTask.Duration.Add(TimeSpan.FromSeconds(1));
-                    durationProxy = trackedTask.Duration.ToString();
+                    durationProxy = trackedTask.Duration.ToString(@"hh\:mm\:ss");
                     StateHasChanged();
                 }
             }
@@ -142,6 +145,9 @@ namespace Timinute.Client.Components
                 trackedTask = new();
                 stopWatchRunning = false;
                 durationProxy = "00:00:00";
+                projectId = null;
+
+                await sessionStorage.RemoveItemAsync("trackedTask");
 
                 StateHasChanged();
             }
