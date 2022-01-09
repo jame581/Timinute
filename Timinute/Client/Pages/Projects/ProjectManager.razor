@@ -8,7 +8,7 @@
 <div class="container">
 
     <AddProject OnAddProject="@HandleProjectAdded" />
-    
+
     <div class="row">
         <p>
             @exceptionMessage
@@ -16,13 +16,13 @@
     </div>
 
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    @*<button class="mb-3" onclick="@RefreshTable">Refresh table</button>*@
     <table class="table table-table-striped table-bordered">
         <thead>
             <tr>
                 <th>Project Id</th>
                 <th>Name</th>
                 <th>Company Id</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -32,6 +32,11 @@
                     <td>@project.ProjectId</td>
                     <td>@project.Name</td>
                     <td>@project.CompanyId</td>
+                    <td>
+                        <button type="submit" class="btn btn-danger" @onclick="() => RemoveProject(project.ProjectId)">
+                            <span class="oi oi-delete"></span> Remove
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>

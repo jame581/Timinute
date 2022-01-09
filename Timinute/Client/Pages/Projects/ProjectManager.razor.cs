@@ -49,6 +49,8 @@ namespace Timinute.Client.Pages.Projects
                     foreach (var item in response)
                         projectsList.Add(new Project(item));
                 }
+
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -59,6 +61,26 @@ namespace Timinute.Client.Pages.Projects
         private async Task HandleProjectAdded(Project project)
         {
             await RefreshTable();
+        }
+
+        private async Task RemoveProject(string projectId)
+        {
+            exceptionMessage = "";
+            var client = clientFactory.CreateClient(Constants.API.ClientName);
+
+            try
+            {
+                var response = await client.DeleteAsync($"{Constants.API.Project.Delete}/{projectId}");
+
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    await RefreshTable();
+                }
+            }
+            catch (Exception ex)
+            {
+                exceptionMessage = ex.Message;
+            }
         }
     }
 }
