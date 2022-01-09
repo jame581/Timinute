@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
+using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Components
@@ -10,6 +11,10 @@ namespace Timinute.Client.Components
     public partial class TimeTracker
     {
         private TrackedTask trackedTask = new();
+
+        private List<Project> projects = new();
+
+        public string? projectId { get; set; }
 
         private bool stopWatchRunning = false;
 
@@ -30,11 +35,14 @@ namespace Timinute.Client.Components
 
         protected override async Task OnInitializedAsync()
         {
+            await LoadProjects();
+
             var savedTrackedTask = await sessionStorage.GetItemAsync<TrackedTask>("trackedTask");
             
             if (savedTrackedTask != null)
             {
                 trackedTask = savedTrackedTask;
+                projectId = trackedTask.ProjectId;
                 stopWatchRunning = true;
                 await StopWatchTick();
             }
@@ -119,8 +127,7 @@ namespace Timinute.Client.Components
             {
                 TaskId = trackedTask.TaskId,
                 Name = trackedTask.Name,
-                //Project = new ProjectDto(trackedTask.Project),
-                ProjectId = trackedTask.ProjectId,
+                ProjectId = projectId,
                 StartDate = trackedTask.StartDate,
                 EndDate = trackedTask.StartDate + trackedTask.Duration
             };
@@ -137,6 +144,30 @@ namespace Timinute.Client.Components
                 durationProxy = "00:00:00";
 
                 StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                exceptionMessage = ex.Message;
+            }
+        }
+
+        private async Task LoadProjects()
+        {
+            var client = clientFactory.CreateClient(Constants.API.ClientName);
+
+            try
+            {
+                var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.GetAll);
+                
+                if (responseMessage != null)
+                {
+                    projects.Clear();
+                    foreach (var projectDto in responseMessage)
+                    {
+                        projects.Add(new Project(projectDto));
+                    }
+                    StateHasChanged();
+                }
             }
             catch (Exception ex)
             {
