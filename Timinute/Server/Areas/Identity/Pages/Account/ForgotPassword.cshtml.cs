@@ -28,7 +28,7 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = null!;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -69,7 +69,9 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
                 await _emailSender.SendEmailAsync(
                     Input.Email,
                     "Reset Password",
+#pragma warning disable CS8604 // Possible null reference argument.
                     $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+#pragma warning restore CS8604 // Possible null reference argument.
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

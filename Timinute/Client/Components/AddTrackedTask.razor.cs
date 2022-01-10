@@ -9,35 +9,37 @@ namespace Timinute.Client.Components
 {
     public partial class AddTrackedTask
     {
-        private TrackedTask trackedTask { get; set; } = new() { StartDate = DateTime.Now };
+        private TrackedTask NewTrackedTask { get; set; } = new() { StartDate = DateTime.Now };
 
-        private string exceptionMessage;
+        private string exceptionMessage = "";
 
         bool displayValidationErrorMessages = false;
 
         public string DurationProxy
         {
-            get => trackedTask.Duration.ToString();
+            get => NewTrackedTask.Duration.ToString();
             set
             {
-                TimeSpan.TryParse(value, out TimeSpan timeSpan);
-                trackedTask.Duration = timeSpan;
+                if (TimeSpan.TryParse(value, out TimeSpan timeSpan))
+                {
+                    NewTrackedTask.Duration = timeSpan;
+                }
             }
         }
 
 
         [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
+        private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         private async Task HandleValidSubmit()
         {
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             CreateTrackedTaskDto createTrackedTaskDto = new()
             {
-                Name = trackedTask.Name,
-                StartDate = trackedTask.StartDate,
-                Duration = trackedTask.Duration
+                Name = NewTrackedTask.Name,
+                StartDate = NewTrackedTask.StartDate,
+                Duration = NewTrackedTask.Duration
             };
 
             try

@@ -12,15 +12,15 @@ namespace Timinute.Client.Components
     {
         private TrackedTask trackedTask = new();
 
-        private List<Project> projects = new();
+        private readonly List<Project> projects = new();
 
-        public string? projectId { get; set; }
+        public string? ProjectId { get; set; }
 
         private bool stopWatchRunning = false;
 
-        private string durationProxy { get; set; } = "00:00:00";
+        private string DurationProxy { get; set; } = "00:00:00";
 
-        private string? exceptionMessage { get; set; }
+        private string? ExceptionMessage { get; set; }
 
         bool displayValidationErrorMessages = false;
 
@@ -28,22 +28,22 @@ namespace Timinute.Client.Components
         public EventCallback<TrackedTask> OnAddTrackedTask { get; set; }
 
         [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
+        private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         [Inject]
-        private ISessionStorageService sessionStorage { get; set; }
+        private ISessionStorageService SessionStorage { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
             await LoadProjects();
 
-            var savedTrackedTask = await sessionStorage.GetItemAsync<TrackedTask>("trackedTask");
+            var savedTrackedTask = await SessionStorage.GetItemAsync<TrackedTask>("trackedTask");
             
             if (savedTrackedTask != null)
             {
                 trackedTask = savedTrackedTask;
                 trackedTask.Duration = DateTime.Now - trackedTask.StartDate;
-                projectId = trackedTask.ProjectId;
+                ProjectId = trackedTask.ProjectId;
                 stopWatchRunning = true;
                 await StopWatchTick();
             }
@@ -72,9 +72,9 @@ namespace Timinute.Client.Components
         {
             trackedTask.StartDate = DateTime.Now;
             trackedTask.Duration = new TimeSpan();
-            trackedTask.ProjectId = projectId;
+            trackedTask.ProjectId = ProjectId;
 
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             CreateTrackedTaskDto createTrackedTaskDto = new()
             {
@@ -95,13 +95,13 @@ namespace Timinute.Client.Components
                     trackedTask.TaskId = trackedTaskDto.TaskId;
                     stopWatchRunning = true;
 
-                    await sessionStorage.SetItemAsync<TrackedTask>("trackedTask", trackedTask);
+                    await SessionStorage.SetItemAsync<TrackedTask>("trackedTask", trackedTask);
                 }
 
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                ExceptionMessage = ex.Message;
             }
 
             await StopWatchTick();
@@ -116,7 +116,7 @@ namespace Timinute.Client.Components
                 if (stopWatchRunning)
                 {
                     trackedTask.Duration = trackedTask.Duration.Add(TimeSpan.FromSeconds(1));
-                    durationProxy = trackedTask.Duration.ToString(@"hh\:mm\:ss");
+                    DurationProxy = trackedTask.Duration.ToString(@"hh\:mm\:ss");
                     StateHasChanged();
                 }
             }
@@ -124,13 +124,13 @@ namespace Timinute.Client.Components
 
         private async Task StopStopWatch()
         {
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             UpdateTrackedTaskDto updateTrackedTaskDto = new()
             {
                 TaskId = trackedTask.TaskId,
                 Name = trackedTask.Name,
-                ProjectId = projectId,
+                ProjectId = ProjectId,
                 StartDate = trackedTask.StartDate,
                 EndDate = trackedTask.StartDate + trackedTask.Duration
             };
@@ -144,22 +144,22 @@ namespace Timinute.Client.Components
 
                 trackedTask = new();
                 stopWatchRunning = false;
-                durationProxy = "00:00:00";
-                projectId = null;
+                DurationProxy = "00:00:00";
+                ProjectId = null;
 
-                await sessionStorage.RemoveItemAsync("trackedTask");
+                await SessionStorage.RemoveItemAsync("trackedTask");
 
                 StateHasChanged();
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                ExceptionMessage = ex.Message;
             }
         }
 
         private async Task LoadProjects()
         {
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
             {
@@ -177,7 +177,7 @@ namespace Timinute.Client.Components
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                ExceptionMessage = ex.Message;
             }
         }
     }

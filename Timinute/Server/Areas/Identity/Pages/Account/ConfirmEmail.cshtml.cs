@@ -23,7 +23,7 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         [TempData]
-        public string StatusMessage { get; set; }
+        public string StatusMessage { get; set; } = null!;
         public async Task<IActionResult> OnGetAsync(string userId, string code)
         {
             if (userId == null || code == null)

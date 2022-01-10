@@ -15,7 +15,7 @@
             </div>
             <div class="col-auto">
                 <label for="project" class="visually-hidden">Select project</label>
-                <InputSelect id="project" class="form-select" @bind-Value="projectId">
+                <InputSelect id="project" class="form-select" @bind-Value="ProjectId">
                      <option selected>None</option>
                     @foreach (var project in projects)
                     {
@@ -26,7 +26,7 @@
             </div>
             <div class="col-auto">
                 <label for="time" class="visually-hidden">Time</label>
-                <InputText type="text" readonly class="form-control" id="time" @bind-Value="durationProxy" placeholder="00:00:00" />
+                <InputText type="text" readonly class="form-control" id="time" @bind-Value="DurationProxy" placeholder="00:00:00" />
             </div>
             <div class="col-auto">
                 @if (!stopWatchRunning)
@@ -45,7 +45,7 @@
             <div class="mb-3 mt-3 row">
                 <ValidationSummary />
                 <p>
-                    @exceptionMessage
+                    @ExceptionMessage
                 </p>
             </div>
         }

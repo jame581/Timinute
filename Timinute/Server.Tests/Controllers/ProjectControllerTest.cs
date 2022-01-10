@@ -214,7 +214,7 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            ProjectController controller = new ProjectController(repositoryFactory, _mapper, _loggerMock.Object)
+            ProjectController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
             {
                 ControllerContext = new ControllerContext
                 {

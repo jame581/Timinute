@@ -10,10 +10,10 @@ namespace Timinute.Client.Components
     {
         public readonly Dictionary<string, List<TrackedTask>> trackedTasksDictionary = new();
 
-        private string exceptionMessage { get; set; }
+        private string ExceptionMessage { get; set; } = "";
 
         [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
+        private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
@@ -22,8 +22,8 @@ namespace Timinute.Client.Components
 
         private async Task LoadTrackedTasks()
         {
-            exceptionMessage = "";
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            ExceptionMessage = "";
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
             {
@@ -33,7 +33,7 @@ namespace Timinute.Client.Components
                 {
                     trackedTasksDictionary.Clear();
 
-                    List<TrackedTask> trackedTaskList = new List<TrackedTask>();
+                    List<TrackedTask> trackedTaskList = new();
 
                     foreach (var trackedTaskDto in trackedTaskDtoList)
                         trackedTaskList.Add(new TrackedTask(trackedTaskDto));
@@ -45,7 +45,7 @@ namespace Timinute.Client.Components
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                ExceptionMessage = ex.Message;
             }
         }
 

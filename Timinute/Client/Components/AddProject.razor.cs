@@ -9,9 +9,9 @@ namespace Timinute.Client.Components
 {
     public partial class AddProject
     {
-        private Project project { get; set; } = new();
+        private Project NewProject { get; set; } = new();
 
-        private string exceptionMessage;
+        private string exceptionMessage = "";
 
         bool displayValidationErrorMessages = false;
 
@@ -19,15 +19,15 @@ namespace Timinute.Client.Components
         public EventCallback<Project> OnAddProject { get; set; }
 
         [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
+        private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         private async Task HandleValidSubmit()
         {
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             ProjectDto createProjectDto = new()
             {
-                Name = project.Name
+                Name = NewProject.Name
             };
 
             try
@@ -37,7 +37,7 @@ namespace Timinute.Client.Components
 
                 displayValidationErrorMessages = false;
 
-                await OnAddProject.InvokeAsync(project);
+                await OnAddProject.InvokeAsync(NewProject);
             }
             catch (Exception ex)
             {

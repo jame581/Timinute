@@ -1,5 +1,5 @@
 ﻿<div class="row">
-    <EditForm class="row g-3" Model="@project" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+    <EditForm class="row g-3" Model="@NewProject" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
         <DataAnnotationsValidator />
 
         <div class="col-auto">
@@ -7,7 +7,7 @@
         </div>
 
         <div class="col-auto">
-            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="project.Name" placeholder="Enter project name..." />
+            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewProject.Name" placeholder="Enter project name..." />
         </div>
         
         <div class="col-auto">

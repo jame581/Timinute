@@ -15,15 +15,12 @@ namespace Timinute.Server.Controllers
     [Route("[controller]")]
     public class TrackedTaskController : ControllerBase
     {
-        private readonly IRepositoryFactory repositoryFactory;
-
         private readonly IRepository<TrackedTask> taskRepository;
         private readonly IMapper mapper;
         private readonly ILogger<TrackedTaskController> logger;
 
         public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger)
         {
-            this.repositoryFactory = repositoryFactory;
             this.mapper = mapper;
             this.logger = logger;
 

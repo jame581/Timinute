@@ -11,20 +11,20 @@ namespace Timinute.Client.Pages.TrackedTasks
     {
         public readonly IList<TrackedTask> TrackedTasksList = new List<TrackedTask>();
 
-        private string exceptionMessage;
+        private string exceptionMessage = "";
 
         [CascadingParameter]
-        private Task<AuthenticationState> authenticationStateTask { get; set; }
+        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
         [Inject]
-        protected NavigationManager Navigation { get; set; }
+        protected NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
+        private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
-            var authState = await authenticationStateTask;
+            var authState = await AuthenticationStateTask;
             var user = authState.User;
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)
@@ -36,7 +36,7 @@ namespace Timinute.Client.Pages.TrackedTasks
         private async Task RefreshTable()
         {
             exceptionMessage = "";
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
             {

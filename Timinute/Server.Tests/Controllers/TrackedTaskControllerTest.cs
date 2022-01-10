@@ -229,7 +229,7 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            TrackedTaskController controller = new TrackedTaskController(repositoryFactory, _mapper, _loggerMock.Object)
+            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
             {
                 ControllerContext = new ControllerContext
                 {

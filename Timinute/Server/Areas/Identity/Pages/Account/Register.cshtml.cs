@@ -43,8 +43,7 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        [BindProperty]
-        public InputModel Input { get; set; }
+        [BindProperty] public InputModel Input { get; set; } = null!;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -137,7 +136,9 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
                         protocol: Request.Scheme);
 
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+#pragma warning disable CS8604 // Possible null reference argument.
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+#pragma warning restore CS8604 // Possible null reference argument.
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {

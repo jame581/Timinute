@@ -7,17 +7,17 @@ namespace Timinute.Client.Pages
 {
     public partial class TimeTrackerPage
     {
+        private TrackedTaskTable trackedTaskTableComponent = null!;
+        
         [CascadingParameter]
-        private Task<AuthenticationState> authenticationStateTask { get; set; }
-
-        private TrackedTaskTable trackedTaskTableComponent;
+        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
         [Inject]
-        protected NavigationManager Navigation { get; set; }
+        protected NavigationManager Navigation { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
-            var authState = await authenticationStateTask;
+            var authState = await AuthenticationStateTask;
             var user = authState.User;
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)

@@ -8,7 +8,7 @@ namespace Timinute.Server.Repository
     {
         internal ApplicationDbContext context;
         internal DbSet<TEntity> dbSet;
-        
+
         public BaseRepository(ApplicationDbContext context)
         {
             this.context = context;
@@ -28,8 +28,10 @@ namespace Timinute.Server.Repository
 
         public async Task Delete(object id)
         {
-            TEntity entityToDelete = await dbSet.FindAsync(id);
-            await Delete(entityToDelete);
+            TEntity? entityToDelete = await dbSet.FindAsync(id);
+            
+            if (entityToDelete != null)
+                await Delete(entityToDelete);
         }
 
         public async Task<TEntity?> Find(object id)
@@ -75,7 +77,7 @@ namespace Timinute.Server.Repository
             return await dbSet.Where(where).Select(select).ToListAsync();
         }
 
-        public async Task<TEntity> GetByIdInclude(Expression<Func<TEntity, bool>>? filter = null, string includeProperties = "")
+        public async Task<TEntity?> GetByIdInclude(Expression<Func<TEntity, bool>>? filter = null, string includeProperties = "")
         {
             IQueryable<TEntity> query = dbSet;
 
@@ -95,11 +97,11 @@ namespace Timinute.Server.Repository
             return await query.SingleOrDefaultAsync();
         }
 
-        public async Task<TEntity> GetById(object id)
+        public async Task<TEntity?> GetById(object id)
         {
             return await dbSet.FindAsync(id);
         }
-        
+
         public async Task<IEnumerable<TEntity>> GetWithRawSql(string query, params object[] parameters)
         {
             return await dbSet.FromSqlRaw(query, parameters).ToListAsync();

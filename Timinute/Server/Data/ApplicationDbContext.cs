@@ -9,9 +9,9 @@ namespace Timinute.Server.Data
 {
     public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
     {
-        public DbSet<Company> Companies { get; set; }
-        public DbSet<TrackedTask> TrackedTasks { get; set; }
-        public DbSet<Project> Projects { get; set; }
+        public DbSet<Company> Companies { get; set; } = null!;
+        public DbSet<TrackedTask> TrackedTasks { get; set; } = null!;
+        public DbSet<Project> Projects { get; set; } = null!;
 
         public ApplicationDbContext(
             DbContextOptions options,
@@ -82,7 +82,7 @@ namespace Timinute.Server.Data
             FillDataToDB(builder);
         }
 
-        private void FillDataToDB(ModelBuilder builder)
+        private static void FillDataToDB(ModelBuilder builder)
         {
             var roles = new List<ApplicationRole>
             {

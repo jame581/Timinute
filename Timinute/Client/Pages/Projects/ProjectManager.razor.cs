@@ -9,22 +9,22 @@ namespace Timinute.Client.Pages.Projects
 {
     public partial class ProjectManager
     {
-        private List<Project> projectsList { get; set; } = new();
+        private List<Project> ProjectsList { get; set; } = new();
 
-        private string exceptionMessage { get; set; }
+        private string ExceptionMessage { get; set; } = "";
 
         [CascadingParameter]
-        private Task<AuthenticationState> authenticationStateTask { get; set; }
+        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
         [Inject]
-        protected NavigationManager Navigation { get; set; }
+        protected NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        private IHttpClientFactory clientFactory { get; set; }
+        private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
-            var authState = await authenticationStateTask;
+            var authState = await AuthenticationStateTask;
             var user = authState.User;
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)
@@ -35,8 +35,8 @@ namespace Timinute.Client.Pages.Projects
 
         private async Task RefreshTable()
         {
-            exceptionMessage = "";
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            ExceptionMessage = "";
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
             {
@@ -44,17 +44,17 @@ namespace Timinute.Client.Pages.Projects
 
                 if (response != null)
                 {
-                    projectsList.Clear();
+                    ProjectsList.Clear();
 
                     foreach (var item in response)
-                        projectsList.Add(new Project(item));
+                        ProjectsList.Add(new Project(item));
                 }
 
                 StateHasChanged();
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                ExceptionMessage = ex.Message;
             }
         }
 
@@ -65,8 +65,8 @@ namespace Timinute.Client.Pages.Projects
 
         private async Task RemoveProject(string projectId)
         {
-            exceptionMessage = "";
-            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            ExceptionMessage = "";
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
             {
@@ -79,7 +79,7 @@ namespace Timinute.Client.Pages.Projects
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                ExceptionMessage = ex.Message;
             }
         }
     }

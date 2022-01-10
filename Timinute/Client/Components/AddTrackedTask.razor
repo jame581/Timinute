@@ -1,16 +1,16 @@
 ﻿<div class="row">
     <h3 class="text-center">Add Tracked Task</h3>
-    <EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+    <EditForm Model="@NewTrackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
         <DataAnnotationsValidator />
 
         <label>
             Task Name:
-            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="trackedTask.Name" placeholder="Enter task name..." />
+            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewTrackedTask.Name" placeholder="Enter task name..." />
         </label>
 
         <label>
             Start Date:
-            <InputDate class="form-control" DisplayName="Date" @bind-Value="trackedTask.StartDate" placeholder="Start Date..." />
+            <InputDate class="form-control" DisplayName="Date" @bind-Value="NewTrackedTask.StartDate" placeholder="Start Date..." />
         </label>
 
         <label>
