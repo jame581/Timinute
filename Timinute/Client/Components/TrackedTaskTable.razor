@@ -31,7 +31,7 @@
                             <li class="list-group-item">
                                 <div class="row">
                                     <div class="col-4">@trackedTask.Name</div>
-                                    <div class="col-4">@trackedTask.ProjectId</div>
+                                    <div class="col-4">@trackedTask.Project?.Name</div>
                                     <div class="col-4" style="text-align: end">@trackedTask.Duration.ToString(@"hh\:mm\:ss")</div>
                                 </div>
                             </li>

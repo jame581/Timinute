@@ -42,7 +42,7 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var trackedTaskList = await taskRepository.Get(x => x.UserId == userId, x => x.OrderByDescending(t => t.StartDate));
+            var trackedTaskList = await taskRepository.Get(x => x.UserId == userId, x => x.OrderByDescending(t => t.StartDate), includeProperties: "Project");
             return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(trackedTaskList));
         }
 
