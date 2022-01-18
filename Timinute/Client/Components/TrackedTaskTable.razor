@@ -1,7 +1,6 @@
 ﻿<div class="container">
     <div class="row">
         <h3>Tracked Task Table</h3>
-        @*<button type="submit" class="btn btn-primary mb-3" onclick="@LoadTrackedTasks">Reload tasks</button>*@
         <p>
             @ExceptionMessage
         </p>
@@ -14,14 +13,7 @@
         <div class="row mt-3">
             <div class="card" style="padding-right: 0px;padding-left: 0px;">
                 <div class="card-header">
-                    <div class="row">
-                        <div class="col-6">
-                            <h5 style="text-align: start">@trackedTaskPair.Key</h5>
-                        </div>
-                        <div class="col-6">
-                            <h5 class="text-muted" style="text-align: end">Total time: @time.ToString(@"hh\:mm\:ss")</h5>
-                        </div>
-                    </div>
+                    <h5 style="text-align: start">@trackedTaskPair.Key</h5>
                 </div>
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
