@@ -155,7 +155,7 @@ namespace Timinute.Server.Tests.Repositories
                 // Check beofre
                 var project = await repository.GetById("ProjectId1");
                 Assert.NotNull(project);
-                Assert.Equal("Project 1", project.Name);
+                Assert.Equal("Project 1", project!.Name);
                 project.Name = "newName";
                 await repository.Update(project);
             }
