@@ -67,12 +67,14 @@ namespace Timinute.Server.Data
             builder.Entity<Project>()
                 .HasOne(c => c.Company)
                 .WithMany(p => p.Projects)
-                .HasForeignKey(p => p.CompanyId);
+                .HasForeignKey(p => p.CompanyId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<TrackedTask>()
                 .HasOne(p => p.Project)
                 .WithMany(t => t.TrackedTasks)
-                .HasForeignKey(t => t.ProjectId);
+                .HasForeignKey(t => t.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<TrackedTask>()
                 .HasOne(t => t.User)
