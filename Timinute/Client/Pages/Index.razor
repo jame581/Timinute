@@ -7,3 +7,41 @@
 Welcome to your new app.
 
 <SurveyPrompt Title="How is Blazor working for you?" />
+
+@if (User.Identity.IsAuthenticated)
+{
+    <h2>Claims</h2>
+    <table class="table table-sm">
+        @foreach (var claim in User.Claims)
+        {
+            <tr>
+                <td>@claim.Issuer</td>
+                <td>@claim.ValueType</td>
+                <td>@claim.Type</td>
+                <td>@claim.Value</td>
+            </tr>
+        }
+    </table>
+}
+
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    public System.Security.Claims.ClaimsPrincipal User { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        User = authState.User;
+
+        foreach (var claim in User.Claims)
+        {
+
+            Console.WriteLine($"User claim: {claim.Value}");
+        }
+        Console.WriteLine($"User.HasClaim(Role, Basic): {User.HasClaim("Role", "Basic")}");
+    }
+
+}

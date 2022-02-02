@@ -35,6 +35,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddRoles<ApplicationRole>()
+    .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>()
     .AddDefaultTokenProviders()
     .AddDefaultUI()
     .AddSignInManager<AppSingInManager>();
@@ -50,6 +51,8 @@ builder.Logging.AddConsole();
 builder.Services.AddRazorPages();
 
 // DI
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
+//builder.Services.AddScoped<IClaimsTransformation, ApplicationUserClaimsTransformation>();
 builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
 
 // Auto Mapper Configurations
@@ -65,8 +68,8 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
         Title = "Timinute API",
         Description = "Docs for Timinute API",
         Version = "v1"
@@ -81,7 +84,7 @@ if (app.Environment.IsDevelopment())
     app.UseMigrationsEndPoint();
     app.UseWebAssemblyDebugging();
     app.UseDeveloperExceptionPage();
-   
+
     // Swagger middleware
     app.UseSwagger();
 
