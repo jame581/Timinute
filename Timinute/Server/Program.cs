@@ -8,6 +8,8 @@ using Timinute.Server.Repository;
 using AutoMapper;
 using Timinute.Server;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using Timinute.Server.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,13 +37,26 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddRoles<ApplicationRole>()
-    .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>()
     .AddDefaultTokenProviders()
     .AddDefaultUI()
-    .AddSignInManager<AppSingInManager>();
+    .AddSignInManager<AppSingInManager>()
+    .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
+    options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
+    options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+});
 
 builder.Services.AddIdentityServer()
-    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+    {
+        options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Fullname);
+        options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.LastLogin);
+        options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Role);
+    })
+    .AddJwtBearerClientAuthentication();
 
 builder.Services.AddAuthentication()
     .AddIdentityServerJwt();
@@ -52,7 +67,6 @@ builder.Services.AddRazorPages();
 
 // DI
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
-//builder.Services.AddScoped<IClaimsTransformation, ApplicationUserClaimsTransformation>();
 builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
 
 // Auto Mapper Configurations

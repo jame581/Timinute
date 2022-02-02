@@ -35,13 +35,5 @@ Welcome to your new app.
     {
         var authState = await authenticationStateTask;
         User = authState.User;
-
-        foreach (var claim in User.Claims)
-        {
-
-            Console.WriteLine($"User claim: {claim.Value}");
-        }
-        Console.WriteLine($"User.HasClaim(Role, Basic): {User.HasClaim("Role", "Basic")}");
     }
-
 }
