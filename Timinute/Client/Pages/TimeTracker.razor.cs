@@ -5,7 +5,7 @@ using Timinute.Client.Models;
 
 namespace Timinute.Client.Pages
 {
-    public partial class TimeTrackerPage
+    public partial class TimeTracker
     {
         private TrackedTaskTable trackedTaskTableComponent = null!;
         

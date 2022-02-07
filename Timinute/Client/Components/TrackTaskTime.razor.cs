@@ -8,7 +8,7 @@ using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Components
 {
-    public partial class TimeTracker
+    public partial class TrackTaskTime
     {
         private TrackedTask trackedTask = new();
 
