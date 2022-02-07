@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 
-namespace Timinute.Client.Pages
+namespace Timinute.Client.Components.Dashboard
 {
     public partial class Dashboard
     {
@@ -11,12 +11,14 @@ namespace Timinute.Client.Pages
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
 
+        public System.Security.Claims.ClaimsPrincipal User { get; set; }
+
         protected override async Task OnInitializedAsync()
         {
             var authState = await AuthenticationStateTask;
-            var user = authState.User;
+            User = authState.User;
 
-            if (user.Identity != null && !user.Identity.IsAuthenticated)
+            if (User.Identity != null && !User.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
         }
     }

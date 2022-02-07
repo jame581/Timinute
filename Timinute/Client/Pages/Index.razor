@@ -1,27 +1,19 @@
 ﻿@page "/"
+@using Timinute.Client.Components.Dashboard
 
-<PageTitle>Index</PageTitle>
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+@inject NavigationManager Navigation
 
 @if (User.Identity.IsAuthenticated)
 {
-    <h2>Claims</h2>
-    <table class="table table-sm">
-        @foreach (var claim in User.Claims)
-        {
-            <tr>
-                <td>@claim.Issuer</td>
-                <td>@claim.ValueType</td>
-                <td>@claim.Type</td>
-                <td>@claim.Value</td>
-            </tr>
-        }
-    </table>
+    <PageTitle>Dashboard</PageTitle>
+    <Dashboard />
+}
+else
+{
+    <PageTitle>Index</PageTitle>
+    <h1>Hello, world!</h1>
+    <p>Welcome to your new app.</p>
+    <SurveyPrompt Title="How is Blazor working for you?" />
 }
 
 @code
