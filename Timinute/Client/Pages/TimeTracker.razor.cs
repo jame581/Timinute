@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Timinute.Client.Components;
+using Timinute.Client.Components.TrackedTasks;
 using Timinute.Client.Models;
 
 namespace Timinute.Client.Pages

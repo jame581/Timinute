@@ -21,7 +21,7 @@ else
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
 
-    public System.Security.Claims.ClaimsPrincipal User { get; set; }
+    public System.Security.Claims.ClaimsPrincipal? User { get; set; }
 
     protected async override Task OnInitializedAsync()
     {

@@ -6,7 +6,7 @@ using Timinute.Client.Models;
 using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
 
-namespace Timinute.Client.Components
+namespace Timinute.Client.Components.TrackedTasks
 {
     public partial class TrackTaskTime
     {
