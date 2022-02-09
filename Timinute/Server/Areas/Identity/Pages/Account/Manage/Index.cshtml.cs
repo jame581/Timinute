@@ -32,6 +32,10 @@ namespace Timinute.Server.Areas.Identity.Pages.Account.Manage
         /// </summary>
         public string Username { get; set; }
 
+        public string Firstname { get; set; }
+
+        public string Lastname { get; set; }
+
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -59,6 +63,16 @@ namespace Timinute.Server.Areas.Identity.Pages.Account.Manage
             [Phone]
             [Display(Name = "Phone number")]
             public string PhoneNumber { get; set; }
+
+            [Required, MaxLength(50)]
+            [DataType(DataType.Text)]
+            [Display(Name = "First name")]
+            public string FirstName { get; set; }
+
+            [Required, MaxLength(50)]
+            [DataType(DataType.Text)]
+            [Display(Name = "Last name")]
+            public string LastName { get; set; }
         }
 
         private async Task LoadAsync(ApplicationUser user)
@@ -66,11 +80,18 @@ namespace Timinute.Server.Areas.Identity.Pages.Account.Manage
             var userName = await _userManager.GetUserNameAsync(user);
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
 
+            //var currentUser = await _userManager.GetUserAsync(User);
+
+            Firstname = user.FirstName;
+            Lastname = user.LastName;
+
             Username = userName;
 
             Input = new InputModel
             {
-                PhoneNumber = phoneNumber
+                PhoneNumber = phoneNumber,
+                FirstName = Firstname,
+                LastName = Lastname
             };
         }
 
@@ -107,9 +128,21 @@ namespace Timinute.Server.Areas.Identity.Pages.Account.Manage
                 if (!setPhoneResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set phone number.";
-                    return RedirectToPage();
+                    throw new InvalidOperationException($"Unexpected error occurred setting phone number for user with ID '{_userManager.GetUserId(User)}'.");
                 }
             }
+
+            if (Input.FirstName != user.FirstName)
+            {
+                user.FirstName = Input.FirstName;
+            }
+
+            if (Input.LastName != user.LastName)
+            {
+                user.LastName = Input.LastName;
+            }
+            
+            await _userManager.UpdateAsync(user);
 
             await _signInManager.RefreshSignInAsync(user);
             StatusMessage = "Your profile has been updated";
