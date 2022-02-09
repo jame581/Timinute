@@ -80,8 +80,6 @@ namespace Timinute.Server.Areas.Identity.Pages.Account.Manage
             var userName = await _userManager.GetUserNameAsync(user);
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
 
-            //var currentUser = await _userManager.GetUserAsync(User);
-
             Firstname = user.FirstName;
             Lastname = user.LastName;
 

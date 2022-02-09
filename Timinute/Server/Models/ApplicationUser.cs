@@ -6,9 +6,11 @@ namespace Timinute.Server.Models
     public class ApplicationUser : IdentityUser
     {
         [Required, MaxLength(50)]
+        [PersonalData]
         public string FirstName { get; set; } = null!;
 
         [Required, MaxLength(50)]
+        [PersonalData]
         public string LastName { get; set; } = null!;
 
         public DateTimeOffset? LastLoginDate { get; set; }
