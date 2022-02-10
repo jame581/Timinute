@@ -2,15 +2,36 @@
 
 <h2>Dashboard</h2>
 
-<h3>Claims</h3>
-<table class="table table-sm">
-    @foreach (var claim in User.Claims)
-    {
-        <tr>
-            <td>@claim.Issuer</td>
-            <td>@claim.ValueType</td>
-            <td>@claim.Type</td>
-            <td>@claim.Value</td>
-        </tr>
-    }
-</table>
+<div class="row">
+    <div class="col-8">
+        <div class="card">
+            <h5 class="card-header">Radzen Blazor Chart donut series</h5>
+            <div class="card-body">
+                <DoughnutChart />
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card">
+            <h5 class="card-header">Radzen Blazor Chart donut series</h5>
+            <div class="card-body">
+                <DoughnutChart />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <h3>Claims</h3>
+    <table class="table table-sm">
+        @foreach (var claim in User.Claims)
+        {
+            <tr>
+                <td>@claim.Issuer</td>
+                <td>@claim.ValueType</td>
+                <td>@claim.Type</td>
+                <td>@claim.Value</td>
+            </tr>
+        }
+    </table>
+</div>
