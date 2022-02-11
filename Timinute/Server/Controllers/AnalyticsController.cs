@@ -29,7 +29,7 @@ namespace Timinute.Server.Controllers
         }
 
         // GET: api/Analytics/ProjectWorkTime
-        [HttpGet(Name = "ProjectWorkTime")]
+        [HttpGet("ProjectWorkTime")]
         public async Task<ActionResult<IEnumerable<ProjectDataItemDto>>> GetProjectWorkTime()
         {
             // get current user ID
@@ -57,7 +57,7 @@ namespace Timinute.Server.Controllers
                 {
                     ProjectId = key == null ? "None" : key,
                     ProjectName = projectName,
-                    ProjectTimeInSeconds = array.Sum(x => x.Duration.Seconds),
+                    ProjectTimeInSeconds = array.Sum(x => x.Duration.TotalSeconds),
                     Count = array.Length
                 };
             }).ToList();
@@ -76,52 +76,140 @@ namespace Timinute.Server.Controllers
             return Ok(projectLiset);
         }
 
-        //// GET: api/Analytics/ProjectWorkTime
-        //[HttpGet(Name = "ProjectWorkTime")]
-        //public async Task<ActionResult<IEnumerable<ProjectDataItemDto>>> GetProjectWorkTime()
-        //{
-        //    // get current user ID
-        //    var userId = User.FindFirstValue(Constants.Claims.UserId);
+        // GET: api/Analytics/ProjectWorkTimePerMonths
+        [HttpGet("ProjectWorkTimePerMonths")]
+        public async Task<ActionResult<IEnumerable<ProjectDataItemsPerMonthDto>>> GetProjectWorkTimePerMonths()
+        {
+            // get current user ID
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
 
-        //    if (string.IsNullOrEmpty(userId))
-        //    {
-        //        return Unauthorized();
-        //    }
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
 
-        //    // TODO(jame_581): Use Dapper for this Queries and let compute time on DB
-        //    var trackedTaskList = await trackedTaskRepository.Get(x => x.UserId == userId, includeProperties: nameof(Project));
+            // TODO(jame_581): Use Dapper for this Queries and let compute time on DB
+            var trackedTaskList = await trackedTaskRepository.Get(x => x.UserId == userId, includeProperties: nameof(Project));
 
-        //    var projectTimes = trackedTaskList.GroupBy(t => t.ProjectId, (key, t) =>
-        //    {
-        //        var array = t as TrackedTask[] ?? t.ToArray();
+            var groupedByDate = trackedTaskList
+                .AsParallel()
+                .GroupBy(x => new { x.StartDate.Year, x.StartDate.Month })
+                .ToList();
 
-        //        string projectName = "None";
-        //        if (array.Length > 0)
-        //        {
-        //            projectName = array[0].Project == null ? "None" : array[0].Project.Name;
-        //        }
+            var projectLiset = new List<ProjectDataItemsPerMonthDto>();
+            foreach (var projectTimeByMonth in groupedByDate)
+            {
+                var projectDataItemsPerMonth = new ProjectDataItemsPerMonthDto();
+                projectDataItemsPerMonth.Time = new DateTime(projectTimeByMonth.Key.Year, projectTimeByMonth.Key.Month, 1);
+                projectDataItemsPerMonth.ProjectDataItems = new List<ProjectDataItemDto>();
 
-        //        return new
-        //        {
-        //            ProjectId = key == null ? "None" : key,
-        //            ProjectName = projectName,
-        //            ProjectTimeInSeconds = array.Sum(x => x.Duration.Seconds),
-        //            Count = array.Length
-        //        };
-        //    }).ToList();
+                foreach (var item in projectTimeByMonth)
+                {
+                    projectDataItemsPerMonth.ProjectDataItems.Add(
+                        new ProjectDataItemDto
+                        {
+                            ProjectId = item.ProjectId == null ? "None" : item.ProjectId,
+                            ProjectName = item.Project == null ? "None" : item.Project.Name,
+                            Time = item.Duration
+                        }
+                    );
+                }
 
-        //    var projectLiset = new List<ProjectDataItemDto>();
-        //    foreach (var projectTime in projectTimes)
-        //    {
-        //        projectLiset.Add(new ProjectDataItemDto
-        //        {
-        //            ProjectId = projectTime.ProjectId,
-        //            ProjectName = projectTime.ProjectName,
-        //            Time = TimeSpan.FromSeconds(projectTime.ProjectTimeInSeconds)
-        //        });
-        //    }
+                projectLiset.Add(projectDataItemsPerMonth);
+            }
 
-        //    return Ok(projectLiset);
-        //}
+            return Ok(projectLiset);
+        }
+
+        // GET: api/Analytics/WorkTimePerMonths
+        [HttpGet("WorkTimePerMonths")]
+        public async Task<ActionResult<IEnumerable<WorkTimePerMonthDto>>> GetWorkTimePerMonths()
+        {
+            // get current user ID
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // TODO(jame_581): Use Dapper for this Queries and let compute time on DB
+            var trackedTaskList = await trackedTaskRepository.Get(x => x.UserId == userId, includeProperties: nameof(Project));
+
+            var groupedByDate = trackedTaskList
+                .AsParallel()
+                .GroupBy(x => new { x.StartDate.Year, x.StartDate.Month })
+                .ToList();
+
+            var workTimePerMonthsDto = new List<WorkTimePerMonthDto>();
+            foreach (var projectTimeByMonth in groupedByDate)
+            {
+                var workTimePerMonth = new WorkTimePerMonthDto();
+                workTimePerMonth.Time = new DateTime(projectTimeByMonth.Key.Year, projectTimeByMonth.Key.Month, 1).ToString("yyyy MMM");
+                workTimePerMonth.WorkTimeInSeconds = projectTimeByMonth.Sum(x => x.Duration.TotalSeconds);
+                workTimePerMonthsDto.Add(workTimePerMonth);
+            }
+
+            return Ok(workTimePerMonthsDto);
+        }
+
+        // GET: api/Analytics/AmountWorkTimeLastMonth
+        [HttpGet("AmountWorkTimeLastMonth")]
+        public async Task<ActionResult<AmountOfWorkTimeDto>> GetAmountWorkTimeLastMonth()
+        {
+            // get current user ID
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var today = DateTime.Today;
+            var month = new DateTime(today.Year, today.Month, 1);
+            var first = month.AddMonths(-1);
+            var last = month.AddDays(-1);
+
+            var trackedTaskList = await trackedTaskRepository.Get(
+                x => x.UserId == userId && x.StartDate >= first && x.StartDate <= last,
+                includeProperties: "Project");
+
+            double secondsSum = trackedTaskList.ToList().Sum(x => x.Duration.TotalSeconds);
+            string amountWorkTimeLastMonthText = TimeSpan.FromSeconds(secondsSum).ToString(@"hh\:mm\:ss");
+
+            var groupedByProject = trackedTaskList
+                .AsParallel()
+                .GroupBy(x => new { x.ProjectId })
+                .ToList();
+
+            string projectName = "None";
+            double maxSeconds = double.MinValue;
+
+            foreach (var project in groupedByProject)
+            {
+                var seconds = project.Sum(x => x.Duration.TotalSeconds);
+
+                if (seconds > maxSeconds)
+                {
+                    maxSeconds = seconds;
+                    var topProject = project.FirstOrDefault();
+                    if (topProject != null)
+                    {
+                        projectName = topProject.Project == null ? "None" : topProject.Project.Name;
+                    }
+                }
+            }
+
+            var amountWorkTimeLastMonth = new AmountOfWorkTimeDto
+            {
+                AmountWorkTime = secondsSum,
+                AmountWorkTimeText = amountWorkTimeLastMonthText,
+                TopProject = projectName,
+                TopProjectAmounTime = maxSeconds,
+                TopProjectAmounTimeText = TimeSpan.FromSeconds(maxSeconds).ToString(@"hh\:mm\:ss"),
+            };
+
+            return Ok(amountWorkTimeLastMonth);
+        }
     }
 }

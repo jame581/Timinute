@@ -40,7 +40,13 @@
             {
                 public const string Api = "Analytics";
 
-                public const string GetProjectWorkTime = $"{Api}";
+                public const string GetProjectWorkTime = $"{Api}/ProjectWorkTime";
+
+                public const string GetProjectWorkTimePerMonths = $"{Api}/ProjectWorkTimePerMonths";
+
+                public const string GetWorkTimePerMonths = $"{Api}/WorkTimePerMonths";
+
+                public const string GetAmountWorkTimeLastMonth = $"{Api}/AmountWorkTimeLastMonth";
 
                 public const string GetById = $"{Api}/";
             }
