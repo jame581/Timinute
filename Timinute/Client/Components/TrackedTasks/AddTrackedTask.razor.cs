@@ -51,6 +51,8 @@ namespace Timinute.Client.Components.TrackedTasks
 
                 displayValidationErrorMessages = false;
                 notificationService.Notify(NotificationSeverity.Success, "Success", "Tracked task saved", 3000);
+
+                NewTrackedTask = new() { StartDate = DateTime.Now };
             }
             catch (Exception ex)
             {
