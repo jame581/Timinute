@@ -90,8 +90,10 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Timinute API",
         Description = "Docs for Timinute API",
-        Version = "v1"
+        Version = "v1",
+        Contact = new OpenApiContact { Email = "jame_581@windowslive.com", Name = "Jan Mesarc" }
     });
+    c.ResolveConflictingActions(apiDescriptors => apiDescriptors.First());
 });
 
 var app = builder.Build();
