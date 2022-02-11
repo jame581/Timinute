@@ -47,13 +47,14 @@ namespace Timinute.Client.Components.Dashboard
                 {
                     AmountWorkTimeLastMonth = response.AmountWorkTimeText;
                     TopProjectLastMonth = $"{response.TopProject} - {response.TopProjectAmounTimeText}";
-                    StateHasChanged();
                 }
             }
             catch (Exception ex)
             {
                 // TODO(jame_581): Add notification
             }
+
+            StateHasChanged();
         }
     }
 }

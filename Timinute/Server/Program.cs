@@ -10,6 +10,7 @@ using Timinute.Server;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using Timinute.Server.Helpers;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,9 +20,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-//builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-//    .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     {
@@ -68,6 +66,15 @@ builder.Services.AddAuthentication()
 builder.Logging.AddConsole();
 
 builder.Services.AddRazorPages();
+builder.Services.AddResponseCaching();
+builder.Services.AddControllers(options =>
+{
+    options.CacheProfiles.Add("Default120",
+        new CacheProfile()
+        {
+            Duration = 120
+        });
+});
 
 // DI
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
@@ -121,6 +128,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseResponseCaching();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
