@@ -3,9 +3,35 @@
 <h2>Dashboard</h2>
 
 <div class="row">
+    <div class="col-12 col-lg-4 mb-3">
+        <div class="card">
+            <h5 class="card-header">Amount of work time last month</h5>
+            <div class="card-body">
+                <h2 class="text-center">@AmountWorkTimeLastMonth</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4 mb-3">
+        <div class="card">
+            <h5 class="card-header">Top project</h5>
+            <div class="card-body">
+                <h2 class="text-center">@TopProjectLastMonth</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4 mb-3">
+        <div class="card">
+            <h5 class="card-header">Amount of work time per project</h5>
+            <div class="card-body">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-12 col-lg-6 mb-3">
         <div class="card">
-            <h5 class="card-header">Radzen Blazor Chart donut series</h5>
+            <h5 class="card-header">Amount of work time per month</h5>
             <div class="card-body">
                 <ProjectColumnChart />
             </div>
@@ -13,7 +39,7 @@
     </div>
     <div class="col-12 col-lg-6 mb-3">
         <div class="card">
-            <h5 class="card-header">Radzen Blazor Chart donut series</h5>
+            <h5 class="card-header">Amount of work time per project</h5>
             <div class="card-body">
                 <DoughnutChart />
             </div>

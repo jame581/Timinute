@@ -1,10 +1,10 @@
-﻿<RadzenChart>
-    <RadzenColumnSeries Data="@projectTimeMonth1" CategoryProperty="ProjectName" Title="Month1" ValueProperty="TimeInt" LineType="LineType.Dashed" />
-    <RadzenColumnSeries Data="@projectTimeMonth2" CategoryProperty="ProjectName" Title="Month2" ValueProperty="TimeInt" />
-    <RadzenColumnSeries Data="@projectTimeMonth3" CategoryProperty="ProjectName" Title="Month3" ValueProperty="TimeInt" />
+﻿@using Timinute.Client.Models.Dashboard
+
+<RadzenChart @ref="radzenChartComponet">
+    <RadzenColumnSeries Data="@workTimePerMonths" CategoryProperty="Time" Title="Work time" ValueProperty="WorkTimeInSeconds" />
     <RadzenColumnOptions Radius="5" />
     <RadzenValueAxis Formatter="@FormatTimeAsString">
         <RadzenGridLines Visible="true" />
-        <RadzenAxisTitle Text="Time" />
+        <RadzenAxisTitle Text="Time per month" />
     </RadzenValueAxis>
 </RadzenChart>

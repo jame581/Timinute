@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen.Blazor;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models.Dashboard;
@@ -11,7 +12,7 @@ namespace Timinute.Client.Components.Dashboard
     {
         private IList<ProjectDataItem> projectTime = new List<ProjectDataItem>();
 
-        private string exceptionMessage = "";
+        private RadzenChart radzenChartComponet = null!;
 
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
@@ -35,7 +36,6 @@ namespace Timinute.Client.Components.Dashboard
 
         private async Task LoadDataForChart()
         {
-            exceptionMessage = "";
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
@@ -47,15 +47,14 @@ namespace Timinute.Client.Components.Dashboard
                     projectTime.Clear();
 
                     foreach (var item in response)
-                        projectTime.Add(new ProjectDataItem(item.ProjectId, item.ProjectName, item.Time));
+                        projectTime.Add(new ProjectDataItem(item.ProjectId, item.ProjectName, item.Time, ""));
                 }
+
+                radzenChartComponet.Reload();
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
             }
-
-            StateHasChanged();
         }
     }
 }
