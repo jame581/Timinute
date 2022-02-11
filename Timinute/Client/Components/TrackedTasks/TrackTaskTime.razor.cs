@@ -24,8 +24,6 @@ namespace Timinute.Client.Components.TrackedTasks
 
         bool displayValidationErrorMessages = false;
 
-        private EditContext? editContext;
-
         [Parameter]
         public EventCallback<TrackedTask> OnAddTrackedTask { get; set; }
 
@@ -40,8 +38,6 @@ namespace Timinute.Client.Components.TrackedTasks
 
         protected override async Task OnInitializedAsync()
         {
-            editContext = new(trackedTask);
-            editContext.EnableDataAnnotationsValidation();
             await LoadProjects();
 
             var savedTrackedTask = await SessionStorage.GetItemAsync<TrackedTask>("trackedTask");
@@ -56,19 +52,8 @@ namespace Timinute.Client.Components.TrackedTasks
             }
         }
 
-        private async Task HandleSubmit()
+        private async Task HandleValidSubmit()
         {
-            if (editContext != null && !editContext.Validate())
-            {
-                displayValidationErrorMessages = true;
-                var errorMessages = editContext.GetValidationMessages();
-                foreach (var errorMessage in errorMessages)
-                {
-                    notificationService.Notify(NotificationSeverity.Error, "Validation error", errorMessage, 5000);
-                }
-                return;
-            }
-
             displayValidationErrorMessages = false;
 
             if (stopWatchRunning)
@@ -78,6 +63,15 @@ namespace Timinute.Client.Components.TrackedTasks
             else
             {
                 await StartWatch();
+            }
+        }
+
+        private void HandleInvalidSubmit(EditContext context)
+        {
+            var errorMessages = context.GetValidationMessages();
+            foreach (var errorMessage in errorMessages)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", errorMessage, 5000);
             }
         }
 
