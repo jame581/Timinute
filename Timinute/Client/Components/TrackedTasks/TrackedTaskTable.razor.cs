@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -10,10 +11,11 @@ namespace Timinute.Client.Components.TrackedTasks
     {
         public readonly Dictionary<string, List<TrackedTask>> trackedTasksDictionary = new();
 
-        private string ExceptionMessage { get; set; } = "";
-
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
@@ -22,7 +24,6 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private async Task LoadTrackedTasks()
         {
-            ExceptionMessage = "";
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
@@ -45,7 +46,7 @@ namespace Timinute.Client.Components.TrackedTasks
             }
             catch (Exception ex)
             {
-                ExceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
         }
 

@@ -1,5 +1,7 @@
 ﻿using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -20,9 +22,9 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private string DurationProxy { get; set; } = "00:00:00";
 
-        private string? ExceptionMessage { get; set; }
-
         bool displayValidationErrorMessages = false;
+
+        private EditContext? editContext;
 
         [Parameter]
         public EventCallback<TrackedTask> OnAddTrackedTask { get; set; }
@@ -33,12 +35,17 @@ namespace Timinute.Client.Components.TrackedTasks
         [Inject]
         private ISessionStorageService SessionStorage { get; set; } = null!;
 
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
+
         protected override async Task OnInitializedAsync()
         {
+            editContext = new(trackedTask);
+            editContext.EnableDataAnnotationsValidation();
             await LoadProjects();
 
             var savedTrackedTask = await SessionStorage.GetItemAsync<TrackedTask>("trackedTask");
-            
+
             if (savedTrackedTask != null)
             {
                 trackedTask = savedTrackedTask;
@@ -49,8 +56,19 @@ namespace Timinute.Client.Components.TrackedTasks
             }
         }
 
-        private async Task HandleValidSubmit()
+        private async Task HandleSubmit()
         {
+            if (editContext != null && !editContext.Validate())
+            {
+                displayValidationErrorMessages = true;
+                var errorMessages = editContext.GetValidationMessages();
+                foreach (var errorMessage in errorMessages)
+                {
+                    notificationService.Notify(NotificationSeverity.Error, "Validation error", errorMessage, 5000);
+                }
+                return;
+            }
+
             displayValidationErrorMessages = false;
 
             if (stopWatchRunning)
@@ -61,11 +79,6 @@ namespace Timinute.Client.Components.TrackedTasks
             {
                 await StartWatch();
             }
-        }
-
-        private void HandleInvalidSubmit()
-        {
-            displayValidationErrorMessages = true;
         }
 
         private async Task StartWatch()
@@ -96,12 +109,13 @@ namespace Timinute.Client.Components.TrackedTasks
                     stopWatchRunning = true;
 
                     await SessionStorage.SetItemAsync<TrackedTask>("trackedTask", trackedTask);
+                    notificationService.Notify(NotificationSeverity.Success, "Success", "Tracking time started" , 3000);
                 }
 
             }
             catch (Exception ex)
             {
-                ExceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
 
             await StopWatchTick();
@@ -148,12 +162,12 @@ namespace Timinute.Client.Components.TrackedTasks
                 ProjectId = null;
 
                 await SessionStorage.RemoveItemAsync("trackedTask");
-
+                notificationService.Notify(NotificationSeverity.Success, "Success", "Tracking time stopped", 3000);
                 StateHasChanged();
             }
             catch (Exception ex)
             {
-                ExceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
         }
 
@@ -164,7 +178,7 @@ namespace Timinute.Client.Components.TrackedTasks
             try
             {
                 var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.GetAll);
-                
+
                 if (responseMessage != null)
                 {
                     projects.Clear();
@@ -177,7 +191,7 @@ namespace Timinute.Client.Components.TrackedTasks
             }
             catch (Exception ex)
             {
-                ExceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
         }
     }

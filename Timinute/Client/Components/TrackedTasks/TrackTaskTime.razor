@@ -1,5 +1,5 @@
 ﻿<div class="row">
-    <EditForm Model="@trackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+    <EditForm Model="@editContext" OnSubmit="@HandleSubmit">
         <DataAnnotationsValidator />
         <div class="mb-3 mt-3 row">
             <div class="col-auto">
@@ -44,9 +44,6 @@
         {
             <div class="mb-3 mt-3 row">
                 <ValidationSummary />
-                <p>
-                    @ExceptionMessage
-                </p>
             </div>
         }
     </EditForm>
