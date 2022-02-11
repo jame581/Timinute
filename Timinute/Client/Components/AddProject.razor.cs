@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -11,8 +12,6 @@ namespace Timinute.Client.Components
     {
         private Project NewProject { get; set; } = new();
 
-        private string exceptionMessage = "";
-
         bool displayValidationErrorMessages = false;
 
         [Parameter]
@@ -20,6 +19,9 @@ namespace Timinute.Client.Components
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
 
         private async Task HandleValidSubmit()
         {
@@ -38,17 +40,24 @@ namespace Timinute.Client.Components
                 displayValidationErrorMessages = false;
 
                 await OnAddProject.InvokeAsync(NewProject);
+
+                NewProject = new Project();
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
-                displayValidationErrorMessages = true;
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
             }
         }
 
         private void HandleInvalidSubmit(EditContext context)
         {
             displayValidationErrorMessages = true;
+
+            var errorMessages = context.GetValidationMessages();
+            foreach (var errorMessage in errorMessages)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", errorMessage, 5000);
+            }
         }
     }
 }

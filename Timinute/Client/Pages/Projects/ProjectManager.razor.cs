@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -11,8 +12,6 @@ namespace Timinute.Client.Pages.Projects
     {
         private List<Project> ProjectsList { get; set; } = new();
 
-        private string ExceptionMessage { get; set; } = "";
-
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
@@ -21,6 +20,9 @@ namespace Timinute.Client.Pages.Projects
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
@@ -35,7 +37,6 @@ namespace Timinute.Client.Pages.Projects
 
         private async Task RefreshTable()
         {
-            ExceptionMessage = "";
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
@@ -54,7 +55,7 @@ namespace Timinute.Client.Pages.Projects
             }
             catch (Exception ex)
             {
-                ExceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
             }
         }
 
@@ -65,7 +66,6 @@ namespace Timinute.Client.Pages.Projects
 
         private async Task RemoveProject(string projectId)
         {
-            ExceptionMessage = "";
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
@@ -75,11 +75,12 @@ namespace Timinute.Client.Pages.Projects
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     await RefreshTable();
+                    notificationService.Notify(NotificationSeverity.Success, "Success", "Project was removed", 3000);
                 }
             }
             catch (Exception ex)
             {
-                ExceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
             }
         }
     }
