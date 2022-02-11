@@ -35,6 +35,15 @@
 
                 public const string Update = Api;
             }
+
+            public static class Analytics
+            {
+                public const string Api = "Analytics";
+
+                public const string GetProjectWorkTime = $"{Api}";
+
+                public const string GetById = $"{Api}/";
+            }
         }
     }
 }

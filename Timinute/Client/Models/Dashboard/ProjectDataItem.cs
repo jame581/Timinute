@@ -2,13 +2,15 @@
 {
     public class ProjectDataItem
     {
-        public string Project { get; set; }
+        public string ProjectId { get; set; }
+        public string ProjectName { get; set; }
         public TimeSpan Time { get; set; }
         public double TimeInt { get => Time.TotalSeconds; }
 
-        public ProjectDataItem(string project, TimeSpan time)
+        public ProjectDataItem(string projectId, string projectName, TimeSpan time)
         {
-            Project = project;
+            ProjectId = projectId;
+            ProjectName = projectName;
             Time = time;
         }
     }
