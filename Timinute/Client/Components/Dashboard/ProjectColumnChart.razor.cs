@@ -28,7 +28,7 @@ namespace Timinute.Client.Components.Dashboard
             new ProjectDataItem("Project 5", TimeSpan.FromMinutes(150)),
         };
 
-        string FormatAsTime(object value)
+        string FormatTimeAsString(object value)
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds((double)value);
             return timeSpan.ToString(@"hh\:mm\:ss");

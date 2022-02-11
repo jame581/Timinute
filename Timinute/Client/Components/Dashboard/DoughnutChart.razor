@@ -1,14 +1,10 @@
-﻿<div class="row">
-    <div class="col-sm-12 col-lg-6 offset-lg-3 my-5">
-        <RadzenChart>
-            <RadzenDonutSeries Data="@projectTime" CategoryProperty="Project" ValueProperty="TimeInt">
-                <TitleTemplate>
-                    <div class="rz-donut-content">
-                        <div>Time</div>
-                        <div>per project</div>
-                    </div>
-                </TitleTemplate>
-            </RadzenDonutSeries>
-        </RadzenChart>
-    </div>
-</div>
+﻿<RadzenChart>
+    <RadzenDonutSeries Data="@projectTime" CategoryProperty="Project" ValueProperty="TimeInt">
+        <TitleTemplate>
+            <div class="rz-donut-content">
+                <div>Time</div>
+                <div>per project</div>
+            </div>
+        </TitleTemplate>
+    </RadzenDonutSeries>
+</RadzenChart>
