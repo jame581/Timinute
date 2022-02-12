@@ -70,7 +70,7 @@ namespace Timinute.Client.Components.Dashboard
             }
             catch (Exception ex)
             {
-                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
         }
 

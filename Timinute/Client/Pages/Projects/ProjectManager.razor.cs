@@ -44,7 +44,7 @@ namespace Timinute.Client.Pages.Projects
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
             await RefreshTable();
-            radzenDataGrid.Reload();
+            await radzenDataGrid.Reload();
         }
 
         private async Task RefreshTable()
@@ -74,64 +74,10 @@ namespace Timinute.Client.Pages.Projects
             StateHasChanged();
         }
 
-        //async Task LoadData(LoadDataArgs args)
-        //{
-        //    // This demo is using https://dynamic-linq.net
-        //    //var query = dbContext.Customers.AsQueryable();
-
-        //    //if (!string.IsNullOrEmpty(args.Filter))
-        //    //{
-        //    //    // Filter via the Where method
-        //    //    query = query.Where(args.Filter);
-        //    //}
-
-        //    //if (!string.IsNullOrEmpty(args.OrderBy))
-        //    //{
-        //    //    // Sort via the OrderBy method
-        //    //    query = query.OrderBy(args.OrderBy);
-        //    //}
-
-        //    await RefreshTable();
-
-        //    // Important!!! Make sure the Count property of RadzenDataGrid is set.
-        //    //projectCount = query.Count();
-
-        //    //// Perform paging via Skip and Take.
-        //    //customers = query.Skip(args.Skip.Value).Take(args.Top.Value).ToList();
-
-        //    // Add StateHasChanged(); for DataGrid to update if your LoadData method is async.
-        //    StateHasChanged();
-        //}
-
         async Task LoadData(LoadDataArgs args)
         {
             isLoading = true;
-
-            //await Task.Yield();
-
-            // This demo is using https://dynamic-linq.net
-            //var query = dbContext.Employees.AsQueryable();
-
-            //if (!string.IsNullOrEmpty(args.Filter))
-            //{
-            //    // Filter via the Where method
-            //    query = query.Where(args.Filter);
-            //}
-
-            //if (!string.IsNullOrEmpty(args.OrderBy))
-            //{
-            //    // Sort via the OrderBy method
-            //    query = query.OrderBy(args.OrderBy);
-            //}
-
-            // Important!!! Make sure the Count property of RadzenDataGrid is set.
-            //projectCount = query.Count();
-
-            // Perform paginv via Skip and Take.
-            //= query.Skip(args.Skip.Value).Take(args.Top.Value).ToList();
-
             await RefreshTable();
-
             isLoading = false;
         }
 

@@ -12,41 +12,15 @@
     <AddProject OnAddProject="@HandleProjectAdded" />
 
     <h3 class="p-3 text-center">Display a list of projects</h3>
-    
+
     <RadzenDataGrid @ref="radzenDataGrid" Data="@ProjectsList" TItem="Project" Count="@projectCount"
                     IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true"
                     AllowMultiColumnSorting="true">
-    <Columns>
-        <RadzenDataGridColumn TItem="Project" Property="ProjectId" Title="Project ID"  />
-        <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name" />
-        <RadzenDataGridColumn TItem="Project" Property="CompanyId" Title="Company ID" />
-    </Columns>
-</RadzenDataGrid>
-    
-    
-    @*<table class="table table-table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Project Id</th>
-                <th>Name</th>
-                <th>Company Id</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var project in ProjectsList)
-            {
-                <tr>
-                    <td>@project.ProjectId</td>
-                    <td>@project.Name</td>
-                    <td>@project.CompanyId</td>
-                    <td>
-                        <button type="submit" class="btn btn-danger" @onclick="() => RemoveProject(project.ProjectId)">
-                            <span class="oi oi-delete"></span> Remove
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>*@
+        <Columns>
+            <RadzenDataGridColumn TItem="Project" Property="ProjectId" Title="Project ID" />
+            <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name" />
+            <RadzenDataGridColumn TItem="Project" Property="CompanyId" Title="Company ID" />
+        </Columns>
+    </RadzenDataGrid>
+
 </div>

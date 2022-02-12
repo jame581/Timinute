@@ -109,7 +109,7 @@ namespace Timinute.Client.Components.TrackedTasks
             }
             catch (Exception ex)
             {
-                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
 
             await StopWatchTick();
@@ -161,7 +161,7 @@ namespace Timinute.Client.Components.TrackedTasks
             }
             catch (Exception ex)
             {
-                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
         }
 
@@ -185,7 +185,7 @@ namespace Timinute.Client.Components.TrackedTasks
             }
             catch (Exception ex)
             {
-                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
         }
     }

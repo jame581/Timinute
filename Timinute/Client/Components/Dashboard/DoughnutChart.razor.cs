@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen;
 using Radzen.Blazor;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
@@ -24,6 +25,9 @@ namespace Timinute.Client.Components.Dashboard
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
 
         #endregion
 
@@ -54,10 +58,11 @@ namespace Timinute.Client.Components.Dashboard
                         projectTime.Add(new ProjectDataItem(item.ProjectId, item.ProjectName, item.Time, ""));
                 }
 
-                radzenChartComponet.Reload();
+                await radzenChartComponet.Reload();
             }
             catch (Exception ex)
             {
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
         }
     }
