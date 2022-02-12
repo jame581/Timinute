@@ -53,7 +53,7 @@ namespace Timinute.Client.Components.Dashboard
                             Time = item.Time,
                             WorkTimeInSeconds = item.WorkTimeInSeconds,
                         };
-                       
+
                         workTimePerMonths.Add(workTimePerMonth);
                     }
                 }
@@ -64,7 +64,7 @@ namespace Timinute.Client.Components.Dashboard
             {
                 // TODO(jame_581): Add notification
             }
-        }       
+        }
 
         string FormatTimeAsString(object value)
         {

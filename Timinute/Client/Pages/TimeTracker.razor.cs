@@ -8,7 +8,7 @@ namespace Timinute.Client.Pages
     public partial class TimeTracker
     {
         private TrackedTaskTable trackedTaskTableComponent = null!;
-        
+
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
@@ -26,7 +26,7 @@ namespace Timinute.Client.Pages
 
         private async Task HandleTrackedTaskAdded(TrackedTask newTrackedTask)
         {
-           await trackedTaskTableComponent.RefreshTable();
+            await trackedTaskTableComponent.RefreshTable();
         }
     }
 }

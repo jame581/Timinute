@@ -20,7 +20,7 @@ namespace Timinute.Server.Tests.Repositories
         public async Task GetAllTrackedTasks_Returns_TrackedTasks()
         {
             await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
-            
+
             //Execute method of SUT
             var repository = new BaseRepository<TrackedTask>(dbContext);
             var trackedTasks = await repository.Get();

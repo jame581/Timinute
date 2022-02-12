@@ -7,7 +7,7 @@
             public const string ClientName = "Timinute.ServerAPI";
 
             public static class TrackedTask
-            {                
+            {
                 public const string Api = "TrackedTask";
 
                 public const string GetAll = "TrackedTask";

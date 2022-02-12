@@ -62,6 +62,6 @@ namespace Timinute.Client.Components.TrackedTasks
         public async Task RefreshTable()
         {
             await LoadTrackedTasks();
-        } 
+        }
     }
 }

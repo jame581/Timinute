@@ -103,7 +103,7 @@ namespace Timinute.Client.Components.TrackedTasks
                     stopWatchRunning = true;
 
                     await SessionStorage.SetItemAsync<TrackedTask>("trackedTask", trackedTask);
-                    notificationService.Notify(NotificationSeverity.Success, "Success", "Tracking time started" , 3000);
+                    notificationService.Notify(NotificationSeverity.Success, "Success", "Tracking time started", 3000);
                 }
 
             }

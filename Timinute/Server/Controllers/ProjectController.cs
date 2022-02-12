@@ -13,7 +13,7 @@ namespace Timinute.Server.Controllers
     [ApiController]
     [Route("[controller]")]
     public class ProjectController : ControllerBase
-    {     
+    {
         private readonly IRepository<Project> projectRepository;
         private readonly IMapper mapper;
         private readonly ILogger<ProjectController> logger;

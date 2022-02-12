@@ -21,7 +21,7 @@ namespace Timinute.Server.Areas.Identity
         protected override async Task<ClaimsIdentity> GenerateClaimsAsync(ApplicationUser user)
         {
             ClaimsIdentity claims = await base.GenerateClaimsAsync(user);
-                        
+
             claims.AddClaims(new List<Claim>
             {
                 new Claim(Constants.Claims.Fullname, $"{user.FirstName} {user.LastName}"),
@@ -29,7 +29,7 @@ namespace Timinute.Server.Areas.Identity
             });
 
             var roles = await userManager.GetRolesAsync(user);
-            
+
             foreach (var role in roles)
             {
                 claims.AddClaim(new Claim(Constants.Claims.Role, role));

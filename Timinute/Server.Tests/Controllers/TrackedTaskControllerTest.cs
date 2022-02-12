@@ -238,6 +238,6 @@ namespace Timinute.Server.Tests.Controllers
             };
 
             return controller;
-        }        
+        }
     }
 }

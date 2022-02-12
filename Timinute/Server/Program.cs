@@ -1,16 +1,16 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.EntityFrameworkCore;
-using Timinute.Server.Data;
-using Timinute.Server.Models;
-using Microsoft.AspNetCore.Identity;
-using Timinute.Server.Areas.Identity;
-using Timinute.Server.Repository;
 using AutoMapper;
-using Timinute.Server;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
+using Timinute.Server;
+using Timinute.Server.Areas.Identity;
+using Timinute.Server.Data;
 using Timinute.Server.Helpers;
-using Microsoft.AspNetCore.Mvc;
+using Timinute.Server.Models;
+using Timinute.Server.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 

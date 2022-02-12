@@ -29,8 +29,8 @@ namespace Timinute.Client.Pages.TrackedTasks
 
             if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
-           
-           await RefreshTable();
+
+            await RefreshTable();
         }
 
         private async Task RefreshTable()

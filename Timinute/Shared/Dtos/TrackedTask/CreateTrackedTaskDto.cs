@@ -11,11 +11,11 @@ namespace Timinute.Shared.Dtos.TrackedTask
 
         [Required]
         public DateTime StartDate { get; set; }
-        
+
         public TimeSpan Duration { get; set; }
-        
+
         public string? ProjectId { get; set; }
-        
+
         public ProjectDto? Project { get; set; }
     }
 }

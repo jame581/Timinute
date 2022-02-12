@@ -29,7 +29,7 @@ namespace Timinute.Server.Repository
         public async Task Delete(object id)
         {
             TEntity? entityToDelete = await dbSet.FindAsync(id);
-            
+
             if (entityToDelete != null)
                 await Delete(entityToDelete);
         }
