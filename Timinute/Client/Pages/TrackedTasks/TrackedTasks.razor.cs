@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Radzen;
+using Radzen.Blazor;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -11,6 +12,12 @@ namespace Timinute.Client.Pages.TrackedTasks
     public partial class TrackedTasks
     {
         public readonly IList<TrackedTask> TrackedTasksList = new List<TrackedTask>();
+
+        private int tasksCount = 0;
+
+        private bool isLoading = true;
+
+        private RadzenDataGrid<TrackedTask> radzenDataGrid = null!;
 
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
@@ -37,6 +44,7 @@ namespace Timinute.Client.Pages.TrackedTasks
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
             await RefreshTable();
+            await radzenDataGrid.Reload();
         }
 
         private async Task RefreshTable()
@@ -57,8 +65,17 @@ namespace Timinute.Client.Pages.TrackedTasks
             }
             catch (Exception ex)
             {
-                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
+        }
+
+        async Task LoadData(LoadDataArgs args)
+        {
+            isLoading = true;
+
+            await RefreshTable();
+
+            isLoading = false;
         }
 
         private async Task HandleTrackedTaskAdded(TrackedTask trackedTask)
