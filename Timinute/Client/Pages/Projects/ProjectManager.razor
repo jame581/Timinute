@@ -1,6 +1,8 @@
 ﻿@page "/projectmanager"
 @attribute [Authorize]
 
+@using Timinute.Client.Models
+
 <PageTitle>Manage Projects</PageTitle>
 
 <h3>Manage Projects</h3>
@@ -9,8 +11,20 @@
 
     <AddProject OnAddProject="@HandleProjectAdded" />
 
-    <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    <table class="table table-table-striped table-bordered">
+    <h3 class="p-3 text-center">Display a list of projects</h3>
+    
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@ProjectsList" TItem="Project" Count="@projectCount"
+                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true"
+                    AllowMultiColumnSorting="true">
+    <Columns>
+        <RadzenDataGridColumn TItem="Project" Property="ProjectId" Title="Project ID"  />
+        <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name" />
+        <RadzenDataGridColumn TItem="Project" Property="CompanyId" Title="Company ID" />
+    </Columns>
+</RadzenDataGrid>
+    
+    
+    @*<table class="table table-table-striped table-bordered">
         <thead>
             <tr>
                 <th>Project Id</th>
@@ -34,5 +48,5 @@
                 </tr>
             }
         </tbody>
-    </table>
+    </table>*@
 </div>
