@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -11,8 +12,6 @@ namespace Timinute.Client.Pages.TrackedTasks
     {
         public readonly IList<TrackedTask> TrackedTasksList = new List<TrackedTask>();
 
-        private string exceptionMessage = "";
-
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
@@ -21,6 +20,9 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
@@ -35,7 +37,6 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         private async Task RefreshTable()
         {
-            exceptionMessage = "";
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
@@ -52,7 +53,7 @@ namespace Timinute.Client.Pages.TrackedTasks
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
         }
 
