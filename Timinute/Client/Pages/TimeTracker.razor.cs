@@ -12,8 +12,12 @@ namespace Timinute.Client.Pages
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
+        #region Dependency Injection
+
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
+
+        #endregion
 
         protected override async Task OnInitializedAsync()
         {

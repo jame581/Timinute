@@ -25,6 +25,8 @@ namespace Timinute.Client.Components.TrackedTasks
         [Parameter]
         public EventCallback<TrackedTask> OnAddTrackedTask { get; set; }
 
+        #region Dependency Injection
+
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
 
@@ -33,6 +35,8 @@ namespace Timinute.Client.Components.TrackedTasks
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+
+        #endregion
 
         protected override async Task OnInitializedAsync()
         {

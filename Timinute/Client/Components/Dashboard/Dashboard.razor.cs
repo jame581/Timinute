@@ -15,7 +15,9 @@ namespace Timinute.Client.Components.Dashboard
         private string AmountWorkTimeLastMonth = "00:00:00";
 
         private string TopProjectLastMonth = "None - 00:00:00";
-
+        
+        #region Dependency Injection
+        
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
 
@@ -24,6 +26,8 @@ namespace Timinute.Client.Components.Dashboard
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+
+        #endregion
 
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;

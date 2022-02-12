@@ -27,11 +27,15 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private TrackedTask NewTrackedTask { get; set; } = new() { StartDate = DateTime.Now };
 
+        #region Dependency Injection
+
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+
+        #endregion
 
         private async Task HandleValidSubmit()
         {

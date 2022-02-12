@@ -15,11 +15,15 @@ namespace Timinute.Client.Components
 
         private Project NewProject { get; set; } = new();
 
+        #region Dependency Injection
+
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+
+        #endregion
 
         private async Task HandleValidSubmit()
         {

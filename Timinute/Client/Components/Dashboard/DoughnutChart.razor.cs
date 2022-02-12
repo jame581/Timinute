@@ -17,11 +17,15 @@ namespace Timinute.Client.Components.Dashboard
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
+        #region Dependency Injection
+
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        #endregion
 
         protected override async Task OnInitializedAsync()
         {

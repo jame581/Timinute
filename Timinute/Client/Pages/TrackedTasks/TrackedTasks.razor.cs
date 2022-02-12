@@ -15,6 +15,8 @@ namespace Timinute.Client.Pages.TrackedTasks
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
+        #region Dependency Injection
+
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
 
@@ -23,6 +25,8 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+        
+        #endregion
 
         protected override async Task OnInitializedAsync()
         {

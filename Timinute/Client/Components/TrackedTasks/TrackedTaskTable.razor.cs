@@ -11,11 +11,15 @@ namespace Timinute.Client.Components.TrackedTasks
     {
         public readonly Dictionary<string, List<TrackedTask>> trackedTasksDictionary = new();
 
+        #region Dependency Injection
+
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+
+        #endregion
 
         protected override async Task OnInitializedAsync()
         {
