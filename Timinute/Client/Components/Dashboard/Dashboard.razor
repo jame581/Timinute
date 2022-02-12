@@ -19,13 +19,6 @@
             </div>
         </div>
     </div>
-@*    <div class="col-12 col-lg-4 mb-3">
-        <div class="card">
-            <h5 class="card-header">Amount of work time per project</h5>
-            <div class="card-body">
-            </div>
-        </div>
-    </div>*@
 </div>
 
 <div class="row">
@@ -45,19 +38,4 @@
             </div>
         </div>
     </div>
-</div>
-
-<div class="row">
-    <h3>Claims</h3>
-    <table class="table table-sm">
-        @foreach (var claim in User.Claims)
-        {
-            <tr>
-                <td>@claim.Issuer</td>
-                <td>@claim.ValueType</td>
-                <td>@claim.Type</td>
-                <td>@claim.Value</td>
-            </tr>
-        }
-    </table>
 </div>

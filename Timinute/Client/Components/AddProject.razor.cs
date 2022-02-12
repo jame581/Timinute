@@ -10,12 +10,10 @@ namespace Timinute.Client.Components
 {
     public partial class AddProject
     {
-        private Project NewProject { get; set; } = new();
-
-        bool displayValidationErrorMessages = false;
-
         [Parameter]
         public EventCallback<Project> OnAddProject { get; set; }
+
+        private Project NewProject { get; set; } = new();
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
@@ -37,8 +35,6 @@ namespace Timinute.Client.Components
                 var responseMessage = await client.PostAsJsonAsync(Constants.API.Project.Create, createProjectDto);
                 responseMessage.EnsureSuccessStatusCode();
 
-                displayValidationErrorMessages = false;
-
                 await OnAddProject.InvokeAsync(NewProject);
 
                 NewProject = new Project();
@@ -51,8 +47,6 @@ namespace Timinute.Client.Components
 
         private void HandleInvalidSubmit(EditContext context)
         {
-            displayValidationErrorMessages = true;
-
             var errorMessages = context.GetValidationMessages();
             foreach (var errorMessage in errorMessages)
             {

@@ -10,9 +10,8 @@ namespace Timinute.Client.Components.TrackedTasks
 {
     public partial class AddTrackedTask
     {
-        private TrackedTask NewTrackedTask { get; set; } = new() { StartDate = DateTime.Now };
-
-        bool displayValidationErrorMessages = false;
+        [Parameter]
+        public EventCallback<TrackedTask> OnTrackedTaskAdded { get; set; }
 
         public string DurationProxy
         {
@@ -26,6 +25,7 @@ namespace Timinute.Client.Components.TrackedTasks
             }
         }
 
+        private TrackedTask NewTrackedTask { get; set; } = new() { StartDate = DateTime.Now };
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
@@ -49,7 +49,8 @@ namespace Timinute.Client.Components.TrackedTasks
                 var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createTrackedTaskDto);
                 responseMessage.EnsureSuccessStatusCode();
 
-                displayValidationErrorMessages = false;
+                await OnTrackedTaskAdded.InvokeAsync(NewTrackedTask);
+
                 notificationService.Notify(NotificationSeverity.Success, "Success", "Tracked task saved", 3000);
 
                 NewTrackedTask = new() { StartDate = DateTime.Now };

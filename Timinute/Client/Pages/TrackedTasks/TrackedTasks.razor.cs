@@ -55,5 +55,10 @@ namespace Timinute.Client.Pages.TrackedTasks
                 exceptionMessage = ex.Message;
             }
         }
+
+        private async Task HandleTrackedTaskAdded(TrackedTask trackedTask)
+        {
+            await RefreshTable();
+        }
     }
 }

@@ -12,17 +12,15 @@ namespace Timinute.Client.Components.TrackedTasks
 {
     public partial class TrackTaskTime
     {
+        public string? ProjectId { get; set; }
+
         private TrackedTask trackedTask = new();
 
         private readonly List<Project> projects = new();
 
-        public string? ProjectId { get; set; }
-
         private bool stopWatchRunning = false;
 
         private string DurationProxy { get; set; } = "00:00:00";
-
-        bool displayValidationErrorMessages = false;
 
         [Parameter]
         public EventCallback<TrackedTask> OnAddTrackedTask { get; set; }
@@ -54,8 +52,6 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private async Task HandleValidSubmit()
         {
-            displayValidationErrorMessages = false;
-
             if (stopWatchRunning)
             {
                 await StopStopWatch();

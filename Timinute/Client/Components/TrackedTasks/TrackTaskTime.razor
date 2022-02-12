@@ -16,7 +16,7 @@
             <div class="col-auto">
                 <label for="project" class="visually-hidden">Select project</label>
                 <InputSelect id="project" class="form-select" @bind-Value="ProjectId">
-                     <option selected>None</option>
+                    <option selected>None</option>
                     @foreach (var project in projects)
                     {
                         <option value="@project.ProjectId">@project.Name</option>
@@ -40,12 +40,9 @@
             </div>
         </div>
 
-        @if (displayValidationErrorMessages)
-        {
-            <div class="mb-3 mt-3 row">
-                <ValidationSummary />
-            </div>
-        }
-    </EditForm>
+        <div class="mb-3 mt-3 row">
+            <ValidationSummary />
+        </div>
 
+    </EditForm>
 </div>

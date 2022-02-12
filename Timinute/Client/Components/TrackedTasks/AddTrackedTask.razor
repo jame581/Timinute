@@ -20,14 +20,9 @@
 
         <button type="submit" class="btn btn-primary">Submit</button>
 
-        @if (displayValidationErrorMessages)
-        {
-            <div class="col-md-4" style="margin-top:10px">
-                <label>Validation Messages: </label>
-                <ValidationSummary />
-            </div>
-        }
+        <div class="col-md-4" style="margin-top:10px">
+            <ValidationSummary />
+        </div>
 
     </EditForm>
-
 </div>
