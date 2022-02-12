@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen;
 using Radzen.Blazor;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
@@ -14,14 +15,17 @@ namespace Timinute.Client.Components.Dashboard
 
         private RadzenChart radzenChartComponet = null!;
 
-        [CascadingParameter]
-        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
-
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
+
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
+
+        [CascadingParameter]
+        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
@@ -62,7 +66,7 @@ namespace Timinute.Client.Components.Dashboard
             }
             catch (Exception ex)
             {
-                // TODO(jame_581): Add notification
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
         }
 

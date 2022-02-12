@@ -1,15 +1,16 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Shared.Dtos.Dashboard;
+using System.Security.Claims;
 
 namespace Timinute.Client.Components.Dashboard
 {
     public partial class Dashboard
     {
-        [CascadingParameter]
-        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
+        public ClaimsPrincipal User { get; set; }
 
         private string AmountWorkTimeLastMonth = "00:00:00";
 
@@ -21,8 +22,11 @@ namespace Timinute.Client.Components.Dashboard
         [Inject]
         private IHttpClientFactory ClientFactory { get; set; } = null!;
 
-        public System.Security.Claims.ClaimsPrincipal User { get; set; }
+        [Inject]
+        private NotificationService notificationService { get; set; } = null!;
 
+        [CascadingParameter]
+        private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
@@ -51,7 +55,7 @@ namespace Timinute.Client.Components.Dashboard
             }
             catch (Exception ex)
             {
-                // TODO(jame_581): Add notification
+                notificationService.Notify(NotificationSeverity.Error, "Something happend", ex.Message, 5000);
             }
 
             StateHasChanged();
