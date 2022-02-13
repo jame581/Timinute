@@ -1,0 +1,30 @@
+﻿@page "/projectmanager"
+@attribute [Authorize]
+
+@using Timinute.Client.Models
+
+<PageTitle>Manage Projects</PageTitle>
+
+<h3>Manage Projects</h3>
+
+<div class="container">
+
+    <div class="d-flex justify-content-center">
+        <AddProject OnAddProject="@HandleProjectAdded" />
+    </div>
+
+    <h3 class="p-3 text-center">Display a list of projects</h3>
+
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@ProjectsList" TItem="Project" Count="@projectCount"
+                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true"
+                    AllowMultiColumnSorting="true">
+        <EmptyTemplate>
+            <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No projects to display.</p>
+        </EmptyTemplate>
+        <Columns>
+            <RadzenDataGridColumn TItem="Project" Property="ProjectId" Title="Project ID" />
+            <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name" />
+        </Columns>
+    </RadzenDataGrid>
+
+</div>

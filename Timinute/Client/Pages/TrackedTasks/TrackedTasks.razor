@@ -1,47 +1,33 @@
 ﻿@page "/trackedtasks"
 @attribute [Authorize]
 
+@using Timinute.Client.Components.TrackedTasks
+@using Timinute.Client.Models
+
 <PageTitle>Tracked Tasks</PageTitle>
 
 
 <div class="container">
-	
-	<div class="d-flex justify-content-center">
-		<AddTrackedTask />
-	</div>
 
-	<h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-	<button class="mb-3" onclick="@RefreshTable">Refresh table</button>
-	<table class="table table-table-striped table-bordered">
-		<thead>
-			<tr>
-				<th>Id</th>
-				<th>Name</th>
-				<th>Duration</th>
-				<th>Start date</th>
-				<th>End date</th>
-			</tr>
-		</thead>
-		<tbody>
-			@foreach (var trackedTask in TrackedTasksList)
-			{
-				<tr>
-					<td>@trackedTask.TaskId</td>
-					<td>@trackedTask.Name</td>
-					<td>@trackedTask.Duration</td>
-					<td>@trackedTask.StartDate</td>
-					<td>@trackedTask.EndDate</td>
-				</tr>
-			}
-		</tbody>
-	</table>
-		
-	<p>
-		@exceptionMessage
-	</p>
+    <div class="d-flex justify-content-center">
+        <AddTrackedTask OnTrackedTaskAdded="@HandleTrackedTaskAdded" />
+    </div>
+
+    <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@tasksCount"
+                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
+                    AllowMultiColumnSorting="true">
+        <EmptyTemplate>
+            <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>
+        </EmptyTemplate>
+        <Columns>
+            <RadzenDataGridColumn TItem="TrackedTask" Property="TaskId" Title="Task ID" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Project.Name" Title="Project Name" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Duration" Title="Duration" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="StartDate" Title="Start date" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date" />
+        </Columns>
+    </RadzenDataGrid>
 
 </div>
-
-@code {
-
-}

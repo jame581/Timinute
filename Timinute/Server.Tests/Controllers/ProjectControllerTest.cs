@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -214,7 +213,7 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            ProjectController controller = new ProjectController(repositoryFactory, _mapper, _loggerMock.Object)
+            ProjectController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
             {
                 ControllerContext = new ControllerContext
                 {

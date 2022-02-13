@@ -1,0 +1,124 @@
+﻿@using Timinute.Client.Helpers
+@using Timinute.Client.Models
+@using Timinute.Shared.Dtos.Project
+
+@inject DialogService DialogService
+@inject IHttpClientFactory ClientFactory
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="TrackedTask" Data="@model" Submit=@OnSubmit>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Name" />
+        </div>
+        <div class="col">
+            <RadzenTextBox @bind-Value="@model.Name" Name="Name" />
+            <RadzenRequiredValidator Text="Name is required" Component="Name" />
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Start" />
+        </div>
+        <div class="col">
+            <RadzenDatePicker @bind-Value="@model.StartDate" Name="Start" ShowTime="true" />
+            <RadzenRequiredValidator Text="Start Date is required" Component="Start" />
+            <RadzenCompareValidator Component="Start" Text="Start date should be less end date" Operator="CompareOperator.LessThan" Value="@model.EndDate" />
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="End" />
+        </div>
+        <div class="col">
+            <RadzenDatePicker Name="End" @bind-Value="@model.EndDate" ShowTime="true" />
+            <RadzenRequiredValidator Text="End Date is required" Component="End" />
+            <RadzenCompareValidator Component="End" Text="End date should be greater start date" Operator="CompareOperator.GreaterThan" Value="@model.StartDate" />
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Project" />
+        </div>
+        <div class="col">
+            <RadzenDropDown AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" Data=@projects @bind-Value=@model.ProjectId
+                            TextProperty="Name" ValueProperty="ProjectId" Class="w-100" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" Text="Save" />
+        </div>
+        <div class="col">
+            <RadzenButton Click=@(args => OnDeleteClick()) ButtonStyle="ButtonStyle.Danger" Text="Delete" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    [Parameter]
+    public TrackedTask TrackedTask { get; set; }
+
+    TrackedTask model = new TrackedTask();
+
+    private readonly List<Project> projects = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+    }
+
+    protected override void OnParametersSet()
+    {
+        model = TrackedTask;
+    }
+
+    void OnSubmit(TrackedTask model)
+    {
+        DialogService.Close(model);
+    }
+
+    async Task OnDeleteClick()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+        try
+        {
+            var responseMessage = await client.DeleteAsync($"{Constants.API.TrackedTask.Delete}/{model.TaskId}");
+
+            responseMessage.EnsureSuccessStatusCode();
+            NotificationService.Notify(NotificationSeverity.Success, "Deleted", $"Tracked task '{model.Name}' was deleted!", 5000);
+            DialogService.Close();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+        }
+    }
+
+    private async Task LoadProjects()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+        try
+        {
+            var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.GetAll);
+
+            if (responseMessage != null)
+            {
+                projects.Clear();
+                foreach (var projectDto in responseMessage)
+                {
+                    projects.Add(new Project(projectDto));
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+        }
+    }
+}

@@ -1,0 +1,14 @@
+﻿@page "/timetracker"
+@attribute [Authorize]
+@using Timinute.Client.Components.TrackedTasks
+
+<PageTitle>Time Tracker</PageTitle>
+
+<div class="container">
+    <h3 class="p-3 text-center">Time Tracker</h3>
+    <div class="d-flex justify-content-center">
+        <TrackTaskTime OnAddTrackedTask="@HandleTrackedTaskAdded" />
+    </div>
+
+    <TrackedTaskTable @ref="trackedTaskTableComponent" />
+</div>

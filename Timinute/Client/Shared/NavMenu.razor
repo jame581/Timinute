@@ -9,21 +9,64 @@
 
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>  
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="timetracker">
-                <span class="oi oi-timer" aria-hidden="true"></span> Time tracker
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="trackedtasks">
-                <span class="oi oi-task" aria-hidden="true"></span> Tracked Tasks
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <span class="oi oi-home" aria-hidden="true"></span> Home
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <span class="oi oi-dashboard" aria-hidden="true"></span> Dashboard
+                    </NavLink>
+                </div>
+                <div class="nav-item px-1">
+                    <div class="nav-category-header">
+                        <span class="oi oi-clock" aria-hidden="true"></span> Track time
+                    </div>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="timetracker">
+                        <span class="oi oi-timer" aria-hidden="true"></span> Time tracker
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="trackedtasks">
+                        <span class="oi oi-task" aria-hidden="true"></span> Tracked Tasks
+                    </NavLink>
+                </div> 
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="scheduler">
+                        <span class="oi oi-calendar" aria-hidden="true"></span> Calendar
+                    </NavLink>
+                </div>
+                <div class="nav-item px-1">
+                    <div class="nav-category-header">
+                        <span class="oi oi-wrench" aria-hidden="true"></span> Manage
+                    </div>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="projectmanager">
+                        <span class="oi oi-project" aria-hidden="true"></span> Projects
+                    </NavLink>
+                </div>
+@*                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="trackedtaskmanager">
+                        <span class="oi oi-task" aria-hidden="true"></span> Tracked Tasks
+                    </NavLink>
+                </div>*@
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="authentication/profile">
+                        <span class="oi oi-people" aria-hidden="true"></span> User Profile
+                    </NavLink>
+                </div>
+            </Authorized>
+
+        </AuthorizeView>
     </nav>
 </div>
 

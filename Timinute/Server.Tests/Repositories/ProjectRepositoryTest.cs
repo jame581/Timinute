@@ -77,29 +77,11 @@ namespace Timinute.Server.Tests.Repositories
                 Assert.Collection(projects, item => Assert.Contains("ProjectId1", item.ProjectId));
             }
         }
-
-        [Fact]
-        public async void Get_Project_By_CompanyId_Test()
-        {
-            using (var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName))
-            {
-                // Call the function to test
-                var repository = new BaseRepository<Project>(dbContext);
-                var projects = await repository.Get(x => x.CompanyId == "CompanyId1");
-
-                Assert.NotNull(projects);
-
-                Assert.Collection(projects,
-                    item => Assert.Contains("ProjectId1", item.ProjectId),
-                    item => Assert.Contains("ProjectId2", item.ProjectId),
-                    item => Assert.Contains("ProjectId3", item.ProjectId));
-            }
-        }
-
+        
         [Fact]
         public async Task Add_Project_Test()
         {
-            var newProject = new Project { ProjectId = "ProjectId100", Name = "Project 100", CompanyId = "CompanyId1" };
+            var newProject = new Project { ProjectId = "ProjectId100", Name = "Project 100" };
 
             int countBefore;
 
@@ -155,7 +137,7 @@ namespace Timinute.Server.Tests.Repositories
                 // Check beofre
                 var project = await repository.GetById("ProjectId1");
                 Assert.NotNull(project);
-                Assert.Equal("Project 1", project.Name);
+                Assert.Equal("Project 1", project!.Name);
                 project.Name = "newName";
                 await repository.Update(project);
             }

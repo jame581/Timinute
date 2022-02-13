@@ -1,0 +1,22 @@
+﻿<div class="row">
+    <EditForm class="row g-3" Model="@NewProject" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="col-auto">
+            <label for="name" class="col-form-label">Project Name:</label>
+        </div>
+
+        <div class="col-auto">
+            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewProject.Name" placeholder="Enter project name..." />
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        </div>
+
+        <div class="col-md-4" style="margin-top:10px">
+            <ValidationSummary />
+        </div>
+
+    </EditForm>
+</div>

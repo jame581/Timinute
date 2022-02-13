@@ -1,13 +1,16 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.EntityFrameworkCore;
-using Timinute.Server.Data;
-using Timinute.Server.Models;
-using Microsoft.AspNetCore.Identity;
-using Timinute.Server.Areas.Identity;
-using Timinute.Server.Repository;
 using AutoMapper;
-using Timinute.Server;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using Timinute.Server;
+using Timinute.Server.Areas.Identity;
+using Timinute.Server.Data;
+using Timinute.Server.Helpers;
+using Timinute.Server.Models;
+using Timinute.Server.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -37,10 +41,24 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     .AddRoles<ApplicationRole>()
     .AddDefaultTokenProviders()
     .AddDefaultUI()
-    .AddSignInManager<AppSingInManager>();
+    .AddSignInManager<AppSingInManager>()
+    .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
+    options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
+    options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+});
 
 builder.Services.AddIdentityServer()
-    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+    {
+        options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Fullname);
+        options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.LastLogin);
+        options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Role);
+    })
+    .AddJwtBearerClientAuthentication();
 
 builder.Services.AddAuthentication()
     .AddIdentityServerJwt();
@@ -48,8 +66,18 @@ builder.Services.AddAuthentication()
 builder.Logging.AddConsole();
 
 builder.Services.AddRazorPages();
+builder.Services.AddResponseCaching();
+builder.Services.AddControllers(options =>
+{
+    options.CacheProfiles.Add("Default120",
+        new CacheProfile()
+        {
+            Duration = 120
+        });
+});
 
 // DI
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
 builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
 
 // Auto Mapper Configurations
@@ -65,12 +93,14 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
         Title = "Timinute API",
         Description = "Docs for Timinute API",
-        Version = "v1"
+        Version = "v1",
+        Contact = new OpenApiContact { Email = "jame_581@windowslive.com", Name = "Jan Mesarc" }
     });
+    c.ResolveConflictingActions(apiDescriptors => apiDescriptors.First());
 });
 
 var app = builder.Build();
@@ -81,7 +111,7 @@ if (app.Environment.IsDevelopment())
     app.UseMigrationsEndPoint();
     app.UseWebAssemblyDebugging();
     app.UseDeveloperExceptionPage();
-   
+
     // Swagger middleware
     app.UseSwagger();
 
@@ -98,6 +128,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseResponseCaching();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();

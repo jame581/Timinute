@@ -1,0 +1,44 @@
+﻿<div class="container">
+
+    <h3 class="text-center">Tracked Tasks</h3>
+
+    @if (trackedTasksDictionary.Count <= 0)
+    {
+        <p style="color: darkgrey; font-size: 32px; text-align: center; margin: 2rem;">No projects to display.</p>
+    }
+    else
+    {
+        @foreach (var trackedTaskPair in trackedTasksDictionary)
+        {
+            var time = new TimeSpan();
+
+            <div class="row mt-3">
+                <div class="card" style="padding-right: 0px;padding-left: 0px;">
+                    <div class="card-header">
+                        <h5 style="text-align: start">@trackedTaskPair.Key</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+
+                            @foreach (var trackedTask in trackedTaskPair.Value)
+                            {
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-4">@trackedTask.Name</div>
+                                        <div class="col-4">@trackedTask.Project?.Name</div>
+                                        <div class="col-4" style="text-align: end">@trackedTask.Duration.ToString(@"hh\:mm\:ss")</div>
+                                    </div>
+                                </li>
+                                time += trackedTask.Duration;
+                            }
+                        </ul>
+                    </div>
+                    <div class="card-footer text-muted">
+                        Total time: @time.ToString(@"hh\:mm\:ss")
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+</div>

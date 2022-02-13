@@ -1,0 +1,28 @@
+﻿<div class="row">
+    <h3 class="text-center">Add Tracked Task</h3>
+    <EditForm Model="@NewTrackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+        <DataAnnotationsValidator />
+
+        <label>
+            Task Name:
+            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewTrackedTask.Name" placeholder="Enter task name..." />
+        </label>
+
+        <label>
+            Start Date:
+            <InputDate class="form-control" DisplayName="Date" @bind-Value="NewTrackedTask.StartDate" placeholder="Start Date..." />
+        </label>
+
+        <label>
+            Duration:
+            <InputText type="text" class="form-control" DisplayName="Duration" @bind-Value="@DurationProxy" />
+        </label>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+
+        <div class="col-md-4" style="margin-top:10px">
+            <ValidationSummary />
+        </div>
+
+    </EditForm>
+</div>

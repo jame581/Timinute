@@ -14,15 +14,12 @@ namespace Timinute.Server.Controllers
     [Route("[controller]")]
     public class ProjectController : ControllerBase
     {
-        private readonly IRepositoryFactory repositoryFactory;
-
         private readonly IRepository<Project> projectRepository;
         private readonly IMapper mapper;
         private readonly ILogger<ProjectController> logger;
 
         public ProjectController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<ProjectController> logger)
         {
-            this.repositoryFactory = repositoryFactory;
             this.mapper = mapper;
             this.logger = logger;
 

@@ -1,9 +1,31 @@
 ﻿@page "/"
+@using Timinute.Client.Components.Dashboard
 
-<PageTitle>Index</PageTitle>
+@inject NavigationManager Navigation
 
-<h1>Hello, world!</h1>
+@if (User.Identity.IsAuthenticated)
+{
+    <PageTitle>Dashboard</PageTitle>
+    <Dashboard />
+}
+else
+{
+    <PageTitle>Index</PageTitle>
+    <h1>Hello, world!</h1>
+    <p>Welcome to your new app.</p>
+    <SurveyPrompt Title="How is Blazor working for you?" />
+}
 
-Welcome to your new app.
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    public System.Security.Claims.ClaimsPrincipal? User { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        User = authState.User;
+    }
+}

@@ -1,0 +1,10 @@
+﻿@using Timinute.Client.Models.Dashboard
+
+<RadzenChart @ref="radzenChartComponet">
+    <RadzenColumnSeries Data="@workTimePerMonths" CategoryProperty="Time" Title="Work time" ValueProperty="WorkTimeInSeconds" />
+    <RadzenColumnOptions Radius="5" />
+    <RadzenValueAxis Formatter="@FormatTimeAsString">
+        <RadzenGridLines Visible="true" />
+        <RadzenAxisTitle Text="Time per month" />
+    </RadzenValueAxis>
+</RadzenChart>

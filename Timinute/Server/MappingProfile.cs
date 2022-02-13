@@ -10,10 +10,6 @@ namespace Timinute.Server
     {
         public MappingProfile()
         {
-            // Company model
-            CreateMap<Company, CompanyDto>();
-            CreateMap<CompanyDto, Company>();
-            
             // TrackedTask model
             CreateMap<TrackedTask, TrackedTaskDto>();
             CreateMap<TrackedTaskDto, TrackedTask>();

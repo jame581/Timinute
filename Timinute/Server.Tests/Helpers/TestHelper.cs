@@ -1,12 +1,12 @@
 ﻿using Duende.IdentityServer.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Timinute.Server.Data;
-using Timinute.Server.Models;
 using Timinute.Server.Helpers;
-using System;
+using Timinute.Server.Models;
 
 namespace Timinute.Server.Tests.Helpers
 {
@@ -25,7 +25,7 @@ namespace Timinute.Server.Tests.Helpers
         public static async Task<ApplicationDbContext> GetDefaultApplicationDbContext(string databaseName = "Test_DB", bool fillTestDate = true, bool deleteAll = true)
         {
             var someOptions = Options.Create(new OperationalStoreOptions());
-           
+
             var dbContextOptions = GetDbContextOptions(databaseName);
 
             var context = new ApplicationDbContext(dbContextOptions, someOptions);
@@ -71,21 +71,15 @@ namespace Timinute.Server.Tests.Helpers
 
             var projects = new List<Project>
             {
-                new Project { ProjectId = "ProjectId1", Name = "Project 1", CompanyId = "CompanyId1", TrackedTasks = new List<TrackedTask>() { trackedTasks[0], trackedTasks[1] } },
-                new Project { ProjectId = "ProjectId2", Name = "Project 2", CompanyId = "CompanyId1", TrackedTasks = new List<TrackedTask>() { trackedTasks[2], trackedTasks[3] } },
-                new Project { ProjectId = "ProjectId3", Name = "Project 3", CompanyId = "CompanyId1", TrackedTasks = new List<TrackedTask>() { trackedTasks[4], trackedTasks[5] } },
-            };
-
-            var companies = new List<Company>
-            {
-                new Company { CompanyId = "CompanyId1", Name = "Company 1", Projects = projects },
+                new Project { ProjectId = "ProjectId1", Name = "Project 1", TrackedTasks = new List<TrackedTask>() { trackedTasks[0], trackedTasks[1] } },
+                new Project { ProjectId = "ProjectId2", Name = "Project 2", TrackedTasks = new List<TrackedTask>() { trackedTasks[2], trackedTasks[3] } },
+                new Project { ProjectId = "ProjectId3", Name = "Project 3", TrackedTasks = new List<TrackedTask>() { trackedTasks[4], trackedTasks[5] } },
             };
 
             context.Roles.AddRange(roles);
             context.Users.AddRange(applicationUsers);
             context.TrackedTasks.AddRange(trackedTasks);
             context.Projects.AddRange(projects);
-            context.Companies.AddRange(companies);
 
             await context.SaveChangesAsync();
         }
