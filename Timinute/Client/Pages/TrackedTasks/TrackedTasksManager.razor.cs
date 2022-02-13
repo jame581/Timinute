@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Radzen;
+using Radzen.Blazor;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -11,6 +12,12 @@ namespace Timinute.Client.Pages.TrackedTasks
     public partial class TrackedTasksManager
     {
         private List<TrackedTask> trackedTasksList { get; set; } = new();
+
+        private int tasksCount = 0;
+
+        private bool isLoading = true;
+
+        private RadzenDataGrid<TrackedTask> radzenDataGrid = null!;
 
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
@@ -37,6 +44,7 @@ namespace Timinute.Client.Pages.TrackedTasks
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
             await RefreshTable();
+            await radzenDataGrid.Reload();
         }
 
         private async Task RefreshTable()
@@ -53,6 +61,8 @@ namespace Timinute.Client.Pages.TrackedTasks
 
                     foreach (var item in response)
                         trackedTasksList.Add(new TrackedTask(item));
+
+                    tasksCount = trackedTasksList.Count;
                 }
 
                 StateHasChanged();
@@ -61,6 +71,15 @@ namespace Timinute.Client.Pages.TrackedTasks
             {
                 notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
             }
+        }
+
+        async Task LoadData(LoadDataArgs args)
+        {
+            isLoading = true;
+
+            await RefreshTable();
+
+            isLoading = false;
         }
 
         private async Task RemoveTrackedTask(string trackedTaskId)

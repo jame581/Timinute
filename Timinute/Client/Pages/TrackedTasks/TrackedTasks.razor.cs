@@ -11,7 +11,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 {
     public partial class TrackedTasks
     {
-        public readonly IList<TrackedTask> TrackedTasksList = new List<TrackedTask>();
+        private readonly IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
 
         private int tasksCount = 0;
 
@@ -50,39 +50,38 @@ namespace Timinute.Client.Pages.TrackedTasks
         private async Task RefreshTable()
         {
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
-
+            isLoading = true;
             try
             {
                 var response = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.GetAll);
 
                 if (response != null)
                 {
-                    TrackedTasksList.Clear();
+                    trackedTasksList.Clear();
 
                     foreach (var item in response)
-                        TrackedTasksList.Add(new TrackedTask(item));
+                        trackedTasksList.Add(new TrackedTask(item));
 
-                    tasksCount = TrackedTasksList.Count;
+                    tasksCount = trackedTasksList.Count;
                 }
             }
             catch (Exception ex)
             {
                 notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
+
+            isLoading = false;
         }
 
         async Task LoadData(LoadDataArgs args)
-        {
-            isLoading = true;
-
-            await RefreshTable();
-
-            isLoading = false;
+        {   
+            await RefreshTable();   
         }
 
         private async Task HandleTrackedTaskAdded(TrackedTask trackedTask)
         {
             await RefreshTable();
+            await radzenDataGrid.Reload();
         }
     }
 }

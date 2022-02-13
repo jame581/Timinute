@@ -14,7 +14,7 @@
     </div>
 
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    <RadzenDataGrid @ref="radzenDataGrid" Data="@TrackedTasksList" TItem="TrackedTask" Count="@tasksCount"
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@tasksCount"
                     IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
                     AllowMultiColumnSorting="true">
         <EmptyTemplate>
@@ -23,6 +23,7 @@
         <Columns>
             <RadzenDataGridColumn TItem="TrackedTask" Property="TaskId" Title="Task ID" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Project.Name" Title="Project Name" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="Duration" Title="Duration" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="StartDate" Title="Start date" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date" />

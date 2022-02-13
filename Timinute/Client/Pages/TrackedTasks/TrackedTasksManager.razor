@@ -1,4 +1,5 @@
 ﻿@page "/trackedtaskmanager"
+@using Timinute.Client.Models
 @attribute [Authorize]
 
 <PageTitle>Manage Tracked Tasks</PageTitle>
@@ -7,35 +8,52 @@
 
 <div class="container">
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    <table class="table table-table-striped table-bordered">
+
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@tasksCount"
+                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
+                    AllowMultiColumnSorting="true">
+        <EmptyTemplate>
+            <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>
+        </EmptyTemplate>
+        <Columns>
+            <RadzenDataGridColumn TItem="TrackedTask" Property="TaskId" Title="Task ID" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name" />
+            @*<RadzenDataGridColumn TItem="TrackedTask" Property="Project.Name" Title="Project Name" />*@
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Duration" Title="Duration" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="StartDate" Title="Start date" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date" />
+        </Columns>
+    </RadzenDataGrid>
+
+    @* <table class="table table-table-striped table-bordered">
         <thead>
-            <tr>
-                <th>Task Id</th>
-                <th>Name</th>
-                <th>Project Id</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Duration</th>
-                <th></th>
-            </tr>
+        <tr>
+        <th>Task Id</th>
+        <th>Name</th>
+        <th>Project Id</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Duration</th>
+        <th></th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var trackedTask in trackedTasksList)
-            {
-                <tr>
-                    <td>@trackedTask.TaskId</td>
-                    <td>@trackedTask.Name</td>
-                    <td>@trackedTask.ProjectId</td>
-                    <td>@trackedTask.StartDate</td>
-                    <td>@trackedTask.EndDate</td>
-                    <td>@trackedTask.Duration</td>
-                    <td>
-                        <button type="submit" class="btn btn-danger" @onclick="() => RemoveTrackedTask(trackedTask.TaskId)">
-                            <span class="oi oi-delete"></span> Remove
-                        </button>
-                    </td>
-                </tr>
-            }
+        @foreach (var trackedTask in trackedTasksList)
+        {
+        <tr>
+        <td>@trackedTask.TaskId</td>
+        <td>@trackedTask.Name</td>
+        <td>@trackedTask.ProjectId</td>
+        <td>@trackedTask.StartDate</td>
+        <td>@trackedTask.EndDate</td>
+        <td>@trackedTask.Duration</td>
+        <td>
+        <button type="submit" class="btn btn-danger" @onclick="() => RemoveTrackedTask(trackedTask.TaskId)">
+        <span class="oi oi-delete"></span> Remove
+        </button>
+        </td>
+        </tr>
+        }
         </tbody>
-    </table>
+        </table>*@
 </div>
