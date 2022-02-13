@@ -5,7 +5,10 @@
 <PageTitle>Time Tracker</PageTitle>
 
 <div class="container">
-    <h3>Time Tracker</h3>
-    <TrackTaskTime OnAddTrackedTask="@HandleTrackedTaskAdded" /> 
+    <h3 class="p-3 text-center">Time Tracker</h3>
+    <div class="d-flex justify-content-center">
+        <TrackTaskTime OnAddTrackedTask="@HandleTrackedTaskAdded" />
+    </div>
+
     <TrackedTaskTable @ref="trackedTaskTableComponent" />
 </div>
