@@ -5,11 +5,11 @@
 <RadzenTemplateForm TItem="TrackedTask" Data="@model" Submit=@OnSubmit>
     <div class="row" style="margin-bottom: 16px">
         <div class="col-md-3">
-            <RadzenLabel Text="Text" />
+            <RadzenLabel Text="Name" />
         </div>
         <div class="col">
-            <RadzenTextBox @bind-Value="@model.Name" Name="Text" />
-            <RadzenRequiredValidator Text="Name is required" Component="Text" />
+            <RadzenTextBox @bind-Value="@model.Name" Name="Name" />
+            <RadzenRequiredValidator Text="Name is required" Component="Name" />
         </div>
     </div>
     <div class="row" style="margin-bottom: 16px">
@@ -19,6 +19,7 @@
         <div class="col">
             <RadzenDatePicker @bind-Value="@model.StartDate" Name="Start" ShowTime="true" />
             <RadzenRequiredValidator Text="Start Date is required" Component="Start" />
+            <RadzenCompareValidator Component="Start" Text="Start date should be less end date" Operator="CompareOperator.LessThan" Value="@model.EndDate" />
         </div>
     </div>
     <div class="row" style="margin-bottom: 16px">
@@ -27,7 +28,8 @@
         </div>
         <div class="col">
             <RadzenDatePicker Name="End" @bind-Value="@model.EndDate" ShowTime="true" />
-            <RadzenRequiredValidator Text="End Date is required" Component="End"  />
+            <RadzenRequiredValidator Text="End Date is required" Component="End" />
+            <RadzenCompareValidator Component="End" Text="End date should be greater start date" Operator="CompareOperator.GreaterThan" Value="@model.StartDate" />
         </div>
     </div>
     <div class="row">
