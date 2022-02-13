@@ -48,7 +48,10 @@
     <div class="row">
         <div class="col-md-3"></div>
         <div class="col">
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" Text="Save" />
+        </div>
+        <div class="col">
+            <RadzenButton Click=@(args => OnDeleteClick()) ButtonStyle="ButtonStyle.Danger" Text="Delete" />
         </div>
     </div>
 </RadzenTemplateForm>
@@ -75,6 +78,24 @@
     void OnSubmit(TrackedTask model)
     {
         DialogService.Close(model);
+    }
+
+    async Task OnDeleteClick()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+        try
+        {
+            var responseMessage = await client.DeleteAsync($"{Constants.API.TrackedTask.Delete}/{model.TaskId}");
+
+            responseMessage.EnsureSuccessStatusCode();
+            NotificationService.Notify(NotificationSeverity.Success, "Deleted", $"Tracked task {model.Name} was deleted!", 5000);
+            DialogService.Close();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+        }
     }
 
     private async Task LoadProjects()

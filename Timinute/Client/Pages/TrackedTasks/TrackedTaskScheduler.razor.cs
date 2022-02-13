@@ -142,13 +142,14 @@ namespace Timinute.Client.Pages.TrackedTasks
                 {
                     var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateTrackedTaskDto);
                     responseMessage.EnsureSuccessStatusCode();
-                    await LoadData();
                 }
                 catch (Exception ex)
                 {
                     notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
                 }
             }
+
+            await LoadData();
         }
 
         void OnTrackedTaskRender(SchedulerAppointmentRenderEventArgs<TrackedTask> args)
