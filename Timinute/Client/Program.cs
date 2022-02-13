@@ -18,6 +18,7 @@ builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Timinute.ServerAPI"));
 
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<DialogService>();
 
 builder.Services.AddApiAuthorization();
 

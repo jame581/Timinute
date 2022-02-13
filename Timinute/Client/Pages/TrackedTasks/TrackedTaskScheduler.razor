@@ -1,0 +1,19 @@
+﻿@page "/scheduler"
+@attribute [Authorize]
+
+@using Timinute.Client.Models
+
+<h3 class="p-3 text-center">Tracked Task Scheduler</h3>
+
+<RadzenScheduler @ref="radzenScheduler" Data="@trackedTasksList" TItem="TrackedTask"
+                 StartProperty="StartDate" EndProperty="EndDate" TextProperty="Name"
+                 style="height: 768px;" SelectedIndex="2">
+    <Template Context="data">
+        <strong>@data.Name</strong>
+    </Template>
+    <ChildContent>
+        <RadzenDayView />
+        <RadzenWeekView />
+        <RadzenMonthView />
+    </ChildContent>
+</RadzenScheduler>
