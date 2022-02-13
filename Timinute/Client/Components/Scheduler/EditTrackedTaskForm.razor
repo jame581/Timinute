@@ -89,7 +89,7 @@
             var responseMessage = await client.DeleteAsync($"{Constants.API.TrackedTask.Delete}/{model.TaskId}");
 
             responseMessage.EnsureSuccessStatusCode();
-            NotificationService.Notify(NotificationSeverity.Success, "Deleted", $"Tracked task {model.Name} was deleted!", 5000);
+            NotificationService.Notify(NotificationSeverity.Success, "Deleted", $"Tracked task '{model.Name}' was deleted!", 5000);
             DialogService.Close();
         }
         catch (Exception ex)
