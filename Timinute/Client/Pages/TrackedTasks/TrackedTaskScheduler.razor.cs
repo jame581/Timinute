@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Radzen;
 using Radzen.Blazor;
 using System.Net.Http.Json;
+using Timinute.Client.Components.Scheduler;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
 using Timinute.Shared.Dtos.TrackedTask;
@@ -30,6 +31,9 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
+
+        [Inject]
+        private DialogService dialogService { get; set; } = null!;
 
         #endregion
 
@@ -69,6 +73,53 @@ namespace Timinute.Client.Pages.TrackedTasks
             }
 
             isLoading = false;
+        }
+
+        void OnSlotRender(SchedulerSlotRenderEventArgs args)
+        {
+            // Highlight today in month view
+            if (args.View.Text == "Month" && args.Start.Date == DateTime.Today)
+            {
+                args.Attributes["style"] = "background: rgba(255,220,40,.2);";
+            }
+
+            // Highlight working hours (9-18)
+            if ((args.View.Text == "Week" || args.View.Text == "Day") && args.Start.Hour > 8 && args.Start.Hour < 19)
+            {
+                args.Attributes["style"] = "background: rgba(255,220,40,.2);";
+            }
+        }
+
+        async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
+        {
+            //console.Log($"SlotSelect: Start={args.Start} End={args.End}");
+
+            TrackedTask data = await dialogService.OpenAsync<AddTrackedTaskForm>("Add Tracked Task",
+                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
+
+            if (data != null)
+            {
+                //appointments.Add(data);
+                // Either call the Reload method or reassign the Data property of the Scheduler
+                await radzenScheduler.Reload();
+            }
+        }
+
+        async Task OnTrackedTaskSelect(SchedulerAppointmentSelectEventArgs<TrackedTask> args)
+        {
+            //console.Log($"AppointmentSelect: Appointment={args.Data.Text}");
+
+            await dialogService.OpenAsync<EditTrackedTaskForm>("Edit Tracked Task", new Dictionary<string, object> { { "Tracked Task", args.Data } });
+
+            await radzenScheduler.Reload();
+        }
+
+        void OnTrackedTaskRender(SchedulerAppointmentRenderEventArgs<TrackedTask> args)
+        {
+            //if (args.Data.Name == "Birthday")
+            //{
+            //    args.Attributes["style"] = "background: red";
+            //}
         }
     }
 }

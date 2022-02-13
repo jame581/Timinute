@@ -1,0 +1,60 @@
+﻿@using Timinute.Client.Models
+
+@inject DialogService DialogService
+
+<RadzenTemplateForm TItem="TrackedTask" Data="@model" Submit=@OnSubmit>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Text" />
+        </div>
+        <div class="col">
+            <RadzenTextBox @bind-Value="@model.Name" Name="Name" />
+            <RadzenRequiredValidator Text="Name is required" Component="Text" />
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Start" />
+        </div>
+        <div class="col">
+            <RadzenDatePicker @bind-Value="@model.StartDate" Name="Start" ShowTime="true" />
+            <RadzenRequiredValidator Text="Start Date is required" Component="Start" />
+        </div>
+    </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="End" />
+        </div>
+        <div class="col">
+            <RadzenDatePicker Name="End" @bind-Value="@model.EndDate" ShowTime="true" />
+            <RadzenRequiredValidator Text="End Date is required" Component="End"  />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col">
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public DateTime Start { get; set; }
+
+    [Parameter]
+    public DateTime End { get; set; }
+
+    TrackedTask model = new TrackedTask();
+
+    protected override void OnParametersSet()
+    {
+        model.StartDate = Start;
+        model.EndDate = End;
+    }
+
+    void OnSubmit(TrackedTask model)
+    {
+        DialogService.Close(model);
+    }
+}
