@@ -11,7 +11,6 @@ namespace Timinute.Server.Data
     {
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<ApplicationRole> ApplicationRoles { get; set; }
-        public DbSet<Company> Companies { get; set; } = null!;
         public DbSet<TrackedTask> TrackedTasks { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
 
@@ -26,17 +25,6 @@ namespace Timinute.Server.Data
             base.OnModelCreating(builder);
 
             // Setup entities
-
-            builder.Entity<Company>()
-                .Property(x => x.CompanyId)
-                .ValueGeneratedOnAdd()
-                .IsRequired();
-
-            builder.Entity<Company>()
-                .Property(x => x.Name)
-                .IsRequired();
-
-            builder.Entity<Company>().HasKey(t => t.CompanyId);
 
             builder.Entity<Project>()
                 .Property(x => x.ProjectId)
@@ -65,12 +53,6 @@ namespace Timinute.Server.Data
             builder.Entity<TrackedTask>().HasKey(t => t.TaskId);
 
             // Setup relationship
-
-            builder.Entity<Project>()
-                .HasOne(c => c.Company)
-                .WithMany(p => p.Projects)
-                .HasForeignKey(p => p.CompanyId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<TrackedTask>()
                 .HasOne(p => p.Project)
