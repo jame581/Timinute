@@ -184,7 +184,7 @@ namespace Timinute.Server.Controllers
                 .ToList();
 
             string projectName = "None";
-            double maxSeconds = double.MinValue;
+            double maxSeconds = 0;
 
             foreach (var project in groupedByProject)
             {
