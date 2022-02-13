@@ -1,6 +1,10 @@
-﻿@using Timinute.Client.Models
+﻿@using Timinute.Client.Helpers
+@using Timinute.Client.Models
+@using Timinute.Shared.Dtos.Project
 
 @inject DialogService DialogService
+@inject IHttpClientFactory ClientFactory
+@inject NotificationService NotificationService
 
 <RadzenTemplateForm TItem="TrackedTask" Data="@model" Submit=@OnSubmit>
     <div class="row" style="margin-bottom: 16px">
@@ -32,6 +36,15 @@
             <RadzenCompareValidator Component="End" Text="End date should be greater start date" Operator="CompareOperator.GreaterThan" Value="@model.StartDate" />
         </div>
     </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Project" />
+        </div>
+        <div class="col">
+            <RadzenDropDown AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" Data=@projects @bind-Value=@model.ProjectId
+                            TextProperty="Name" ValueProperty="ProjectId" Class="w-100" />
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-3"></div>
         <div class="col">
@@ -49,14 +62,48 @@
 
     TrackedTask model = new TrackedTask();
 
+    private readonly List<Project> projects = new();
+
+
+
     protected override void OnParametersSet()
     {
         model.StartDate = Start;
         model.EndDate = End;
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+    }
+
     void OnSubmit(TrackedTask model)
     {
         DialogService.Close(model);
     }
+
+    private async Task LoadProjects()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+        try
+        {
+            var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.GetAll);
+
+            if (responseMessage != null)
+            {
+                projects.Clear();
+                foreach (var projectDto in responseMessage)
+                {
+                    projects.Add(new Project(projectDto));
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+        }
+    }
+
 }

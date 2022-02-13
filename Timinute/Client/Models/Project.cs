@@ -11,8 +11,6 @@ namespace Timinute.Client.Models
         [StringLength(50, MinimumLength = 3, ErrorMessage = "Name can not have less then 3 characters and more then 50.")]
         public string Name { get; set; } = null!;
 
-        public string? CompanyId { get; set; }
-
         public Project()
         {
 
@@ -22,7 +20,6 @@ namespace Timinute.Client.Models
         {
             ProjectId = project.ProjectId;
             Name = project.Name;
-            CompanyId = project.CompanyId;
         }
     }
 }

@@ -46,7 +46,6 @@ namespace Timinute.Client.Pages.TrackedTasks
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
             await LoadData();
-            await radzenScheduler.Reload();
         }
 
         private async Task LoadData()
@@ -64,7 +63,7 @@ namespace Timinute.Client.Pages.TrackedTasks
                     foreach (var item in response)
                         trackedTasksList.Add(new TrackedTask(item));
 
-                    //tasksCount = trackedTasksList.Count;
+                    await radzenScheduler.Reload();
                 }
             }
             catch (Exception ex)
@@ -92,26 +91,64 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
         {
-            //console.Log($"SlotSelect: Start={args.Start} End={args.End}");
-
             TrackedTask data = await dialogService.OpenAsync<AddTrackedTaskForm>("Add Tracked Task",
                 new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
 
             if (data != null)
             {
-                //appointments.Add(data);
-                // Either call the Reload method or reassign the Data property of the Scheduler
-                await radzenScheduler.Reload();
+                var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+                TimeSpan duration = data.EndDate.HasValue ? (data.EndDate - data.StartDate).Value : TimeSpan.FromSeconds(0);
+
+                var createTrackedTaskDto = new CreateTrackedTaskDto
+                {
+                    StartDate = data.StartDate,
+                    Duration = duration,
+                    Name = data.Name,
+                    ProjectId = data.ProjectId,
+                };
+
+                try
+                {
+                    var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createTrackedTaskDto);
+                    responseMessage.EnsureSuccessStatusCode();
+                    await LoadData();
+                }
+                catch (Exception ex)
+                {
+                    notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+                }
             }
         }
 
         async Task OnTrackedTaskSelect(SchedulerAppointmentSelectEventArgs<TrackedTask> args)
         {
-            //console.Log($"AppointmentSelect: Appointment={args.Data.Text}");
+            TrackedTask data = await dialogService.OpenAsync<EditTrackedTaskForm>("Edit Tracked Task", new Dictionary<string, object> { { "TrackedTask", args.Data } });
 
-            await dialogService.OpenAsync<EditTrackedTaskForm>("Edit Tracked Task", new Dictionary<string, object> { { "Tracked Task", args.Data } });
+            if (data != null)
+            {
+                var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
-            await radzenScheduler.Reload();
+                var updateTrackedTaskDto = new UpdateTrackedTaskDto
+                {
+                    TaskId = data.TaskId,
+                    EndDate = data.EndDate,
+                    StartDate = data.StartDate,
+                    Name = data.Name,
+                    ProjectId = data.ProjectId,
+                };
+
+                try
+                {
+                    var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateTrackedTaskDto);
+                    responseMessage.EnsureSuccessStatusCode();
+                    await LoadData();
+                }
+                catch (Exception ex)
+                {
+                    notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+                }
+            }
         }
 
         void OnTrackedTaskRender(SchedulerAppointmentRenderEventArgs<TrackedTask> args)
