@@ -84,6 +84,7 @@ namespace Timinute.Client.Pages.Projects
         private async Task HandleProjectAdded(Project project)
         {
             await RefreshTable();
+            await radzenDataGrid.Reload();
         }
 
         private async Task RemoveProject(string projectId)

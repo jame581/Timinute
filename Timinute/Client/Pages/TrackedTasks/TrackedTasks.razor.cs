@@ -61,6 +61,8 @@ namespace Timinute.Client.Pages.TrackedTasks
 
                     foreach (var item in response)
                         TrackedTasksList.Add(new TrackedTask(item));
+
+                    tasksCount = TrackedTasksList.Count;
                 }
             }
             catch (Exception ex)
