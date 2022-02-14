@@ -176,7 +176,8 @@ namespace Timinute.Server.Controllers
                 includeProperties: "Project");
 
             double secondsSum = trackedTaskList.ToList().Sum(x => x.Duration.TotalSeconds);
-            string amountWorkTimeLastMonthText = TimeSpan.FromSeconds(secondsSum).ToString(@"hh\:mm\:ss");
+
+            string amountWorkTimeLastMonthText = GetAmountWorkTimeFormatted(secondsSum);
 
             var groupedByProject = trackedTaskList
                 .AsParallel()
@@ -211,6 +212,14 @@ namespace Timinute.Server.Controllers
             };
 
             return Ok(amountWorkTimeLastMonth);
+        }
+
+        private static string GetAmountWorkTimeFormatted(double secondsSum)
+        {
+            TimeSpan totalTime = TimeSpan.FromSeconds(secondsSum);
+            int hours = (totalTime.Days * 24) + totalTime.Hours;
+            string amountWorkTimeLastMonthText = $"{hours}:{totalTime.Minutes:00}:{totalTime.Seconds:00}";
+            return amountWorkTimeLastMonthText;
         }
     }
 }
