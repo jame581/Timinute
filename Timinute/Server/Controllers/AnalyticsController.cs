@@ -73,7 +73,7 @@ namespace Timinute.Server.Controllers
                     Time = TimeSpan.FromSeconds(projectTime.ProjectTimeInSeconds)
                 });
             }
-
+            projectLiset = projectLiset.OrderByDescending(x => x.Time).ToList();
             return Ok(projectLiset);
         }
 

@@ -110,7 +110,13 @@ namespace Timinute.Server.Tests.Helpers
                 new TrackedTask { TaskId = "TrackedTaskId1004", Name = "Task 1004", ProjectId = "ProjectId1002", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(4), Duration = TimeSpan.FromHours(4) },
                 new TrackedTask { TaskId = "TrackedTaskId1005", Name = "Task 1005", ProjectId = "ProjectId1003", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(5), Duration = TimeSpan.FromHours(5) },
                 new TrackedTask { TaskId = "TrackedTaskId1006", Name = "Task 1006", ProjectId = "ProjectId1003", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(6), Duration = TimeSpan.FromHours(6) },
+                
                 new TrackedTask { TaskId = "TrackedTaskId1007", Name = "Task 1007", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(7), Duration = TimeSpan.FromHours(7) },
+
+                new TrackedTask { TaskId = "TrackedTaskId1008", Name = "Task 1008", User = applicationUsers[0], StartDate = month, EndDate = month.AddHours(1), Duration = TimeSpan.FromHours(1) },
+                new TrackedTask { TaskId = "TrackedTaskId1009", Name = "Task 1009", User = applicationUsers[0], StartDate = month, EndDate = month.AddHours(2), Duration = TimeSpan.FromHours(2) },
+                new TrackedTask { TaskId = "TrackedTaskId1010", Name = "Task 1010", User = applicationUsers[0], StartDate = month, EndDate = month.AddHours(3), Duration = TimeSpan.FromHours(3) },
+                new TrackedTask { TaskId = "TrackedTaskId1011", Name = "Task 1011", User = applicationUsers[0], StartDate = month, EndDate = month.AddHours(4), Duration = TimeSpan.FromHours(4) },
             };
 
             var projects = new List<Project>
@@ -118,6 +124,7 @@ namespace Timinute.Server.Tests.Helpers
                 new Project { ProjectId = "ProjectId1001", Name = "Project 1001", TrackedTasks = new List<TrackedTask>() { trackedTasks[0], trackedTasks[1] } },
                 new Project { ProjectId = "ProjectId1002", Name = "Project 1002", TrackedTasks = new List<TrackedTask>() { trackedTasks[2], trackedTasks[3] } },
                 new Project { ProjectId = "ProjectId1003", Name = "Project 1003", TrackedTasks = new List<TrackedTask>() { trackedTasks[4], trackedTasks[5] } },
+                new Project { ProjectId = "ProjectId1004", Name = "Project 1004", TrackedTasks = new List<TrackedTask>() { trackedTasks[7], trackedTasks[8], trackedTasks[9], trackedTasks[10], } },
             };
 
             context.Users.AddRange(applicationUsers);
