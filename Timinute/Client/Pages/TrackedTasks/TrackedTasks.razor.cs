@@ -13,7 +13,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 {
     public partial class TrackedTasks
     {
-        private readonly IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
+        private IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
 
         private readonly IList<int> pageSizes = new List<int> { 10, 25, 50 };
 
@@ -80,7 +80,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    trackedTasksList.Clear();
+                    trackedTasksList = new List<TrackedTask>();
 
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
@@ -96,6 +96,7 @@ namespace Timinute.Client.Pages.TrackedTasks
                     }
 
                     tasksCount = trackedTasksList.Count;
+
                 }
             }
             catch (Exception ex)
@@ -105,7 +106,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 
             isLoading = false;
 
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
 
         private void DeserializeAndSetupPagingInfo(string? paginationValues, JsonSerializerOptions options)
@@ -135,7 +136,7 @@ namespace Timinute.Client.Pages.TrackedTasks
             }
 
             await LoadPage(args);
-            await InvokeAsync(StateHasChanged);          
+            await InvokeAsync(StateHasChanged);
         }
 
         private async Task HandleTrackedTaskAdded(TrackedTask trackedTask)
@@ -158,11 +159,8 @@ namespace Timinute.Client.Pages.TrackedTasks
                 url += $"&Filter={args.Filter}";
             }
 
-            if (args.Top != pageSize)
-            {
-                url += $"&PageSize={args.Top}";
-            }
-
+            url += $"&PageSize={args.Top}";
+            
             return url;
         }
     }
