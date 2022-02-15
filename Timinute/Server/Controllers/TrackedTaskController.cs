@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
+using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Server.Controllers
@@ -29,7 +32,7 @@ namespace Timinute.Server.Controllers
 
         // GET: api/TrackedTasks
         [HttpGet(Name = "TrackedTasks")]
-        public async Task<ActionResult<IEnumerable<TrackedTaskDto>>> GetTrackedTasks()
+        public async Task<ActionResult<IEnumerable<TrackedTaskDto>>> GetTrackedTasks([FromQuery] PagingParameters trackedTaskParameters)
         {
             // get current user ID
             var userId = User.FindFirstValue(Constants.Claims.UserId);
@@ -39,8 +42,22 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var trackedTaskList = await taskRepository.Get(x => x.UserId == userId, x => x.OrderByDescending(t => t.StartDate), includeProperties: "Project");
-            return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(trackedTaskList));
+            var pagedTrackedTaskList = await taskRepository.GetPaged(trackedTaskParameters, "Project");
+
+            var metadata = new PaginationHeaderDto
+            {
+                TotalCount = pagedTrackedTaskList.TotalCount,
+                PageSize = pagedTrackedTaskList.PageSize,
+                CurrentPage = pagedTrackedTaskList.CurrentPage,
+                TotalPages = pagedTrackedTaskList.TotalPages,
+                HasNext = pagedTrackedTaskList.HasNext,
+                HasPrevious = pagedTrackedTaskList.HasPrevious
+            };
+
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
+
+            //var trackedTaskList = await taskRepository.Get(x => x.UserId == userId, x => x.OrderByDescending(t => t.StartDate), includeProperties: "Project");
+            return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(pagedTrackedTaskList));
         }
 
         // GET: api/TrackedTask

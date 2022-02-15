@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Timinute.Server;
 using Timinute.Server.Areas.Identity;
 using Timinute.Server.Data;
@@ -37,8 +39,14 @@ builder.Services.AddResponseCaching();
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
-    //options.Filters.Add(new AuthorizeFilter());
     options.CacheProfiles.Add("Default120", new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
+    
+
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+
 })
     .AddXmlDataContractSerializerFormatters()
     .ConfigureApiBehaviorOptions(options =>
