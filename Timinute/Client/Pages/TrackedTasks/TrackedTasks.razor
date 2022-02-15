@@ -15,7 +15,7 @@
 
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
     <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@totalCount"
-                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true" AllowMultiColumnSorting="true"
+                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
                     AllowPaging="true" PageSizeOptions="@pageSizes" ShowPagingSummary="true" PageSize="@pageSize" PagerHorizontalAlign="HorizontalAlign.Center">
         <EmptyTemplate>
             <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>

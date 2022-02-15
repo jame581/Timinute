@@ -61,7 +61,7 @@ namespace Timinute.Server.Repository
 
             if (!string.IsNullOrEmpty(parameters.OrderBy))
             {
-                query.OrderBy(parameters.OrderBy);
+               query =  query.OrderBy(parameters.OrderBy);
             }
             
             int count = await query.CountAsync();
