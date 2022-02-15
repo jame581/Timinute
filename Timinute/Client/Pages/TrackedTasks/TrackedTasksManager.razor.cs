@@ -53,7 +53,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 
             try
             {
-                var response = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.GetAll);
+                var response = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.Get);
 
                 if (response != null)
                 {

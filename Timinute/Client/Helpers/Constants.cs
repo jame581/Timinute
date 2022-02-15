@@ -2,6 +2,11 @@
 {
     public static class Constants
     {
+        public static class Paging
+        {
+            public const string PagingHeader = "X-Pagination";
+        }
+
         public static class API
         {
             public const string ClientName = "Timinute.ServerAPI";
@@ -10,7 +15,9 @@
             {
                 public const string Api = "TrackedTask";
 
-                public const string GetAll = "TrackedTask";
+                public const string Get = "TrackedTask";
+
+                //public const string GetPaged = "TrackedTask/PageNumber={0}&OrderBy={1}&Filter={2}&PageSize={3}";
 
                 public const string GetById = $"{Api}/";
 

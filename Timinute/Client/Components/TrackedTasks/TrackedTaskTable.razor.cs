@@ -32,7 +32,7 @@ namespace Timinute.Client.Components.TrackedTasks
 
             try
             {
-                var trackedTaskDtoList = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.GetAll);
+                var trackedTaskDtoList = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.Get);
 
                 if (trackedTaskDtoList != null)
                 {
