@@ -65,5 +65,10 @@ namespace Timinute.Client.Components.Dashboard
                 notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
         }
+
+        string FormatTimeAsString(object value)
+        {
+            return Formatter.FormatTimeSpan((double)value);
+        }
     }
 }
