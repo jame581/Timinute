@@ -37,7 +37,7 @@ builder.Services.AddResponseCaching();
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
-    options.Filters.Add(new AuthorizeFilter());
+    //options.Filters.Add(new AuthorizeFilter());
     options.CacheProfiles.Add("Default120", new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
 })
     .AddXmlDataContractSerializerFormatters()
