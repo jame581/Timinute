@@ -7,7 +7,11 @@
         public int PageNumber { get; set; } = 1;
         
         private int pageSize = 10;
-        
+
+        public string? OrderBy { get; set; }
+
+        public string? Filter { get; set; }
+
         public int PageSize
         {
             get
