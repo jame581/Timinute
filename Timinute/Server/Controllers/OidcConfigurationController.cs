@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Timinute.Server.Controllers
 {
-    [AllowAnonymous]
     public class OidcConfigurationController : Controller
     {
         private readonly ILogger<OidcConfigurationController> _logger;
