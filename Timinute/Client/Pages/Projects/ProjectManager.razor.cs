@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Radzen;
 using Radzen.Blazor;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -136,19 +137,74 @@ namespace Timinute.Client.Pages.Projects
             await radzenDataGrid.Reload();
         }
 
-        private async Task RemoveProject(string projectId)
+        async Task EditRow(Project project)
+        {
+            await radzenDataGrid.EditRow(project);
+        }
+
+        async Task SaveRow(Project project)
+        {
+            await radzenDataGrid.UpdateRow(project);
+        }
+
+        void CancelEdit(Project project)
+        {
+            radzenDataGrid.CancelEditRow(project);
+        }
+
+        private async Task RemoveProject(Project project)
         {
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             try
             {
-                var response = await client.DeleteAsync($"{Constants.API.Project.Delete}/{projectId}");
+                var response = await client.DeleteAsync($"{Constants.API.Project.Delete}/{project.ProjectId}");
 
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    //await RefreshTable();
+                    await radzenDataGrid.Reload();
                     notificationService.Notify(NotificationSeverity.Success, "Success", "Project was removed", 3000);
                 }
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
+            }
+        }
+
+        async Task OnProjectUpdate(Project project)
+        {
+            UpdateProjectDto updateProjectDto = new()
+            {
+                ProjectId = project.ProjectId,
+                Name = project.Name
+            };
+
+            try
+            {
+                var responseMessage = await client.PutAsJsonAsync(Constants.API.Project.Update, updateProjectDto);
+                responseMessage.EnsureSuccessStatusCode();
+
+                notificationService.Notify(NotificationSeverity.Success, "Project updated", "Project was updated successfully.", 5000);
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
+            }
+        }
+
+        async Task OnProjectCreateAsync(Project project)
+        {
+            ProjectDto createProjectDto = new()
+            {
+                Name = project.Name
+            };
+
+            try
+            {
+                var responseMessage = await client.PostAsJsonAsync(Constants.API.Project.Create, createProjectDto);
+                responseMessage.EnsureSuccessStatusCode();
+                notificationService.Notify(NotificationSeverity.Success, "Project created", "New project created successfully.", 5000);
             }
             catch (Exception ex)
             {
