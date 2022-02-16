@@ -42,7 +42,7 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var pagedTrackedTaskList = await taskRepository.GetPaged(trackedTaskParameters, "Project");
+            var pagedTrackedTaskList = await taskRepository.GetPaged(trackedTaskParameters, trackedTask => trackedTask.UserId == userId, "Project");
 
             var metadata = new PaginationHeaderDto
             {

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Radzen;
 using Radzen.Blazor;
 using System.Linq.Dynamic.Core;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -133,10 +134,89 @@ namespace Timinute.Client.Pages.TrackedTasks
             await InvokeAsync(StateHasChanged);
         }
 
+        async Task EditRow(TrackedTask trackedTask)
+        {
+            await radzenDataGrid.EditRow(trackedTask);
+        }
+
+        async Task SaveRow(TrackedTask trackedTask)
+        {
+            await radzenDataGrid.UpdateRow(trackedTask);
+        }
+
+        void CancelEdit(TrackedTask trackedTask)
+        {
+            radzenDataGrid.CancelEditRow(trackedTask);
+        }
+
+        async Task DeleteRow(TrackedTask trackedTask)
+        {
+            try
+            {
+                var response = await client.DeleteAsync($"{Constants.API.TrackedTask.Delete}/{trackedTask.TaskId}");
+
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    await radzenDataGrid.Reload();
+                    notificationService.Notify(NotificationSeverity.Success, "Success", "Tracked Task was removed", 3000);
+                }
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
+            }
+        }
+
         private async Task HandleTrackedTaskAdded(TrackedTask trackedTask)
         {
             //await RefreshTable();
             await radzenDataGrid.Reload();
+        }
+
+        async Task OnTrackedTaskUpdate(TrackedTask trackedTask)
+        {
+            UpdateTrackedTaskDto updateDto = new()
+            {
+                TaskId = trackedTask.TaskId,
+                Name = trackedTask.Name,
+                StartDate = trackedTask.StartDate,
+                EndDate = trackedTask.EndDate,
+                ProjectId = trackedTask.ProjectId,
+            };
+
+            try
+            {
+                var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateDto);
+                responseMessage.EnsureSuccessStatusCode();
+
+                notificationService.Notify(NotificationSeverity.Success, "Tracked task updated", "Tracked task was updated successfully.", 5000);
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
+            }
+        }
+
+        async Task OnTrackedTaskCreate(TrackedTask trackedTask)
+        {
+            CreateTrackedTaskDto createDto = new()
+            {
+                Name = trackedTask.Name,
+                StartDate = trackedTask.StartDate,
+                Duration = trackedTask.EndDate.HasValue ? (trackedTask.EndDate - trackedTask.StartDate).Value : trackedTask.Duration,
+                ProjectId = trackedTask.ProjectId,
+            };
+
+            try
+            {
+                var responseMessage = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, createDto);
+                responseMessage.EnsureSuccessStatusCode();
+                notificationService.Notify(NotificationSeverity.Success, "Tracked Task created", "New Tracked Task created successfully.", 5000);
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Validation error", ex.Message, 5000);
+            }
         }
     }
 }

@@ -17,17 +17,60 @@
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
     <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@pagingAttributes.TotalCount"
                     IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
+                    EditMode="DataGridEditMode.Single" RowUpdate="@OnTrackedTaskUpdate" RowCreate="@OnTrackedTaskCreate"
                     AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pagingAttributes.PageSize" PagerHorizontalAlign="HorizontalAlign.Center">
         <EmptyTemplate>
             <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>
         </EmptyTemplate>
         <Columns>
             <RadzenDataGridColumn Visible="false" TItem="TrackedTask" Property="TaskId" Title="Task ID" />
-            <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name">
+                <EditTemplate Context="trackedTask">
+                    <RadzenTextBox @bind-Value="trackedTask.Name" Style="width:100%; display: block" Name="TrackedTaskName" />
+                    <RadzenRequiredValidator Text="Task name is required" Component="TrackedTaskName" Popup="true" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="TrackedTask" Property="Project.Name" Title="Project Name" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="Duration" Title="Duration" />
-            <RadzenDataGridColumn TItem="TrackedTask" Property="StartDate" Title="Start date" />
-            <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date" />
+            <RadzenDataGridColumn TItem="TrackedTask" Property="StartDate" Title="Start date">
+                <Template Context="trackedTask">
+                    @String.Format("{0:d}", trackedTask.StartDate)
+                </Template>
+                <EditTemplate Context="trackedTask">
+                    <RadzenDatePicker @bind-Value="trackedTask.StartDate" ShowTime="true" ShowSeconds="true" MinutesStep="5" SecondsStep="10" DateFormat="dd/MM/yyyy HH:mm:ss" Class="w-100" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date">
+@*                <Template Context="trackedTask">
+                    @String.Format("{0:d}", trackedTask.EndDate)
+                </Template>*@
+                <EditTemplate Context="trackedTask">
+                    <RadzenDatePicker @bind-Value="trackedTask.EndDate" ShowTime="true" ShowSeconds="true" MinutesStep="5" SecondsStep="10" DateFormat="dd/MM/yyyy HH:mm:ss" Class="w-100" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="TrackedTask" Context="trackedTask" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
+                <Template Context="trackedTask">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRow(trackedTask))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="trackedTask">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRow(trackedTask))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEdit(trackedTask))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="TrackedTask" Context="trackedTask" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="60px">
+                <Template Context="trackedTask">
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRow(trackedTask))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="trackedTask">
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRow(trackedTask))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
 

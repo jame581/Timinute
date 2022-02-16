@@ -18,7 +18,7 @@
 
     <RadzenDataGrid @ref="radzenDataGrid" Data="@projectsList" TItem="Project" Count="@pagingAttributes.TotalCount"
                     IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
-                    EditMode="DataGridEditMode.Single" RowUpdate="@OnProjectUpdate" RowCreate="@OnProjectCreateAsync"
+                    EditMode="DataGridEditMode.Single" RowUpdate="@OnProjectUpdate" RowCreate="@OnProjectCreate"
                     AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pagingAttributes.PageSize" PagerHorizontalAlign="HorizontalAlign.Center">
         <EmptyTemplate>
             <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No projects to display.</p>

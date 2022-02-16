@@ -154,8 +154,6 @@ namespace Timinute.Client.Pages.Projects
 
         private async Task RemoveProject(Project project)
         {
-            var client = ClientFactory.CreateClient(Constants.API.ClientName);
-
             try
             {
                 var response = await client.DeleteAsync($"{Constants.API.Project.Delete}/{project.ProjectId}");
@@ -193,7 +191,7 @@ namespace Timinute.Client.Pages.Projects
             }
         }
 
-        async Task OnProjectCreateAsync(Project project)
+        async Task OnProjectCreate(Project project)
         {
             ProjectDto createProjectDto = new()
             {

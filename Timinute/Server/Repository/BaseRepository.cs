@@ -41,9 +41,14 @@ namespace Timinute.Server.Repository
             return await dbSet.FindAsync(id);
         }
 
-        public async Task<PagedList<TEntity>> GetPaged(PagingParameters parameters, string includeProperties = "")
+        public async Task<PagedList<TEntity>> GetPaged(PagingParameters parameters, Expression<Func<TEntity, bool>>? filter = null, string includeProperties = "")
         {
             IQueryable<TEntity> query = dbSet;
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
 
             if (!string.IsNullOrEmpty(parameters.Filter))
             {
