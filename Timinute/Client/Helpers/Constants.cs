@@ -64,7 +64,7 @@ namespace Timinute.Client.Helpers
             {
                 public const string Api = "Project";
 
-                public const string GetAll = "Project";
+                public const string Get = "Project";
 
                 public const string GetById = $"{Api}/";
 
