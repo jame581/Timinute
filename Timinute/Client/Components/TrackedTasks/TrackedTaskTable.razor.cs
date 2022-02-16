@@ -3,6 +3,7 @@ using Radzen;
 using System.Text.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
+using Timinute.Client.Models.Paging;
 using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.TrackedTask;
 
@@ -14,17 +15,7 @@ namespace Timinute.Client.Components.TrackedTasks
 
         string pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
 
-        int totalPageCount = 1;
-
-        int tasksCount = 0;
-
-        int totalCount = 0;
-
-        int pageCount = 1;
-
-        int pageSize = 10;
-
-        int currentPage = 1;
+        PagingAttributes pagingAttributes = new PagingAttributes();
 
         #region Dependency Injection
 
@@ -53,7 +44,7 @@ namespace Timinute.Client.Components.TrackedTasks
                     RequestUri = new Uri(
                         Constants.Paging.ConstructUrlFromPagerRequest(
                             client.BaseAddress!.ToString() + Constants.API.TrackedTask.Get,
-                            currentPage,
+                            pagingAttributes.CurrentPage,
                             args)),
                 };
                 requestMessage.Headers.Add("accept", "application/json");
@@ -78,7 +69,7 @@ namespace Timinute.Client.Components.TrackedTasks
 
                         GroupTraskedTasksByDay(trackedTaskList);
 
-                        tasksCount = trackedTaskList.Count;
+                        pagingAttributes.Count = trackedTaskList.Count;
                     }
 
                 }
@@ -93,8 +84,8 @@ namespace Timinute.Client.Components.TrackedTasks
 
         async void PageChanged(PagerEventArgs args)
         {
-            currentPage = ((int)args.Skip / pageSize) + 1;
-            pageSize = args.Top;
+            pagingAttributes.CurrentPage = ((int)args.Skip / pagingAttributes.PageSize) + 1;
+            pagingAttributes.PageSize = args.Top;
 
             await LoadTrackedTasks(args);
         }
@@ -120,10 +111,10 @@ namespace Timinute.Client.Components.TrackedTasks
             var pagination = JsonSerializer.Deserialize<PaginationHeaderDto>(paginationValues, options);
             if (pagination != null)
             {
-                totalPageCount = pagination.TotalPages;
-                pageSize = pagination.PageSize;
-                tasksCount = pagination.TotalCount;
-                totalCount = pagination.TotalCount;
+                pagingAttributes.TotalPageCount = pagination.TotalPages;
+                pagingAttributes.PageSize = pagination.PageSize;
+                pagingAttributes.Count = pagination.TotalCount;
+                pagingAttributes.TotalCount = pagination.TotalCount;
             }
         }
 

@@ -6,6 +6,7 @@ using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
+using Timinute.Client.Models.Paging;
 using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.TrackedTask;
 
@@ -15,15 +16,7 @@ namespace Timinute.Client.Pages.TrackedTasks
     {
         private IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
 
-        private int tasksCount = 0;
-
-        private int totalCount = 0;
-
-        private int totalPageCount = 1;
-
-        private int pageSize = 10;
-
-        private int currentPage = 1;
+        PagingAttributes pagingAttributes = new PagingAttributes();
 
         private bool isLoading = true;
 
@@ -71,7 +64,7 @@ namespace Timinute.Client.Pages.TrackedTasks
                     RequestUri = new Uri(
                         Constants.Paging.ConstructUrlTrackedTaskRequest(
                             client.BaseAddress!.ToString() + Constants.API.TrackedTask.Get,
-                            currentPage,
+                            pagingAttributes.CurrentPage,
                             args)),
                 };
 
@@ -96,7 +89,7 @@ namespace Timinute.Client.Pages.TrackedTasks
                             trackedTasksList.Add(new TrackedTask(item));
                     }
 
-                    tasksCount = trackedTasksList.Count;
+                    pagingAttributes.Count = trackedTasksList.Count;
 
                 }
             }
@@ -117,23 +110,23 @@ namespace Timinute.Client.Pages.TrackedTasks
             var pagination = JsonSerializer.Deserialize<PaginationHeaderDto>(paginationValues, options);
             if (pagination != null)
             {
-                totalPageCount = pagination.TotalPages;
-                pageSize = pagination.PageSize;
-                tasksCount = pagination.TotalCount;
-                totalCount = pagination.TotalCount;
+                pagingAttributes.TotalPageCount = pagination.TotalPages;
+                pagingAttributes.PageSize = pagination.PageSize;
+                pagingAttributes.Count = pagination.TotalCount;
+                pagingAttributes.TotalCount = pagination.TotalCount;
             }
         }
 
         async Task LoadData(LoadDataArgs args)
         {
-            if (args.Top.HasValue && pageSize != args.Top.Value)
+            if (args.Top.HasValue && pagingAttributes.PageSize != args.Top.Value)
             {
-                pageSize = args.Top.Value;
+                pagingAttributes.PageSize = args.Top.Value;
             }
 
             if (args.Skip.HasValue)
             {
-                currentPage = ((int)args.Skip / pageSize) + 1;
+                pagingAttributes.CurrentPage = ((int)args.Skip / pagingAttributes.PageSize) + 1;
             }
 
             await LoadPage(args);

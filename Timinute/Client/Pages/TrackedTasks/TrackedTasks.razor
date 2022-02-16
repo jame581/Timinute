@@ -15,9 +15,9 @@
     </div>
 
     <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@totalCount"
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@pagingAttributes.TotalCount"
                     IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
-                    AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pageSize" PagerHorizontalAlign="HorizontalAlign.Center">
+                    AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pagingAttributes.PageSize" PagerHorizontalAlign="HorizontalAlign.Center">
         <EmptyTemplate>
             <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>
         </EmptyTemplate>

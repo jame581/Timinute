@@ -40,7 +40,7 @@
                 </div>
             </div>
         }
-        <RadzenPager ShowPagingSummary="true" PagingSummaryFormat="@pagingSummaryFormat" PageSizeOptions="@Constants.Paging.PageSizeOptions" HorizontalAlign="HorizontalAlign.Right" Count="@totalCount" PageSize="@pageSize" PageNumbersCount="@totalPageCount" PageChanged="@PageChanged" />
+        <RadzenPager ShowPagingSummary="true" PagingSummaryFormat="@pagingSummaryFormat" PageSizeOptions="@Constants.Paging.PageSizeOptions" HorizontalAlign="HorizontalAlign.Right" Count="@pagingAttributes.TotalCount" PageSize="@pagingAttributes.PageSize" PageNumbersCount="@pagingAttributes.TotalPageCount" PageChanged="@PageChanged" />
     }
 
 </div>
