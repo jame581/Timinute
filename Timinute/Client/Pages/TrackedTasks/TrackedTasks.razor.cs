@@ -71,7 +71,11 @@ namespace Timinute.Client.Pages.TrackedTasks
                 var requestMessage = new HttpRequestMessage()
                 {
                     Method = new HttpMethod("GET"),
-                    RequestUri = new Uri(ConstructUrlRequest(args)),
+                    RequestUri = new Uri(
+                        Constants.Paging.ConstructUrlTrackedTaskRequest(
+                            client.BaseAddress!.ToString() + Constants.API.TrackedTask.Get,
+                            currentPage,
+                            args)),
                 };
 
                 requestMessage.Headers.Add("accept", "application/json");
@@ -143,25 +147,6 @@ namespace Timinute.Client.Pages.TrackedTasks
         {
             //await RefreshTable();
             await radzenDataGrid.Reload();
-        }
-
-        private string ConstructUrlRequest(LoadDataArgs args)
-        {
-            string url = client.BaseAddress + Constants.API.TrackedTask.Get + $"?PageNumber={currentPage}";
-
-            if (!string.IsNullOrEmpty(args.OrderBy))
-            {
-                url += $"&OrderBy={args.OrderBy}";
-            }
-
-            if (!string.IsNullOrEmpty(args.Filter))
-            {
-                url += $"&Filter={args.Filter}";
-            }
-
-            url += $"&PageSize={args.Top}";
-            
-            return url;
         }
     }
 }

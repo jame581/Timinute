@@ -1,10 +1,40 @@
-﻿namespace Timinute.Client.Helpers
+﻿using Radzen;
+
+namespace Timinute.Client.Helpers
 {
     public static class Constants
     {
         public static class Paging
         {
             public const string PagingHeader = "X-Pagination";
+
+            public static string ConstructUrlTrackedTaskRequest(string clientBaseAddress, int currentPage, LoadDataArgs args)
+            {
+                string url = clientBaseAddress + $"?PageNumber={currentPage}";
+
+                if (!string.IsNullOrEmpty(args.OrderBy))
+                {
+                    url += $"&OrderBy={args.OrderBy}";
+                }
+
+                if (!string.IsNullOrEmpty(args.Filter))
+                {
+                    url += $"&Filter={args.Filter}";
+                }
+
+                url += $"&PageSize={args.Top}";
+
+                return url;
+            }
+
+            public static string ConstructUrlFromPagerRequest(string clientBaseAddress, int currentPage, PagerEventArgs args)
+            {
+                string url = clientBaseAddress + API.TrackedTask.Get + $"?PageNumber={currentPage}";
+
+                url += $"&PageSize={args.Top}";
+
+                return url;
+            }
         }
 
         public static class API
