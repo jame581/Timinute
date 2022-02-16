@@ -16,6 +16,8 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         private bool isLoading = true;
 
+        private HttpClient client;
+
         private RadzenScheduler<TrackedTask> radzenScheduler = null!;
 
         [CascadingParameter]
@@ -45,12 +47,13 @@ namespace Timinute.Client.Pages.TrackedTasks
             if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
+            client = ClientFactory.CreateClient(Constants.API.ClientName);
+
             await LoadData();
         }
 
         private async Task LoadData()
         {
-            var client = ClientFactory.CreateClient(Constants.API.ClientName);
             isLoading = true;
             try
             {

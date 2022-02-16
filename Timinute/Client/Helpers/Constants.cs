@@ -8,6 +8,8 @@ namespace Timinute.Client.Helpers
         {
             public const string PagingHeader = "X-Pagination";
 
+            public static readonly List<int> PageSizeOptions = new List<int> { 10, 25, 50 };
+
             public static string ConstructUrlTrackedTaskRequest(string clientBaseAddress, int currentPage, LoadDataArgs args)
             {
                 string url = clientBaseAddress + $"?PageNumber={currentPage}";
@@ -29,7 +31,7 @@ namespace Timinute.Client.Helpers
 
             public static string ConstructUrlFromPagerRequest(string clientBaseAddress, int currentPage, PagerEventArgs args)
             {
-                string url = clientBaseAddress + API.TrackedTask.Get + $"?PageNumber={currentPage}";
+                string url = clientBaseAddress + $"?PageNumber={currentPage}";
 
                 url += $"&PageSize={args.Top}";
 

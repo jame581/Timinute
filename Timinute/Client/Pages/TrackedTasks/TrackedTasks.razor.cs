@@ -15,8 +15,6 @@ namespace Timinute.Client.Pages.TrackedTasks
     {
         private IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
 
-        private readonly IList<int> pageSizes = new List<int> { 10, 25, 50 };
-
         private int tasksCount = 0;
 
         private int totalCount = 0;
@@ -59,8 +57,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 
             client = ClientFactory.CreateClient(Constants.API.ClientName);
 
-            await LoadPage(new LoadDataArgs { Top = pageSizes[0] });
-            await radzenDataGrid.Reload();
+            await LoadPage(new LoadDataArgs { Top = Constants.Paging.PageSizeOptions[0] });
         }
 
         private async Task LoadPage(LoadDataArgs args)
