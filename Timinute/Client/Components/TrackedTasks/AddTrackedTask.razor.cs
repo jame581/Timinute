@@ -4,6 +4,7 @@ using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
+using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Components.TrackedTasks
@@ -25,6 +26,11 @@ namespace Timinute.Client.Components.TrackedTasks
             }
         }
 
+        private readonly List<Project> projects = new();
+        private string? ProjectId { get; set; }
+
+        private HttpClient client;
+
         private TrackedTask NewTrackedTask { get; set; } = new() { StartDate = DateTime.Now };
 
         #region Dependency Injection
@@ -36,6 +42,13 @@ namespace Timinute.Client.Components.TrackedTasks
         private NotificationService notificationService { get; set; } = null!;
 
         #endregion
+
+        protected override async Task OnInitializedAsync()
+        {
+            client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+            await LoadProjects();
+        }
 
         private async Task HandleValidSubmit()
         {
@@ -71,6 +84,28 @@ namespace Timinute.Client.Components.TrackedTasks
             foreach (var errorMessage in errorMessages)
             {
                 notificationService.Notify(NotificationSeverity.Error, "Validation error", errorMessage, 5000);
+            }
+        }
+
+        private async Task LoadProjects()
+        {
+            try
+            {
+                var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.Get);
+
+                if (responseMessage != null)
+                {
+                    projects.Clear();
+                    foreach (var projectDto in responseMessage)
+                    {
+                        projects.Add(new Project(projectDto));
+                    }
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
         }
     }
