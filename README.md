@@ -1,5 +1,5 @@
 # Timinute
-[![Build & Test](https://github.com/jame581/Timinute/actions/workflows/build_test.yml/badge.svg?branch=master)](https://github.com/jame581/Timinute/actions/workflows/build_test.yml)
+[![Build & Test](https://github.com/jame581/Timinute/actions/workflows/build_test.yml/badge.svg)](https://github.com/jame581/Timinute/actions/workflows/build_test.yml)
 
 The application serves as a demonstration of the possibilities of the new Blazor technology. Allows you to track time and task. Identity server is used to manage users.
 
