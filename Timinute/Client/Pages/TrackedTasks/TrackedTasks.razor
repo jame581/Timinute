@@ -22,7 +22,7 @@
             <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>
         </EmptyTemplate>
         <Columns>
-            <RadzenDataGridColumn TItem="TrackedTask" Property="TaskId" Title="Task ID" />
+            <RadzenDataGridColumn Visible="false" TItem="TrackedTask" Property="TaskId" Title="Task ID" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="Project.Name" Title="Project Name" />
             <RadzenDataGridColumn TItem="TrackedTask" Property="Duration" Title="Duration" />

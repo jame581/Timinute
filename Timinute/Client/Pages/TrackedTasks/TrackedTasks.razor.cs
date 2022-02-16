@@ -14,15 +14,15 @@ namespace Timinute.Client.Pages.TrackedTasks
 {
     public partial class TrackedTasks
     {
-        private IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
+        IList<TrackedTask> trackedTasksList = new List<TrackedTask>();
 
         PagingAttributes pagingAttributes = new PagingAttributes();
 
-        private bool isLoading = true;
+        bool isLoading = true;
 
-        private RadzenDataGrid<TrackedTask> radzenDataGrid = null!;
+        RadzenDataGrid<TrackedTask> radzenDataGrid = null!;
 
-        private HttpClient client;
+        HttpClient client;
 
         [CascadingParameter]
         private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
