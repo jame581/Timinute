@@ -41,7 +41,7 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var pagedProjectList = await projectRepository.GetPaged(projectParameters);
+            var pagedProjectList = await projectRepository.GetPaged(projectParameters, project => project.UserId == userId);
 
             var metadata = new PaginationHeaderDto
             {
@@ -88,6 +88,7 @@ namespace Timinute.Server.Controllers
             }
 
             var newProject = mapper.Map<Project>(project);
+            newProject.UserId = userId;
 
             await projectRepository.Insert(newProject);
             return Ok(mapper.Map<ProjectDto>(newProject));
@@ -109,6 +110,11 @@ namespace Timinute.Server.Controllers
             {
                 logger.LogError("Project was not found");
                 return NotFound("Project not found!");
+            }
+
+            if (projectToDelete.UserId != userId)
+            {
+                return Unauthorized();
             }
 
             await projectRepository.Delete(projectToDelete);
@@ -134,6 +140,11 @@ namespace Timinute.Server.Controllers
             {
                 logger.LogError("Project was not found");
                 return NotFound("Project not found!");
+            }
+
+            if (foundProject.UserId != userId)
+            {
+                return Unauthorized();
             }
 
             var updatedProject = mapper.Map(project, foundProject);

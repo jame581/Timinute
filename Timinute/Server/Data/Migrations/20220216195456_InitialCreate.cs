@@ -111,18 +111,6 @@ namespace Timinute.Server.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Projects",
-                columns: table => new
-                {
-                    ProjectId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Projects", x => x.ProjectId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -229,6 +217,25 @@ namespace Timinute.Server.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Projects",
+                columns: table => new
+                {
+                    ProjectId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Projects", x => x.ProjectId);
+                    table.ForeignKey(
+                        name: "FK_Projects_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TrackedTasks",
                 columns: table => new
                 {
@@ -262,8 +269,8 @@ namespace Timinute.Server.Data.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Description", "Discriminator", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "2fc3b348-3432-41b7-a3eb-d22150f3859e", "d4215cfe-ffaa-466f-a36f-06bf6c7bc54d", "Basic role with lowest rights.", "ApplicationRole", "Basic", "BASIC" },
-                    { "84d5a5ce-d485-4ebc-9bd2-f10f8cef809b", "4760ab97-d6f4-443c-85da-eabdada6e725", "Admin role with highest rights.", "ApplicationRole", "Admin", "ADMIN" }
+                    { "1dc1392a-cd10-47f4-a25e-768ec5a2fd21", "6b8356a1-68b2-4da4-8234-af799c8aebec", "Admin role with highest rights.", "ApplicationRole", "Admin", "ADMIN" },
+                    { "d1db9338-44b6-415a-be29-1493394b939e", "63e8faf0-4100-4ce3-ad3b-73d758f5dc31", "Basic role with lowest rights.", "ApplicationRole", "Basic", "BASIC" }
                 });
 
             migrationBuilder.InsertData(
@@ -271,9 +278,9 @@ namespace Timinute.Server.Data.Migrations
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastLoginDate", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8", 0, "f1bbce0f-d94d-4e3e-ae1d-07a42b9b8c78", "test1@email.com", true, "Jan", null, "Testovic", false, null, null, null, "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", null, false, "2d9dad18-a34e-4d2f-8336-babb25fb201b", false, "test1@email.com" },
-                    { "b24dc9b2-81f4-4e30-99d8-105acb901a26", 0, "25686410-f2e8-43ad-afd2-f510abbeb8ee", "test2@email.com", true, "Ivana", null, "Maricenkova", false, null, null, null, "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", null, false, "9ae05c28-9cf6-40c0-b087-3b7e8785473c", false, "test2@email.com" },
-                    { "eb3a885f-44e4-45b0-a1bd-bcf84a104f81", 0, "4910f5cb-605d-4b1e-bc96-803c23088dfc", "test3@email.com", true, "Marek", null, "Klukac", false, null, null, null, "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", null, false, "e3bd3f0b-3045-4767-a56b-6e8419fd38d4", false, "test3@email.com" }
+                    { "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e", 0, "a5da4111-f765-4077-a5b4-3adcf3d7ab03", "test2@email.com", true, "Ivana", null, "Maricenkova", false, null, null, null, "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", null, false, "a33513ed-b15f-43ed-8b87-e33286e5b124", false, "test2@email.com" },
+                    { "d7053da8-48ca-4efc-8787-cb1fd4df609e", 0, "77e9e9b4-3841-4200-805a-e81afd7c84d8", "test3@email.com", true, "Marek", null, "Klukac", false, null, null, null, "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", null, false, "336e0a2e-5af6-495b-ad1f-fcf11dde9805", false, "test3@email.com" },
+                    { "e1c0d524-4972-474b-a1da-961cb2aa7afb", 0, "f49b7918-1bab-4614-91a1-5509197fa95a", "test1@email.com", true, "Jan", null, "Testovic", false, null, null, null, "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", null, false, "e9d28d12-0bbc-46e3-98bb-ae00bef5c8ba", false, "test1@email.com" }
                 });
 
             migrationBuilder.InsertData(
@@ -281,13 +288,13 @@ namespace Timinute.Server.Data.Migrations
                 columns: new[] { "TaskId", "Duration", "EndDate", "Name", "ProjectId", "StartDate", "UserId" },
                 values: new object[,]
                 {
-                    { "028fe42c-b77f-487f-9b0b-d99db2a1304a", new TimeSpan(0, 7, 0, 0, 0), new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified), "Project G", null, new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified), "eb3a885f-44e4-45b0-a1bd-bcf84a104f81" },
-                    { "33e4a47e-e2cb-48c4-8070-f114939202ec", new TimeSpan(0, 7, 0, 0, 0), new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified), "Project F", null, new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified), "eb3a885f-44e4-45b0-a1bd-bcf84a104f81" },
-                    { "53021ea4-3be2-481a-a7e0-5e3eebc09585", new TimeSpan(0, 3, 0, 0, 0), new DateTime(2022, 2, 2, 13, 0, 0, 0, DateTimeKind.Unspecified), "Project B", null, new DateTime(2022, 2, 2, 10, 0, 0, 0, DateTimeKind.Unspecified), "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8" },
-                    { "67471fb3-0807-45ad-9f88-1d8b501c8037", new TimeSpan(0, 4, 0, 0, 0), new DateTime(2022, 1, 1, 15, 0, 0, 0, DateTimeKind.Unspecified), "Project C", null, new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified), "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8" },
-                    { "74bb1b68-fc67-454f-9b11-0e960681cafd", new TimeSpan(0, 6, 0, 0, 0), new DateTime(2022, 1, 1, 19, 0, 0, 0, DateTimeKind.Unspecified), "Project E", null, new DateTime(2022, 1, 1, 13, 0, 0, 0, DateTimeKind.Unspecified), "b24dc9b2-81f4-4e30-99d8-105acb901a26" },
-                    { "7fde90dd-b420-4c0a-a401-8340fda67776", new TimeSpan(0, 2, 0, 0, 0), new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified), "Project A", null, new DateTime(2022, 1, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8" },
-                    { "d7c5687b-0484-4034-b6c5-1df560133b3e", new TimeSpan(0, 5, 0, 0, 0), new DateTime(2022, 2, 2, 17, 0, 0, 0, DateTimeKind.Unspecified), "Project D", null, new DateTime(2022, 2, 2, 12, 0, 0, 0, DateTimeKind.Unspecified), "b24dc9b2-81f4-4e30-99d8-105acb901a26" }
+                    { "67ca51ee-3cc4-4dae-a65f-b136fcbbf228", new TimeSpan(0, 6, 0, 0, 0), new DateTime(2022, 1, 1, 19, 0, 0, 0, DateTimeKind.Unspecified), "Project E", null, new DateTime(2022, 1, 1, 13, 0, 0, 0, DateTimeKind.Unspecified), "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e" },
+                    { "75e5ad7e-2280-43c0-9a0e-61c5730f8ad1", new TimeSpan(0, 7, 0, 0, 0), new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified), "Project G", null, new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified), "d7053da8-48ca-4efc-8787-cb1fd4df609e" },
+                    { "87fdea30-c669-4dc3-b9a1-0c33179ca40e", new TimeSpan(0, 7, 0, 0, 0), new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified), "Project F", null, new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified), "d7053da8-48ca-4efc-8787-cb1fd4df609e" },
+                    { "8c671d20-4496-41ec-90b1-5fc3e120c7a7", new TimeSpan(0, 3, 0, 0, 0), new DateTime(2022, 2, 2, 13, 0, 0, 0, DateTimeKind.Unspecified), "Project B", null, new DateTime(2022, 2, 2, 10, 0, 0, 0, DateTimeKind.Unspecified), "e1c0d524-4972-474b-a1da-961cb2aa7afb" },
+                    { "bf5baa4b-d036-4adf-9ff7-c31cb90d983f", new TimeSpan(0, 2, 0, 0, 0), new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified), "Project A", null, new DateTime(2022, 1, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), "e1c0d524-4972-474b-a1da-961cb2aa7afb" },
+                    { "da2f0f30-eefe-4862-b64a-7e2e9d7864d0", new TimeSpan(0, 4, 0, 0, 0), new DateTime(2022, 1, 1, 15, 0, 0, 0, DateTimeKind.Unspecified), "Project C", null, new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified), "e1c0d524-4972-474b-a1da-961cb2aa7afb" },
+                    { "fc9de1d0-b03f-470b-8a8f-475c499879c4", new TimeSpan(0, 5, 0, 0, 0), new DateTime(2022, 2, 2, 17, 0, 0, 0, DateTimeKind.Unspecified), "Project D", null, new DateTime(2022, 2, 2, 12, 0, 0, 0, DateTimeKind.Unspecified), "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -366,6 +373,11 @@ namespace Timinute.Server.Data.Migrations
                 columns: new[] { "SubjectId", "SessionId", "Type" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Projects_UserId",
+                table: "Projects",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TrackedTasks_ProjectId",
                 table: "TrackedTasks",
                 column: "ProjectId");
@@ -409,10 +421,10 @@ namespace Timinute.Server.Data.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Projects");
 
             migrationBuilder.DropTable(
-                name: "Projects");
+                name: "AspNetUsers");
         }
     }
 }
