@@ -166,8 +166,8 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var today = DateTime.Today;
-            var month = new DateTime(today.Year, today.Month, 1);
+            var today = DateTime.Today.ToUniversalTime();
+            var month = new DateTime(today.Year, today.Month, 1).ToUniversalTime();
             var first = month.AddMonths(-1);
             var last = month.AddDays(-1);
 
