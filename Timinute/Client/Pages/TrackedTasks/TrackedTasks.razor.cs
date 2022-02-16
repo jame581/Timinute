@@ -189,6 +189,11 @@ namespace Timinute.Client.Pages.TrackedTasks
                 var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateDto);
                 responseMessage.EnsureSuccessStatusCode();
 
+                if (trackedTask.EndDate.HasValue)
+                {
+                    trackedTask.Duration = trackedTask.EndDate.Value - trackedTask.StartDate;
+                }
+
                 notificationService.Notify(NotificationSeverity.Success, "Tracked task updated", "Tracked task was updated successfully.", 5000);
             }
             catch (Exception ex)
