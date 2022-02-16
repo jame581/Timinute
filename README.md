@@ -23,10 +23,14 @@ First step install prerequisites software, then clone repository, setup SQL data
   * run script `MigrateDatabase.ps1`
 * Build & run solution
 
-## Running the tests
-
-Test will be added in future.
-
 ## Author
 
 * **Jan Mesarč** - *Creator* - [jame581](https://jame581.azurewebsites.net/)
+
+## Screenshots
+
+![Dashboard](https://user-images.githubusercontent.com/21112138/154360046-279ec830-9f27-448d-8345-d6c0609b785c.png)
+![TimeTracker](https://user-images.githubusercontent.com/21112138/154360051-d906f7ee-86a4-47f6-9c8d-b5084c80d19d.png)
+![TrackedTasks](https://user-images.githubusercontent.com/21112138/154360053-cef71925-e41a-4329-b816-25260c00c136.png)
+![Calendar](https://user-images.githubusercontent.com/21112138/154360045-bb04d245-eadb-4a5a-a2ef-03f96e1638e9.png)
+
