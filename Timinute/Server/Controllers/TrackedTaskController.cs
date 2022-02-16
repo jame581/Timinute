@@ -55,8 +55,6 @@ namespace Timinute.Server.Controllers
             };
 
             Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
-
-            //var trackedTaskList = await taskRepository.Get(x => x.UserId == userId, x => x.OrderByDescending(t => t.StartDate), includeProperties: "Project");
             return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(pagedTrackedTaskList));
         }
 

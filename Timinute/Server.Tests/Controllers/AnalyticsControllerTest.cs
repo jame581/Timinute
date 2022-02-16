@@ -81,12 +81,14 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Collection(projectDataItemsPerMonthDtos,
                 item =>
                 {
-                    Assert.Equal(first.ToUniversalTime(), item.Time.ToUniversalTime());
+                    Assert.Equal(first.Year, item.Time.Year);
+                    Assert.Equal(first.Month, item.Time.Month);
                     Assert.Equal(7, item.ProjectDataItems.Count);
                 },
                 item =>
                 {
-                    Assert.Equal(month.ToUniversalTime(), item.Time.ToUniversalTime());
+                    Assert.Equal(month.Year, item.Time.Year);
+                    Assert.Equal(month.Month, item.Time.Month);
                     Assert.Equal(4, item.ProjectDataItems.Count);
                 });
         }

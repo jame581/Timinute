@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
+using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Project;
@@ -20,6 +21,8 @@ namespace Timinute.Server.Tests.Controllers
         private readonly IMapper _mapper;
         private readonly Mock<ILogger<ProjectController>> _loggerMock;
 
+        private PagingParameters pagingParameters;
+
         private const string _databaseName = "ProjectController_Test_DB";
         public ProjectControllerTest()
         {
@@ -28,6 +31,12 @@ namespace Timinute.Server.Tests.Controllers
             _mapper = new Mapper(configuration);
 
             _loggerMock = new Mock<ILogger<ProjectController>>();
+
+            pagingParameters = new PagingParameters()
+            {
+                PageSize = 100,
+                PageNumber = 1,
+            };
         }
 
         [Fact]
@@ -35,7 +44,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             ProjectController controller = await CreateController();
 
-            var actionResult = await controller.GetProjects();
+            var actionResult = await controller.GetProjects(pagingParameters);
 
             Assert.NotNull(actionResult);
             Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
