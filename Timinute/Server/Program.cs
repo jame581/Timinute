@@ -2,11 +2,9 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Timinute.Server;
 using Timinute.Server.Areas.Identity;
@@ -40,7 +38,7 @@ builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
     options.CacheProfiles.Add("Default120", new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
-    
+
 
 }).AddJsonOptions(options =>
 {

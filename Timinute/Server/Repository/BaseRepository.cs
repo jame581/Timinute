@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Timinute.Server.Data;
@@ -68,20 +67,20 @@ namespace Timinute.Server.Repository
 
             if (!string.IsNullOrEmpty(parameters.OrderBy) && !string.IsNullOrEmpty(orderBy))
             {
-               query = query.OrderBy($"{orderBy}, {parameters.OrderBy}");
+                query = query.OrderBy($"{orderBy}, {parameters.OrderBy}");
             }
             else if (!string.IsNullOrEmpty(orderBy))
             {
-               query = query.OrderBy(orderBy);
+                query = query.OrderBy(orderBy);
             }
             else if (!string.IsNullOrEmpty(parameters.OrderBy))
             {
-               query = query.OrderBy(parameters.OrderBy);
+                query = query.OrderBy(parameters.OrderBy);
             }
-            
+
             int count = await query.CountAsync();
             var items = await query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize).ToListAsync();
-            
+
             return new PagedList<TEntity>(items, count, parameters.PageNumber, parameters.PageSize);
         }
 

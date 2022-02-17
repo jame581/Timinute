@@ -79,7 +79,7 @@ namespace Timinute.Server.Tests.Repositories
                 Assert.Collection(projects, item => Assert.Contains("ProjectId1", item.ProjectId));
             }
         }
-        
+
         [Fact]
         public async Task Add_Project_Test()
         {

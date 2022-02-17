@@ -34,7 +34,7 @@ namespace Timinute.Server.Tests.Helpers
             {
                 await context.Database.EnsureDeletedAsync();
             }
-                        
+
             if (fillTestDate)
             {
                 await FillInitData(context);
@@ -81,7 +81,7 @@ namespace Timinute.Server.Tests.Helpers
                 new Project { ProjectId = "ProjectId1", Name = "Project 1", UserId = applicationUsers[0].Id, TrackedTasks = new List<TrackedTask>() { trackedTasks[0], trackedTasks[1], trackedTasks[2] } },
                 new Project { ProjectId = "ProjectId2", Name = "Project 2", UserId = applicationUsers[1].Id, TrackedTasks = new List<TrackedTask>() { trackedTasks[4], trackedTasks[5] } },
                 new Project { ProjectId = "ProjectId3", Name = "Project 3", UserId = applicationUsers[1].Id, TrackedTasks = new List<TrackedTask>() { trackedTasks[6] } },
-                
+
                 new Project { ProjectId = "ProjectId4", Name = "Project 4", UserId = applicationUsers[0].Id, TrackedTasks = new List<TrackedTask>() { } },
                 new Project { ProjectId = "ProjectId5", Name = "Project 5", UserId = applicationUsers[0].Id, TrackedTasks = new List<TrackedTask>() { } },
             };
@@ -114,7 +114,7 @@ namespace Timinute.Server.Tests.Helpers
                 new TrackedTask { TaskId = "TrackedTaskId1004", Name = "Task 1004", ProjectId = "ProjectId1002", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(4), Duration = TimeSpan.FromHours(4) },
                 new TrackedTask { TaskId = "TrackedTaskId1005", Name = "Task 1005", ProjectId = "ProjectId1003", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(5), Duration = TimeSpan.FromHours(5) },
                 new TrackedTask { TaskId = "TrackedTaskId1006", Name = "Task 1006", ProjectId = "ProjectId1003", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(6), Duration = TimeSpan.FromHours(6) },
-                
+
                 new TrackedTask { TaskId = "TrackedTaskId1007", Name = "Task 1007", User = applicationUsers[0], StartDate = first, EndDate = first.AddHours(7), Duration = TimeSpan.FromHours(7) },
 
                 new TrackedTask { TaskId = "TrackedTaskId1008", Name = "Task 1008", User = applicationUsers[0], StartDate = month, EndDate = month.AddHours(1), Duration = TimeSpan.FromHours(1) },

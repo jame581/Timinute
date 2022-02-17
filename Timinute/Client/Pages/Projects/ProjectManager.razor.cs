@@ -21,7 +21,7 @@ namespace Timinute.Client.Pages.Projects
         bool isLoading = true;
 
         RadzenDataGrid<Project> radzenDataGrid = null!;
-        
+
         HttpClient client;
 
         [CascadingParameter]

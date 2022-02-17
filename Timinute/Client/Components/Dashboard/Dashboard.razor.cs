@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Radzen;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using Timinute.Client.Helpers;
 using Timinute.Shared.Dtos.Dashboard;
-using System.Security.Claims;
 
 namespace Timinute.Client.Components.Dashboard
 {
@@ -17,11 +17,11 @@ namespace Timinute.Client.Components.Dashboard
         private string TopProjectLastMonth = "None - 00:00:00";
 
         private string AmountWorkTimeThisMonth = "00:00:00";
-        
+
         private string TopProjectThisMonth = "None - 00:00:00";
-        
+
         #region Dependency Injection
-        
+
         [Inject]
         protected NavigationManager Navigation { get; set; } = null!;
 

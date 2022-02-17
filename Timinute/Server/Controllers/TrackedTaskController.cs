@@ -43,7 +43,7 @@ namespace Timinute.Server.Controllers
             }
 
             var pagedTrackedTaskList = await taskRepository.GetPaged(trackedTaskParameters,
-                trackedTask => trackedTask.UserId == userId,                
+                trackedTask => trackedTask.UserId == userId,
                 orderBy: $"{nameof(TrackedTask.StartDate)} desc",
                 includeProperties: "Project");
 
