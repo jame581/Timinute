@@ -1,6 +1,6 @@
 ﻿@attribute [Authorize]
 
-<h2>Dashboard</h2>
+<h2 class="text-center">Dashboard</h2>
 
 <div class="row">
     <div class="col-12 col-lg-6 mb-3">
@@ -13,7 +13,7 @@
     </div>
     <div class="col-12 col-lg-6 mb-3">
         <div class="card">
-            <h5 class="card-header">Top project</h5>
+            <h5 class="card-header">Top project last month</h5>
             <div class="card-body">
                 <h2 class="text-center">@TopProjectLastMonth</h2>
             </div>
@@ -24,7 +24,26 @@
 <div class="row">
     <div class="col-12 col-lg-6 mb-3">
         <div class="card">
-            <h5 class="card-header">Amount of work time per month</h5>
+            <h5 class="card-header">Amount of work time this month</h5>
+            <div class="card-body">
+                <h2 class="text-center">@AmountWorkTimeThisMonth</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="card">
+            <h5 class="card-header">Top project this month</h5>
+            <div class="card-body">
+                <h2 class="text-center">@TopProjectThisMonth</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="card">
+            <h5 class="card-header">Amount of work time per months</h5>
             <div class="card-body">
                 <ProjectColumnChart />
             </div>
@@ -32,7 +51,7 @@
     </div>
     <div class="col-12 col-lg-6 mb-3">
         <div class="card">
-            <h5 class="card-header">Amount of work time per project</h5>
+            <h5 class="card-header">Amount of work time per projects</h5>
             <div class="card-body">
                 <DoughnutChart />
             </div>

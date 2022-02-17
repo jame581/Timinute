@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
+using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.Project;
 
 namespace Timinute.Server.Controllers
@@ -28,7 +31,7 @@ namespace Timinute.Server.Controllers
 
         // GET: api/Projects
         [HttpGet(Name = "Projects")]
-        public async Task<ActionResult<IEnumerable<ProjectDto>>> GetProjects()
+        public async Task<ActionResult<IEnumerable<ProjectDto>>> GetProjects([FromQuery] PagingParameters projectParameters)
         {
             // get current user ID
             var userId = User.FindFirstValue(Constants.Claims.UserId);
@@ -38,8 +41,20 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var projectList = await projectRepository.Get();
-            return Ok(mapper.Map<IEnumerable<ProjectDto>>(projectList));
+            var pagedProjectList = await projectRepository.GetPaged(projectParameters, project => project.UserId == userId);
+
+            var metadata = new PaginationHeaderDto
+            {
+                TotalCount = pagedProjectList.TotalCount,
+                PageSize = pagedProjectList.PageSize,
+                CurrentPage = pagedProjectList.CurrentPage,
+                TotalPages = pagedProjectList.TotalPages,
+                HasNext = pagedProjectList.HasNext,
+                HasPrevious = pagedProjectList.HasPrevious
+            };
+
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
+            return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjectList));
         }
 
         // GET: api/Project
@@ -73,86 +88,70 @@ namespace Timinute.Server.Controllers
             }
 
             var newProject = mapper.Map<Project>(project);
+            newProject.UserId = userId;
 
-            try
-            {
-                await projectRepository.Insert(newProject);
-                return Ok(mapper.Map<ProjectDto>(newProject));
-            }
-            catch (Exception ex)
-            {
-                //TODO: Add proper expceptions for proper requests
-                logger.LogError($"Error when creating Project:", ex.Message);
-                return BadRequest("Invalid Project data.");
-            }
+            await projectRepository.Insert(newProject);
+            return Ok(mapper.Map<ProjectDto>(newProject));
         }
 
         // DELETE: api/Project
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteProject(string id)
         {
-            try
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = User.FindFirstValue(Constants.Claims.UserId);
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
-
-                var projectToDelete = await projectRepository.GetById(id);
-                if (projectToDelete == null)
-                {
-                    logger.LogError("Project was not found");
-                    return NotFound("Project not found!");
-                }
-
-                await projectRepository.Delete(projectToDelete);
-
-                logger.LogInformation($"Project with Id {projectToDelete.ProjectId}, Name {projectToDelete.Name} was deleted.");
-                return NoContent();
+                return Unauthorized();
             }
-            catch (Exception ex)
+
+            var projectToDelete = await projectRepository.GetById(id);
+            if (projectToDelete == null)
             {
-                //TODO: Add proper expceptions for proper requests
-                logger.LogError($"Error when creating Project:", ex.Message);
-                return BadRequest("Invalid Project data.");
+                logger.LogError("Project was not found");
+                return NotFound("Project not found!");
             }
+
+            if (projectToDelete.UserId != userId)
+            {
+                return Unauthorized();
+            }
+
+            await projectRepository.Delete(projectToDelete);
+
+            logger.LogInformation($"Project with Id {projectToDelete.ProjectId}, Name {projectToDelete.Name} was deleted.");
+            return NoContent();
         }
 
         // UPDATE: api/Project
         [HttpPut]
         public async Task<ActionResult<ProjectDto>> UpdateProject([FromBody] UpdateProjectDto project)
         {
-            try
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = User.FindFirstValue(Constants.Claims.UserId);
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
-
-                var foundProject = await projectRepository.GetById(project.ProjectId);
-
-                if (foundProject == null)
-                {
-                    logger.LogError("Project was not found");
-                    return NotFound("Project not found!");
-                }
-
-                var updatedProject = mapper.Map(project, foundProject);
-
-                await projectRepository.Update(updatedProject);
-
-                return Ok(mapper.Map<ProjectDto>(updatedProject));
+                return Unauthorized();
             }
-            catch (Exception ex)
+
+            var foundProject = await projectRepository.GetById(project.ProjectId);
+
+            if (foundProject == null)
             {
-                //TODO: Add proper expceptions for proper requests
-                logger.LogError($"Error when creating Project:", ex.Message);
-                return BadRequest("Invalid Project data.");
+                logger.LogError("Project was not found");
+                return NotFound("Project not found!");
             }
+
+            if (foundProject.UserId != userId)
+            {
+                return Unauthorized();
+            }
+
+            var updatedProject = mapper.Map(project, foundProject);
+
+            await projectRepository.Update(updatedProject);
+
+            return Ok(mapper.Map<ProjectDto>(updatedProject));
         }
     }
 }

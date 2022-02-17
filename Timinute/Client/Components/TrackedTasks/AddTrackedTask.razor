@@ -3,24 +3,45 @@
     <EditForm Model="@NewTrackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
         <DataAnnotationsValidator />
 
-        <label>
-            Task Name:
-            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewTrackedTask.Name" placeholder="Enter task name..." />
-        </label>
+        <div class="mb-3 mt-3 row">
+            <div class="col-auto">
+                <label>
+                    Task Name:
+                    <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewTrackedTask.Name" placeholder="Enter task name..." />
+                </label>
 
-        <label>
-            Start Date:
-            <InputDate class="form-control" DisplayName="Date" @bind-Value="NewTrackedTask.StartDate" placeholder="Start Date..." />
-        </label>
+            </div>
+            <div class="col-auto">
+                <label for="project">
+                    Select project
+                    <InputSelect id="project" class="form-select" @bind-Value="ProjectId">
+                        <option selected>None</option>
+                        @foreach (var project in projects)
+                        {
+                            <option value="@project.ProjectId">@project.Name</option>
+                        }
+                    </InputSelect>
+                </label>
 
-        <label>
-            Duration:
-            <InputText type="text" class="form-control" DisplayName="Duration" @bind-Value="@DurationProxy" />
-        </label>
+            </div>
+            <div class="col-auto">
+                <label>
+                    Start Date:
+                    <InputDate class="form-control" DisplayName="Date" @bind-Value="NewTrackedTask.StartDate" placeholder="Start Date..." />
+                </label>
+            </div>
+            <div class="col-auto">
+                <label>
+                    Duration:
+                    <InputText type="text" class="form-control" DisplayName="Duration" @bind-Value="@DurationProxy" />
+                </label>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary mt-4">Submit</button>
+            </div>
+        </div>
 
-        <button type="submit" class="btn btn-primary">Submit</button>
-
-        <div class="col-md-4" style="margin-top:10px">
+        <div class="mb-3 mt-3 row">
             <ValidationSummary />
         </div>
 

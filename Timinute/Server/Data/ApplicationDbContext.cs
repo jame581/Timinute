@@ -65,6 +65,12 @@ namespace Timinute.Server.Data
                 .WithMany(u => u.TrackedTasks)
                 .HasForeignKey(t => t.UserId);
 
+            builder.Entity<Project>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.Projects)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             FillDataToDB(builder);
         }
 

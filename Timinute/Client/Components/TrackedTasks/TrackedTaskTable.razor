@@ -1,4 +1,5 @@
-﻿<div class="container">
+﻿@using Timinute.Client.Helpers
+<div class="container">
 
     <h3 class="text-center">Tracked Tasks</h3>
 
@@ -39,6 +40,7 @@
                 </div>
             </div>
         }
+        <RadzenPager ShowPagingSummary="true" PagingSummaryFormat="@pagingSummaryFormat" PageSizeOptions="@Constants.Paging.PageSizeOptions" HorizontalAlign="HorizontalAlign.Right" Count="@pagingAttributes.TotalCount" PageSize="@pagingAttributes.PageSize" PageNumbersCount="@pagingAttributes.TotalPageCount" PageChanged="@PageChanged" />
     }
 
 </div>

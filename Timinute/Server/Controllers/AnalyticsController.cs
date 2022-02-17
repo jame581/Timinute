@@ -73,7 +73,7 @@ namespace Timinute.Server.Controllers
                     Time = TimeSpan.FromSeconds(projectTime.ProjectTimeInSeconds)
                 });
             }
-
+            projectLiset = projectLiset.OrderByDescending(x => x.Time).ToList();
             return Ok(projectLiset);
         }
 
@@ -155,8 +155,8 @@ namespace Timinute.Server.Controllers
         }
 
         // GET: api/Analytics/AmountWorkTimeLastMonth
-        [HttpGet("AmountWorkTimeLastMonth")]
-        public async Task<ActionResult<AmountOfWorkTimeDto>> GetAmountWorkTimeLastMonth()
+        [HttpGet("AmountWorkTimeByMonth")]
+        public async Task<ActionResult<AmountOfWorkTimeDto>> GetAmountWorkTimeByMonth([FromQuery] AmountWorkTimeByMonthDto amountWorkTimeByMonthDto)
         {
             // get current user ID
             var userId = User.FindFirstValue(Constants.Claims.UserId);
@@ -166,25 +166,40 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var today = DateTime.Today;
-            var month = new DateTime(today.Year, today.Month, 1);
-            var first = month.AddMonths(-1);
-            var last = month.AddDays(-1);
+            var month = new DateTime(amountWorkTimeByMonthDto.Year, amountWorkTimeByMonthDto.Month, 1).ToUniversalTime();
+            var last = month.AddMonths(1).AddDays(-1);
 
             var trackedTaskList = await trackedTaskRepository.Get(
-                x => x.UserId == userId && x.StartDate >= first && x.StartDate <= last,
+                x => x.UserId == userId && x.StartDate >= month && x.StartDate <= last,
                 includeProperties: "Project");
 
             double secondsSum = trackedTaskList.ToList().Sum(x => x.Duration.TotalSeconds);
-            string amountWorkTimeLastMonthText = TimeSpan.FromSeconds(secondsSum).ToString(@"hh\:mm\:ss");
 
-            var groupedByProject = trackedTaskList
+            string amountWorkTimeLastMonthText = GetAmountWorkTimeFormatted(secondsSum);
+
+            var (projectName, timeInSeconds) = FindTopProjectLastMonth(trackedTaskList);
+
+            var amountWorkTimeLastMonth = new AmountOfWorkTimeDto
+            {
+                AmountWorkTime = secondsSum,
+                AmountWorkTimeText = amountWorkTimeLastMonthText,
+                TopProject = projectName,
+                TopProjectAmounTime = timeInSeconds,
+                TopProjectAmounTimeText = GetAmountWorkTimeFormatted(timeInSeconds),
+            };
+
+            return Ok(amountWorkTimeLastMonth);
+        }
+
+        private (string, double) FindTopProjectLastMonth(IEnumerable<TrackedTask> trackedTasks)
+        {
+            string projectName = "None";
+            double maxSeconds = 0;
+
+            var groupedByProject = trackedTasks
                 .AsParallel()
                 .GroupBy(x => new { x.ProjectId })
                 .ToList();
-
-            string projectName = "None";
-            double maxSeconds = 0;
 
             foreach (var project in groupedByProject)
             {
@@ -201,16 +216,15 @@ namespace Timinute.Server.Controllers
                 }
             }
 
-            var amountWorkTimeLastMonth = new AmountOfWorkTimeDto
-            {
-                AmountWorkTime = secondsSum,
-                AmountWorkTimeText = amountWorkTimeLastMonthText,
-                TopProject = projectName,
-                TopProjectAmounTime = maxSeconds,
-                TopProjectAmounTimeText = TimeSpan.FromSeconds(maxSeconds).ToString(@"hh\:mm\:ss"),
-            };
+            return (projectName, maxSeconds);
+        }
 
-            return Ok(amountWorkTimeLastMonth);
+        private static string GetAmountWorkTimeFormatted(double secondsSum)
+        {
+            TimeSpan totalTime = TimeSpan.FromSeconds(secondsSum);
+            int hours = (totalTime.Days * 24) + totalTime.Hours;
+            string amountWorkTimeLastMonthText = $"{hours}:{totalTime.Minutes:00}:{totalTime.Seconds:00}";
+            return amountWorkTimeLastMonthText;
         }
     }
 }

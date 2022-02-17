@@ -16,5 +16,7 @@ namespace Timinute.Server.Models
         public DateTimeOffset? LastLoginDate { get; set; }
 
         public ICollection<TrackedTask>? TrackedTasks { get; set; }
+
+        public ICollection<Project>? Projects { get; set; }
     }
 }

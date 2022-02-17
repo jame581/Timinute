@@ -36,7 +36,8 @@ namespace Timinute.Server.Tests.Repositories
                 item => Assert.Contains("TrackedTaskId4", item.TaskId),
                 item => Assert.Contains("TrackedTaskId5", item.TaskId),
                 item => Assert.Contains("TrackedTaskId6", item.TaskId),
-                item => Assert.Contains("TrackedTaskId7", item.TaskId));
+                item => Assert.Contains("TrackedTaskId7", item.TaskId),
+                item => Assert.Contains("TrackedTaskId8", item.TaskId));
         }
 
         [Fact]

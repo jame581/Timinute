@@ -16,6 +16,8 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         private bool isLoading = true;
 
+        private HttpClient client;
+
         private RadzenScheduler<TrackedTask> radzenScheduler = null!;
 
         [CascadingParameter]
@@ -45,16 +47,17 @@ namespace Timinute.Client.Pages.TrackedTasks
             if (user.Identity != null && !user.Identity.IsAuthenticated)
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
+            client = ClientFactory.CreateClient(Constants.API.ClientName);
+
             await LoadData();
         }
 
         private async Task LoadData()
         {
-            var client = ClientFactory.CreateClient(Constants.API.ClientName);
             isLoading = true;
             try
             {
-                var response = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.GetAll);
+                var response = await client.GetFromJsonAsync<TrackedTaskDto[]>(Constants.API.TrackedTask.Get);
 
                 if (response != null)
                 {
@@ -92,7 +95,7 @@ namespace Timinute.Client.Pages.TrackedTasks
         async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
         {
             TrackedTask data = await dialogService.OpenAsync<AddTrackedTaskForm>("Add Tracked Task",
-                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
+                new Dictionary<string, object> { { "Start", args.Start.AddHours(9) }, { "End", args.End.AddHours(-6) } }); // Add hours for setup start and end work hours 9 - 18
 
             if (data != null)
             {
@@ -142,18 +145,18 @@ namespace Timinute.Client.Pages.TrackedTasks
                 {
                     var responseMessage = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, updateTrackedTaskDto);
                     responseMessage.EnsureSuccessStatusCode();
+                    await LoadData();
                 }
                 catch (Exception ex)
                 {
                     notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
                 }
             }
-
-            await LoadData();
         }
 
         void OnTrackedTaskRender(SchedulerAppointmentRenderEventArgs<TrackedTask> args)
         {
+            // Examaple
             //if (args.Data.Name == "Birthday")
             //{
             //    args.Attributes["style"] = "background: red";

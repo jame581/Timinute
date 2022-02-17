@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Timinute.Server.Data;
+using Timinute.Server.Models.Paging;
 
 namespace Timinute.Server.Repository
 {
@@ -37,6 +39,49 @@ namespace Timinute.Server.Repository
         public async Task<TEntity?> Find(object id)
         {
             return await dbSet.FindAsync(id);
+        }
+
+        public async Task<PagedList<TEntity>> GetPaged(PagingParameters parameters, Expression<Func<TEntity, bool>>? filter = null,
+            string orderBy = null, string includeProperties = "")
+        {
+            IQueryable<TEntity> query = dbSet;
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            if (!string.IsNullOrEmpty(parameters.Filter))
+            {
+                query = query.Where(parameters.Filter);
+            }
+
+            if (!string.IsNullOrEmpty(includeProperties))
+            {
+                foreach (var includeProperty in includeProperties.Split
+                (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProperty.Trim());
+                }
+            }
+
+            if (!string.IsNullOrEmpty(parameters.OrderBy) && !string.IsNullOrEmpty(orderBy))
+            {
+                query = query.OrderBy($"{orderBy}, {parameters.OrderBy}");
+            }
+            else if (!string.IsNullOrEmpty(orderBy))
+            {
+                query = query.OrderBy(orderBy);
+            }
+            else if (!string.IsNullOrEmpty(parameters.OrderBy))
+            {
+                query = query.OrderBy(parameters.OrderBy);
+            }
+
+            int count = await query.CountAsync();
+            var items = await query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize).ToListAsync();
+
+            return new PagedList<TEntity>(items, count, parameters.PageNumber, parameters.PageSize);
         }
 
         public async Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>>? filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, string includeProperties = "")

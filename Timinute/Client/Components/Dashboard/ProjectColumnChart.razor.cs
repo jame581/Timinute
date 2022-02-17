@@ -76,8 +76,7 @@ namespace Timinute.Client.Components.Dashboard
 
         string FormatTimeAsString(object value)
         {
-            TimeSpan timeSpan = TimeSpan.FromSeconds((double)value);
-            return timeSpan.ToString(@"hh\:mm\:ss");
+            return Formatter.FormatTimeSpan((double)value);
         }
     }
 }

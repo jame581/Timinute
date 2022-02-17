@@ -1,6 +1,7 @@
 ﻿@page "/projectmanager"
 @attribute [Authorize]
 
+@using Timinute.Client.Helpers
 @using Timinute.Client.Models
 
 <PageTitle>Manage Projects</PageTitle>
@@ -15,15 +16,44 @@
 
     <h3 class="p-3 text-center">Display a list of projects</h3>
 
-    <RadzenDataGrid @ref="radzenDataGrid" Data="@ProjectsList" TItem="Project" Count="@projectCount"
-                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true"
-                    AllowMultiColumnSorting="true">
+    <RadzenDataGrid @ref="radzenDataGrid" Data="@projectsList" TItem="Project" Count="@pagingAttributes.TotalCount"
+                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
+                    EditMode="DataGridEditMode.Single" RowUpdate="@OnProjectUpdate" RowCreate="@OnProjectCreate"
+                    AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pagingAttributes.PageSize" PagerHorizontalAlign="HorizontalAlign.Center">
         <EmptyTemplate>
             <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No projects to display.</p>
         </EmptyTemplate>
         <Columns>
-            <RadzenDataGridColumn TItem="Project" Property="ProjectId" Title="Project ID" />
-            <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name" />
+            <RadzenDataGridColumn Visible="false" TItem="Project" Property="ProjectId" Title="Project ID" />
+            <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name">
+                <EditTemplate Context="project">
+                    <RadzenTextBox @bind-Value="project.Name" Style="width:100%; display: block" Name="ProjectName" />
+                    <RadzenRequiredValidator Text="Project name is required" Component="ProjectName" Popup="true" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="Project" Context="project" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
+                <Template Context="project">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRow(project))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="project">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRow(project))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEdit(project))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Project" Context="project" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
+                <Template Context="project">
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => RemoveProject(project))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="project">
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => RemoveProject(project))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
 

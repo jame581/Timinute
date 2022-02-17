@@ -12,7 +12,7 @@ using Timinute.Server.Data;
 namespace Timinute.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20220213124223_InitialCreate")]
+    [Migration("20220216195456_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -384,9 +384,9 @@ namespace Timinute.Server.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8",
+                            Id = "e1c0d524-4972-474b-a1da-961cb2aa7afb",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "f1bbce0f-d94d-4e3e-ae1d-07a42b9b8c78",
+                            ConcurrencyStamp = "f49b7918-1bab-4614-91a1-5509197fa95a",
                             Email = "test1@email.com",
                             EmailConfirmed = true,
                             FirstName = "Jan",
@@ -394,15 +394,15 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2d9dad18-a34e-4d2f-8336-babb25fb201b",
+                            SecurityStamp = "e9d28d12-0bbc-46e3-98bb-ae00bef5c8ba",
                             TwoFactorEnabled = false,
                             UserName = "test1@email.com"
                         },
                         new
                         {
-                            Id = "b24dc9b2-81f4-4e30-99d8-105acb901a26",
+                            Id = "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "25686410-f2e8-43ad-afd2-f510abbeb8ee",
+                            ConcurrencyStamp = "a5da4111-f765-4077-a5b4-3adcf3d7ab03",
                             Email = "test2@email.com",
                             EmailConfirmed = true,
                             FirstName = "Ivana",
@@ -410,15 +410,15 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "9ae05c28-9cf6-40c0-b087-3b7e8785473c",
+                            SecurityStamp = "a33513ed-b15f-43ed-8b87-e33286e5b124",
                             TwoFactorEnabled = false,
                             UserName = "test2@email.com"
                         },
                         new
                         {
-                            Id = "eb3a885f-44e4-45b0-a1bd-bcf84a104f81",
+                            Id = "d7053da8-48ca-4efc-8787-cb1fd4df609e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "4910f5cb-605d-4b1e-bc96-803c23088dfc",
+                            ConcurrencyStamp = "77e9e9b4-3841-4200-805a-e81afd7c84d8",
                             Email = "test3@email.com",
                             EmailConfirmed = true,
                             FirstName = "Marek",
@@ -426,7 +426,7 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "e3bd3f0b-3045-4767-a56b-6e8419fd38d4",
+                            SecurityStamp = "336e0a2e-5af6-495b-ad1f-fcf11dde9805",
                             TwoFactorEnabled = false,
                             UserName = "test3@email.com"
                         });
@@ -442,7 +442,13 @@ namespace Timinute.Server.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("ProjectId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Projects");
                 });
@@ -484,66 +490,66 @@ namespace Timinute.Server.Data.Migrations
                     b.HasData(
                         new
                         {
-                            TaskId = "7fde90dd-b420-4c0a-a401-8340fda67776",
+                            TaskId = "bf5baa4b-d036-4adf-9ff7-c31cb90d983f",
                             Duration = new TimeSpan(0, 2, 0, 0, 0),
                             EndDate = new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project A",
                             StartDate = new DateTime(2022, 1, 1, 9, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8"
+                            UserId = "e1c0d524-4972-474b-a1da-961cb2aa7afb"
                         },
                         new
                         {
-                            TaskId = "53021ea4-3be2-481a-a7e0-5e3eebc09585",
+                            TaskId = "8c671d20-4496-41ec-90b1-5fc3e120c7a7",
                             Duration = new TimeSpan(0, 3, 0, 0, 0),
                             EndDate = new DateTime(2022, 2, 2, 13, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project B",
                             StartDate = new DateTime(2022, 2, 2, 10, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8"
+                            UserId = "e1c0d524-4972-474b-a1da-961cb2aa7afb"
                         },
                         new
                         {
-                            TaskId = "67471fb3-0807-45ad-9f88-1d8b501c8037",
+                            TaskId = "da2f0f30-eefe-4862-b64a-7e2e9d7864d0",
                             Duration = new TimeSpan(0, 4, 0, 0, 0),
                             EndDate = new DateTime(2022, 1, 1, 15, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project C",
                             StartDate = new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "86ca07cf-3b9e-4495-8fe3-56cd9bf1cfc8"
+                            UserId = "e1c0d524-4972-474b-a1da-961cb2aa7afb"
                         },
                         new
                         {
-                            TaskId = "d7c5687b-0484-4034-b6c5-1df560133b3e",
+                            TaskId = "fc9de1d0-b03f-470b-8a8f-475c499879c4",
                             Duration = new TimeSpan(0, 5, 0, 0, 0),
                             EndDate = new DateTime(2022, 2, 2, 17, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project D",
                             StartDate = new DateTime(2022, 2, 2, 12, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "b24dc9b2-81f4-4e30-99d8-105acb901a26"
+                            UserId = "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e"
                         },
                         new
                         {
-                            TaskId = "74bb1b68-fc67-454f-9b11-0e960681cafd",
+                            TaskId = "67ca51ee-3cc4-4dae-a65f-b136fcbbf228",
                             Duration = new TimeSpan(0, 6, 0, 0, 0),
                             EndDate = new DateTime(2022, 1, 1, 19, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project E",
                             StartDate = new DateTime(2022, 1, 1, 13, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "b24dc9b2-81f4-4e30-99d8-105acb901a26"
+                            UserId = "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e"
                         },
                         new
                         {
-                            TaskId = "33e4a47e-e2cb-48c4-8070-f114939202ec",
+                            TaskId = "87fdea30-c669-4dc3-b9a1-0c33179ca40e",
                             Duration = new TimeSpan(0, 7, 0, 0, 0),
                             EndDate = new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project F",
                             StartDate = new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "eb3a885f-44e4-45b0-a1bd-bcf84a104f81"
+                            UserId = "d7053da8-48ca-4efc-8787-cb1fd4df609e"
                         },
                         new
                         {
-                            TaskId = "028fe42c-b77f-487f-9b0b-d99db2a1304a",
+                            TaskId = "75e5ad7e-2280-43c0-9a0e-61c5730f8ad1",
                             Duration = new TimeSpan(0, 7, 0, 0, 0),
                             EndDate = new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project G",
                             StartDate = new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "eb3a885f-44e4-45b0-a1bd-bcf84a104f81"
+                            UserId = "d7053da8-48ca-4efc-8787-cb1fd4df609e"
                         });
                 });
 
@@ -560,16 +566,16 @@ namespace Timinute.Server.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "2fc3b348-3432-41b7-a3eb-d22150f3859e",
-                            ConcurrencyStamp = "d4215cfe-ffaa-466f-a36f-06bf6c7bc54d",
+                            Id = "d1db9338-44b6-415a-be29-1493394b939e",
+                            ConcurrencyStamp = "63e8faf0-4100-4ce3-ad3b-73d758f5dc31",
                             Name = "Basic",
                             NormalizedName = "BASIC",
                             Description = "Basic role with lowest rights."
                         },
                         new
                         {
-                            Id = "84d5a5ce-d485-4ebc-9bd2-f10f8cef809b",
-                            ConcurrencyStamp = "4760ab97-d6f4-443c-85da-eabdada6e725",
+                            Id = "1dc1392a-cd10-47f4-a25e-768ec5a2fd21",
+                            ConcurrencyStamp = "6b8356a1-68b2-4da4-8234-af799c8aebec",
                             Name = "Admin",
                             NormalizedName = "ADMIN",
                             Description = "Admin role with highest rights."
@@ -627,6 +633,17 @@ namespace Timinute.Server.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Timinute.Server.Models.Project", b =>
+                {
+                    b.HasOne("Timinute.Server.Models.ApplicationUser", "User")
+                        .WithMany("Projects")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Timinute.Server.Models.TrackedTask", b =>
                 {
                     b.HasOne("Timinute.Server.Models.Project", "Project")
@@ -647,6 +664,8 @@ namespace Timinute.Server.Data.Migrations
 
             modelBuilder.Entity("Timinute.Server.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("Projects");
+
                     b.Navigation("TrackedTasks");
                 });
 

@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
+using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.TrackedTask;
@@ -21,6 +22,8 @@ namespace Timinute.Server.Tests.Controllers
         private readonly IMapper _mapper;
         private readonly Mock<ILogger<TrackedTaskController>> _loggerMock;
 
+        private PagingParameters pagingParameters;
+
         private const string _databaseName = "TrackedTaskController_Test_DB";
         public TrackedTaskControllerTest()
         {
@@ -29,6 +32,12 @@ namespace Timinute.Server.Tests.Controllers
             _mapper = new Mapper(configuration);
 
             _loggerMock = new Mock<ILogger<TrackedTaskController>>();
+
+            pagingParameters = new PagingParameters()
+            {
+                PageSize = 100,
+                PageNumber = 1,
+            };
         }
 
         [Fact]
@@ -36,7 +45,37 @@ namespace Timinute.Server.Tests.Controllers
         {
             TrackedTaskController controller = await CreateController();
 
-            var actionResult = await controller.GetTrackedTasks();
+            pagingParameters.PageNumber = 1;
+            pagingParameters.PageSize = 1000;
+
+            var actionResult = await controller.GetTrackedTasks(pagingParameters);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+
+            Assert.NotNull(okResult);
+            Assert.IsAssignableFrom<IEnumerable<TrackedTaskDto>>(okResult!.Value);
+            var trackedTasks = okResult.Value as IList<TrackedTaskDto>;
+
+            Assert.NotNull(trackedTasks);
+
+            Assert.Collection(trackedTasks,
+            item => Assert.Contains("TrackedTaskId1", trackedTasks![0].TaskId),
+            item => Assert.Contains("TrackedTaskId2", trackedTasks![1].TaskId),
+            item => Assert.Contains("TrackedTaskId3", trackedTasks![2].TaskId),
+            item => Assert.Contains("TrackedTaskId4", trackedTasks![3].TaskId));
+        }
+
+        [Fact]
+        public async Task Get_First_Page_TrackedTasks_Test()
+        {
+            TrackedTaskController controller = await CreateController();
+
+            pagingParameters.PageNumber = 1;
+            pagingParameters.PageSize = 3;
+
+            var actionResult = await controller.GetTrackedTasks(pagingParameters);
 
             Assert.NotNull(actionResult);
             Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
@@ -52,6 +91,31 @@ namespace Timinute.Server.Tests.Controllers
             item => Assert.Contains("TrackedTaskId1", trackedTasks![0].TaskId),
             item => Assert.Contains("TrackedTaskId2", trackedTasks![1].TaskId),
             item => Assert.Contains("TrackedTaskId3", trackedTasks![2].TaskId));
+        }
+
+        [Fact]
+        public async Task Get_Second_Page_TrackedTasks_Test()
+        {
+            TrackedTaskController controller = await CreateController();
+
+            pagingParameters.PageNumber = 2;
+            pagingParameters.PageSize = 2;
+
+            var actionResult = await controller.GetTrackedTasks(pagingParameters);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+
+            Assert.NotNull(okResult);
+            Assert.IsAssignableFrom<IEnumerable<TrackedTaskDto>>(okResult!.Value);
+            var trackedTasks = okResult.Value as IList<TrackedTaskDto>;
+
+            Assert.NotNull(trackedTasks);
+
+            Assert.Collection(trackedTasks,
+            item => Assert.Contains("TrackedTaskId3", trackedTasks![0].TaskId),
+            item => Assert.Contains("TrackedTaskId4", trackedTasks![1].TaskId));
         }
 
         [Fact]
@@ -214,7 +278,7 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
         }
 
-        protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null)
+        protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
             {

@@ -171,7 +171,7 @@ namespace Timinute.Client.Components.TrackedTasks
 
             try
             {
-                var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.GetAll);
+                var responseMessage = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.Get);
 
                 if (responseMessage != null)
                 {
