@@ -31,12 +31,8 @@ First step install prerequisites software, then clone repository, setup SQL data
 Do you like this project and want me support? Great! I really appreciate it and makes me very happy if you buy [Buy Me A Coffee](https://www.buymeacoffee.com/jame581).
 
 ## Screenshots
+![Dashboard](https://user-images.githubusercontent.com/21112138/154512704-0680fe51-8dfa-4012-9d4b-bada6592c3fa.png)
+![TrackedTasks](https://user-images.githubusercontent.com/21112138/154512705-d13dcf63-f5ca-49b3-8897-9001f37c4cde.png)
+![Calendar](https://user-images.githubusercontent.com/21112138/154512708-2544afc4-0065-47ab-ac72-25f34bd46a63.png)
 
-![Dashboard](https://user-images.githubusercontent.com/21112138/154360046-279ec830-9f27-448d-8345-d6c0609b785c.png)
-
-![TimeTracker](https://user-images.githubusercontent.com/21112138/154360051-d906f7ee-86a4-47f6-9c8d-b5084c80d19d.png)
-
-![TrackedTasks](https://user-images.githubusercontent.com/21112138/154360053-cef71925-e41a-4329-b816-25260c00c136.png)
-
-![Calendar](https://user-images.githubusercontent.com/21112138/154360045-bb04d245-eadb-4a5a-a2ef-03f96e1638e9.png)
 
