@@ -155,8 +155,8 @@ namespace Timinute.Server.Controllers
         }
 
         // GET: api/Analytics/AmountWorkTimeLastMonth
-        [HttpGet("AmountWorkTimeLastMonth")]
-        public async Task<ActionResult<AmountOfWorkTimeDto>> GetAmountWorkTimeLastMonth()
+        [HttpGet("AmountWorkTimeByMonth")]
+        public async Task<ActionResult<AmountOfWorkTimeDto>> GetAmountWorkTimeByMonth([FromQuery] AmountWorkTimeByMonthDto amountWorkTimeByMonthDto)
         {
             // get current user ID
             var userId = User.FindFirstValue(Constants.Claims.UserId);
@@ -166,13 +166,11 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var today = DateTime.Today.ToUniversalTime();
-            var month = new DateTime(today.Year, today.Month, 1).ToUniversalTime();
-            var first = month.AddMonths(-1);
-            var last = month.AddDays(-1);
+            var month = new DateTime(amountWorkTimeByMonthDto.Year, amountWorkTimeByMonthDto.Month, 1).ToUniversalTime();
+            var last = month.AddMonths(1).AddDays(-1);
 
             var trackedTaskList = await trackedTaskRepository.Get(
-                x => x.UserId == userId && x.StartDate >= first && x.StartDate <= last,
+                x => x.UserId == userId && x.StartDate >= month && x.StartDate <= last,
                 includeProperties: "Project");
 
             double secondsSum = trackedTaskList.ToList().Sum(x => x.Duration.TotalSeconds);

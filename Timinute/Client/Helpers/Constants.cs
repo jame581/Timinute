@@ -85,9 +85,14 @@ namespace Timinute.Client.Helpers
 
                 public const string GetWorkTimePerMonths = $"{Api}/WorkTimePerMonths";
 
-                public const string GetAmountWorkTimeLastMonth = $"{Api}/AmountWorkTimeLastMonth";
+                public const string GetAmountWorkTimeByMonth = $"{Api}/AmountWorkTimeByMonth";
 
                 public const string GetById = $"{Api}/";
+
+                public static string ConstructUrlForAmountWorkTimeByMonth(int year, int month)
+                {
+                    return GetAmountWorkTimeByMonth + $"?Year={year}&Month={month}";
+                }
             }
         }
     }

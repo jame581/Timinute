@@ -45,6 +45,7 @@ namespace Timinute.Client.Components.Dashboard
                 Navigation.NavigateTo($"{Navigation.BaseUri}auth/login", true);
 
             await LoadAmountWorkTimeLastMonth();
+            await LoadAmountWorkTimeActualMonth();
         }
 
         private async Task LoadAmountWorkTimeLastMonth()
@@ -53,12 +54,36 @@ namespace Timinute.Client.Components.Dashboard
 
             try
             {
-                var response = await client.GetFromJsonAsync<AmountOfWorkTimeDto>(Constants.API.Analytics.GetAmountWorkTimeLastMonth);
+                DateTime lastMonth = DateTime.Now.AddMonths(-1);
+                var response = await client.GetFromJsonAsync<AmountOfWorkTimeDto>(Constants.API.Analytics.ConstructUrlForAmountWorkTimeByMonth(lastMonth.Year, lastMonth.Month));
 
                 if (response != null)
                 {
                     AmountWorkTimeLastMonth = response.AmountWorkTimeText;
                     TopProjectLastMonth = $"{response.TopProject} - {response.TopProjectAmounTimeText}";
+                }
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+            }
+
+            StateHasChanged();
+        }
+
+        private async Task LoadAmountWorkTimeActualMonth()
+        {
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+            try
+            {
+                DateTime now = DateTime.Now;
+                var response = await client.GetFromJsonAsync<AmountOfWorkTimeDto>(Constants.API.Analytics.ConstructUrlForAmountWorkTimeByMonth(now.Year, now.Month));
+
+                if (response != null)
+                {
+                    AmountWorkTimeThisMonth = response.AmountWorkTimeText;
+                    TopProjectThisMonth = $"{response.TopProject} - {response.TopProjectAmounTimeText}";
                 }
             }
             catch (Exception ex)
