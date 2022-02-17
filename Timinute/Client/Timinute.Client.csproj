@@ -29,16 +29,4 @@
     <Folder Include="wwwroot\img\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="wwwroot\img\Calendar.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="wwwroot\img\Dashboard.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="wwwroot\img\TrackedTasks.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>
