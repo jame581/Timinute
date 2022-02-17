@@ -95,7 +95,7 @@ namespace Timinute.Client.Pages.TrackedTasks
         async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
         {
             TrackedTask data = await dialogService.OpenAsync<AddTrackedTaskForm>("Add Tracked Task",
-                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
+                new Dictionary<string, object> { { "Start", args.Start.AddHours(9) }, { "End", args.End.AddHours(-6) } }); // Add hours for setup start and end work hours 9 - 18
 
             if (data != null)
             {
