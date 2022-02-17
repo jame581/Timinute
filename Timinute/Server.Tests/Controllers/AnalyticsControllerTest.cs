@@ -37,7 +37,9 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            var actionResult = await controller.GetAmountWorkTimeLastMonth();
+            DateTime lastMonth = DateTime.Now.AddMonths(-1);
+
+            var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = lastMonth.Year, Month = lastMonth.Month });
 
             Assert.NotNull(actionResult);
             Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
@@ -50,11 +52,38 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(amountOfWorkTimeDto);
 
             Assert.Equal("Project 1003", amountOfWorkTimeDto.TopProject);
-            Assert.Equal(TimeSpan.FromHours(5).TotalSeconds + TimeSpan.FromHours(6).TotalSeconds, amountOfWorkTimeDto.TopProjectAmounTime);
+            Assert.Equal(TimeSpan.FromHours(11).TotalSeconds, amountOfWorkTimeDto.TopProjectAmounTime);
             Assert.Equal(TimeSpan.FromSeconds(amountOfWorkTimeDto.TopProjectAmounTime).ToString(@"hh\:mm\:ss"), amountOfWorkTimeDto.TopProjectAmounTimeText);
 
             Assert.Equal("28:00:00", amountOfWorkTimeDto.AmountWorkTimeText);
             Assert.Equal(TimeSpan.FromHours(28).TotalSeconds, amountOfWorkTimeDto.AmountWorkTime);
+        }
+
+        [Fact]
+        public async Task Get_Amount_Work_Time_This_Month_Test()
+        {
+            AnalyticsController controller = await CreateController();
+
+            DateTime thisMonth = DateTime.Now;
+
+            var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = thisMonth.Year, Month = thisMonth.Month });
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+
+            Assert.NotNull(okResult);
+            Assert.IsAssignableFrom<AmountOfWorkTimeDto>(okResult!.Value);
+            var amountOfWorkTimeDto = okResult.Value as AmountOfWorkTimeDto;
+
+            Assert.NotNull(amountOfWorkTimeDto);
+
+            Assert.Equal("Project 1004", amountOfWorkTimeDto.TopProject);
+            Assert.Equal(TimeSpan.FromHours(10).TotalSeconds, amountOfWorkTimeDto.TopProjectAmounTime);
+            Assert.Equal(TimeSpan.FromSeconds(amountOfWorkTimeDto.TopProjectAmounTime).ToString(@"hh\:mm\:ss"), amountOfWorkTimeDto.TopProjectAmounTimeText);
+
+            Assert.Equal("10:00:00", amountOfWorkTimeDto.AmountWorkTimeText);
+            Assert.Equal(TimeSpan.FromHours(10).TotalSeconds, amountOfWorkTimeDto.AmountWorkTime);
         }
 
         [Fact]
