@@ -169,7 +169,6 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         private async Task HandleTrackedTaskAdded(TrackedTask trackedTask)
         {
-            //await RefreshTable();
             await radzenDataGrid.Reload();
         }
 

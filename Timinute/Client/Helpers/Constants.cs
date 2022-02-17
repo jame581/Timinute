@@ -49,8 +49,6 @@ namespace Timinute.Client.Helpers
 
                 public const string Get = "TrackedTask";
 
-                //public const string GetPaged = "TrackedTask/PageNumber={0}&OrderBy={1}&Filter={2}&PageSize={3}";
-
                 public const string GetById = $"{Api}/";
 
                 public const string Create = Api;

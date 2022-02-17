@@ -156,6 +156,7 @@ namespace Timinute.Client.Pages.TrackedTasks
 
         void OnTrackedTaskRender(SchedulerAppointmentRenderEventArgs<TrackedTask> args)
         {
+            // Examaple
             //if (args.Data.Name == "Birthday")
             //{
             //    args.Attributes["style"] = "background: red";
