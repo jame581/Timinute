@@ -30,7 +30,9 @@ namespace Timinute.Server.Tests.Repositories
             Assert.Collection(projects,
                 item => Assert.Contains("ProjectId1", item.ProjectId),
                 item => Assert.Contains("ProjectId2", item.ProjectId),
-                item => Assert.Contains("ProjectId3", item.ProjectId));
+                item => Assert.Contains("ProjectId3", item.ProjectId),
+                item => Assert.Contains("ProjectId4", item.ProjectId),
+                item => Assert.Contains("ProjectId5", item.ProjectId));
         }
 
         [Fact]
@@ -81,7 +83,8 @@ namespace Timinute.Server.Tests.Repositories
         [Fact]
         public async Task Add_Project_Test()
         {
-            var newProject = new Project { ProjectId = "ProjectId100", Name = "Project 100" };
+            var userId = Guid.NewGuid().ToString();
+            var newProject = new Project { ProjectId = "ProjectId100", Name = "Project 100", UserId = userId };
 
             int countBefore;
 
@@ -105,7 +108,8 @@ namespace Timinute.Server.Tests.Repositories
         [Fact]
         public async Task Add_Project_Without_Company_Test()
         {
-            var newProject = new Project { ProjectId = "ProjectId200", Name = "Project 200" };
+            var userId = Guid.NewGuid().ToString();
+            var newProject = new Project { ProjectId = "ProjectId200", Name = "Project 200", UserId = userId };
 
             int countBefore;
 

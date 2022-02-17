@@ -139,7 +139,7 @@ namespace Timinute.Server.Tests.Controllers
         }
 
 
-        protected override async Task<AnalyticsController> CreateController(ApplicationDbContext? applicationDbContext = null)
+        protected override async Task<AnalyticsController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
             {

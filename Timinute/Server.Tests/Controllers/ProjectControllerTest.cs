@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
@@ -58,8 +59,8 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.Collection(projectDtos,
             item => Assert.Contains("ProjectId1", projectDtos![0].ProjectId),
-            item => Assert.Contains("ProjectId2", projectDtos![1].ProjectId),
-            item => Assert.Contains("ProjectId3", projectDtos![2].ProjectId));
+            item => Assert.Contains("ProjectId4", projectDtos![1].ProjectId),
+            item => Assert.Contains("ProjectId5", projectDtos![2].ProjectId));
         }
 
         [Fact]
@@ -139,7 +140,7 @@ namespace Timinute.Server.Tests.Controllers
 
             var projectToUpdate = new UpdateProjectDto
             {
-                ProjectId = "ProjectId2",
+                ProjectId = "ProjectId1",
                 Name = "Project 42",
             };
 
@@ -157,6 +158,30 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.Equal(projectToUpdate.ProjectId, updatedProjectTask!.ProjectId);
             Assert.Equal(projectToUpdate.Name, updatedProjectTask!.Name);
+        }
+
+        [Fact]
+        public async Task Update_Project_Another_User_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateTest");
+
+            ProjectController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            var projectToUpdate = new UpdateProjectDto
+            {
+                ProjectId = "ProjectId1",
+                Name = "Project 42",
+            };
+
+            var actionResult = await controller.UpdateProject(projectToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<UnauthorizedResult>(actionResult.Result);
+
+            var unauthorizedResult = actionResult.Result as UnauthorizedResult;
+            Assert.NotNull(unauthorizedResult);
+
+            Assert.Equal((int)HttpStatusCode.Unauthorized, unauthorizedResult.StatusCode);
         }
 
         [Fact]
@@ -207,7 +232,7 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(projectToCreate.Name, newlyCreatedProject!.Name);
         }
 
-        protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null)
+        protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
             {
@@ -217,7 +242,7 @@ namespace Timinute.Server.Tests.Controllers
             var repositoryFactory = new RepositoryFactory(applicationDbContext);
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {
-                                        new Claim("sub", "ApplicationUser1"),
+                                        new Claim("sub", userId),
                                         new Claim(ClaimTypes.Name, "test1@email.com")
                                         }
             ));

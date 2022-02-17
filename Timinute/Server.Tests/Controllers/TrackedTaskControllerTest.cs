@@ -64,10 +64,7 @@ namespace Timinute.Server.Tests.Controllers
             item => Assert.Contains("TrackedTaskId1", trackedTasks![0].TaskId),
             item => Assert.Contains("TrackedTaskId2", trackedTasks![1].TaskId),
             item => Assert.Contains("TrackedTaskId3", trackedTasks![2].TaskId),
-            item => Assert.Contains("TrackedTaskId4", trackedTasks![3].TaskId),
-            item => Assert.Contains("TrackedTaskId5", trackedTasks![4].TaskId),
-            item => Assert.Contains("TrackedTaskId6", trackedTasks![5].TaskId),
-            item => Assert.Contains("TrackedTaskId7", trackedTasks![6].TaskId));
+            item => Assert.Contains("TrackedTaskId4", trackedTasks![3].TaskId));
         }
 
         [Fact]
@@ -102,7 +99,7 @@ namespace Timinute.Server.Tests.Controllers
             TrackedTaskController controller = await CreateController();
 
             pagingParameters.PageNumber = 2;
-            pagingParameters.PageSize = 3;
+            pagingParameters.PageSize = 2;
 
             var actionResult = await controller.GetTrackedTasks(pagingParameters);
 
@@ -117,9 +114,8 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(trackedTasks);
 
             Assert.Collection(trackedTasks,
-            item => Assert.Contains("TrackedTaskId4", trackedTasks![0].TaskId),
-            item => Assert.Contains("TrackedTaskId5", trackedTasks![1].TaskId),
-            item => Assert.Contains("TrackedTaskId6", trackedTasks![2].TaskId));
+            item => Assert.Contains("TrackedTaskId3", trackedTasks![0].TaskId),
+            item => Assert.Contains("TrackedTaskId4", trackedTasks![1].TaskId));
         }
 
         [Fact]
@@ -282,7 +278,7 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
         }
 
-        protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null)
+        protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
             {
