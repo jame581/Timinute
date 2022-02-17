@@ -66,11 +66,6 @@ namespace Timinute.Server.Repository
                 }
             }
 
-            if (orderBy != null)
-            {
-                query = query.OrderBy(orderBy);
-            }
-
             if (!string.IsNullOrEmpty(parameters.OrderBy) && !string.IsNullOrEmpty(orderBy))
             {
                query = query.OrderBy($"{orderBy}, {parameters.OrderBy}");
