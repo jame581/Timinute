@@ -15,6 +15,10 @@ namespace Timinute.Client.Components.Dashboard
         private string AmountWorkTimeLastMonth = "00:00:00";
 
         private string TopProjectLastMonth = "None - 00:00:00";
+
+        private string AmountWorkTimeThisMonth = "00:00:00";
+        
+        private string TopProjectThisMonth = "None - 00:00:00";
         
         #region Dependency Injection
         
