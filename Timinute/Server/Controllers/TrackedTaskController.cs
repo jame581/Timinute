@@ -96,102 +96,76 @@ namespace Timinute.Server.Controllers
             newTrackedTask.StartDate = trackedTask.StartDate.ToUniversalTime();
             newTrackedTask.EndDate = trackedTask.StartDate + newTrackedTask.Duration;
 
-            try
-            {
-                await taskRepository.Insert(newTrackedTask);
-                return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
-            }
-            catch (Exception ex)
-            {
-                //TODO: Add proper expceptions for proper requests
-                logger.LogError($"Error when creating Tracked task:", ex.Message);
-                return BadRequest("Invalid Tracked task data.");
-            }
+            await taskRepository.Insert(newTrackedTask);
+            return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
         }
 
         // DELETE: api/TrackedTask
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteTrackedTask(string id)
         {
-            try
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = User.FindFirstValue(Constants.Claims.UserId);
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
-
-                var trackedTaskToDelete = await taskRepository.Find(id);
-                if (trackedTaskToDelete == null)
-                {
-                    logger.LogError("Tracked task was not found");
-                    return NotFound("Tracked task not found!");
-                }
-
-                if (trackedTaskToDelete.UserId != userId)
-                {
-                    return Unauthorized();
-                }
-
-                await taskRepository.Delete(id);
-
-                logger.LogInformation($"Tracked task with Id {id} was deleted.");
-                return NoContent();
+                return Unauthorized();
             }
-            catch (Exception ex)
+
+            var trackedTaskToDelete = await taskRepository.Find(id);
+            if (trackedTaskToDelete == null)
             {
-                //TODO: Add proper expceptions for proper requests
-                logger.LogError($"Error when creating Tracked task:", ex.Message);
-                return BadRequest("Invalid Tracked task data.");
+                logger.LogError("Tracked task was not found");
+                return NotFound("Tracked task not found!");
             }
+
+            if (trackedTaskToDelete.UserId != userId)
+            {
+                return Unauthorized();
+            }
+
+            await taskRepository.Delete(id);
+
+            logger.LogInformation($"Tracked task with Id {id} was deleted.");
+            return NoContent();
+
         }
 
         // UPDATE: api/TrackedTask
         [HttpPut]
         public async Task<ActionResult<TrackedTaskDto>> UpdateTrackedTask([FromBody] UpdateTrackedTaskDto trackedTask)
         {
-            try
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = User.FindFirstValue(Constants.Claims.UserId);
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
-
-                var foundTrackedTask = await taskRepository.Find(trackedTask.TaskId);
-
-                if (foundTrackedTask == null)
-                {
-                    logger.LogError("Tracked task was not found");
-                    return NotFound("Tracked task not found!");
-                }
-
-                if (foundTrackedTask.UserId != userId)
-                {
-                    return Unauthorized();
-                }
-
-                var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
-                updatedTrackedTask.StartDate = updatedTrackedTask.StartDate.ToUniversalTime();
-
-                if (updatedTrackedTask.EndDate.HasValue)
-                {
-                    updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
-                    updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
-                }
-
-                await taskRepository.Update(updatedTrackedTask);
-
-                return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTask));
+                return Unauthorized();
             }
-            catch (Exception ex)
+
+            var foundTrackedTask = await taskRepository.Find(trackedTask.TaskId);
+
+            if (foundTrackedTask == null)
             {
-                //TODO: Add proper expceptions for proper requests
-                logger.LogError($"Error when creating Tracked task:", ex.Message);
-                return BadRequest("Invalid Tracked task data.");
+                logger.LogError("Tracked task was not found");
+                return NotFound("Tracked task not found!");
             }
+
+            if (foundTrackedTask.UserId != userId)
+            {
+                return Unauthorized();
+            }
+
+            var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
+            updatedTrackedTask.StartDate = updatedTrackedTask.StartDate.ToUniversalTime();
+
+            if (updatedTrackedTask.EndDate.HasValue)
+            {
+                updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
+                updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
+            }
+
+            await taskRepository.Update(updatedTrackedTask);
+
+            return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTask));
         }
     }
 }
