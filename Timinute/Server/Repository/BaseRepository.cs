@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Timinute.Server.Data;
@@ -41,7 +42,8 @@ namespace Timinute.Server.Repository
             return await dbSet.FindAsync(id);
         }
 
-        public async Task<PagedList<TEntity>> GetPaged(PagingParameters parameters, Expression<Func<TEntity, bool>>? filter = null, string includeProperties = "")
+        public async Task<PagedList<TEntity>> GetPaged(PagingParameters parameters, Expression<Func<TEntity, bool>>? filter = null,
+            string orderBy = null, string includeProperties = "")
         {
             IQueryable<TEntity> query = dbSet;
 
@@ -64,7 +66,20 @@ namespace Timinute.Server.Repository
                 }
             }
 
-            if (!string.IsNullOrEmpty(parameters.OrderBy))
+            if (orderBy != null)
+            {
+                query = query.OrderBy(orderBy);
+            }
+
+            if (!string.IsNullOrEmpty(parameters.OrderBy) && !string.IsNullOrEmpty(orderBy))
+            {
+               query = query.OrderBy($"{orderBy}, {parameters.OrderBy}");
+            }
+            else if (!string.IsNullOrEmpty(orderBy))
+            {
+               query = query.OrderBy(orderBy);
+            }
+            else if (!string.IsNullOrEmpty(parameters.OrderBy))
             {
                query = query.OrderBy(parameters.OrderBy);
             }
