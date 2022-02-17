@@ -1,6 +1,7 @@
 # Timinute
 [![Build & Test](https://github.com/jame581/Timinute/actions/workflows/build_test.yml/badge.svg)](https://github.com/jame581/Timinute/actions/workflows/build_test.yml)
 
+The free time tracker and time tracking software. Timinute is a time tracker and timesheet app that lets you track work hours across projects.
 The application serves as a demonstration of the possibilities of the new Blazor technology. Allows you to track time and task. Identity server is used to manage users.
 
 ### Prerequisites
