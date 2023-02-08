@@ -9,7 +9,7 @@ The application serves as a demonstration of the possibilities of the new Blazor
 Software what you need is:
 
 * [Visual Studio 2022 (Version 17 or better)](https://visualstudio.microsoft.com/)
-* [.NET 6.0 SDK (v6.0.0 or better)](https://dotnet.microsoft.com/download/dotnet)
+* [.NET 7.0 SDK (v7.0.0 or better)](https://dotnet.microsoft.com/download/dotnet)
 * [Docker Desktop (Is used for SQL Database)](https://www.docker.com/get-started) 
 
 That's it :)
@@ -29,6 +29,10 @@ First step install prerequisites software, then clone repository, setup SQL data
 * **Jan Mesarč** - *Creator* - [jame581](https://jame581.azurewebsites.net/)
 
 Do you like this project and want me support? Great! I really appreciate it and makes me very happy if you buy [Buy Me A Coffee](https://www.buymeacoffee.com/jame581).
+
+## Video
+
+https://user-images.githubusercontent.com/21112138/217609228-ac3dfdb4-3f97-4771-aff1-ee98917f5547.mp4
 
 ## Screenshots
 ![Dashboard](https://user-images.githubusercontent.com/21112138/154512704-0680fe51-8dfa-4012-9d4b-bada6592c3fa.png)
