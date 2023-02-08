@@ -27,7 +27,8 @@ namespace Timinute.Client.Components.TrackedTasks
         }
 
         private readonly List<Project> projects = new();
-        private string? ProjectId { get; set; }
+        
+        private string? SelectedProjectId { get; set; }
 
         private HttpClient client;
 
@@ -57,6 +58,7 @@ namespace Timinute.Client.Components.TrackedTasks
             CreateTrackedTaskDto createTrackedTaskDto = new()
             {
                 Name = NewTrackedTask.Name,
+                ProjectId = SelectedProjectId,
                 StartDate = NewTrackedTask.StartDate,
                 Duration = NewTrackedTask.Duration
             };

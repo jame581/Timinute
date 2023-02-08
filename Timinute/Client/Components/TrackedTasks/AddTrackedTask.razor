@@ -14,7 +14,7 @@
             <div class="col-auto">
                 <label for="project">
                     Select project
-                    <InputSelect id="project" class="form-select" @bind-Value="ProjectId">
+                    <InputSelect id="project" class="form-select" @bind-Value="SelectedProjectId">
                         <option selected>None</option>
                         @foreach (var project in projects)
                         {
