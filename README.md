@@ -9,7 +9,7 @@ The application serves as a demonstration of the possibilities of the new Blazor
 Software what you need is:
 
 * [Visual Studio 2022 (Version 17 or better)](https://visualstudio.microsoft.com/)
-* [.NET 7.0 SDK (v7.0.0 or better)](https://dotnet.microsoft.com/download/dotnet)
+* [.NET 8.0 SDK (v8.0.0 or better)](https://dotnet.microsoft.com/download/dotnet)
 * [Docker Desktop (Is used for SQL Database)](https://www.docker.com/get-started) 
 
 That's it :)
