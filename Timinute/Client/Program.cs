@@ -13,6 +13,7 @@ builder.Services.AddHttpClient("Timinute.ServerAPI", client => client.BaseAddres
     .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
 
 builder.Services.AddBlazoredSessionStorage();
+builder.Services.AddRadzenComponents();
 
 // Supply HttpClient instances that include access tokens when making requests to the server project
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Timinute.ServerAPI"));
