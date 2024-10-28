@@ -1,5 +1,10 @@
 ﻿@inherits LayoutComponentBase
 
+<head>
+    <RadzenTheme Theme="material" @rendermode="RenderMode.InteractiveAuto" />
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+</head>
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
