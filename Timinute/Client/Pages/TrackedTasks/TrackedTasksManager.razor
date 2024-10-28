@@ -24,36 +24,4 @@
             <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date" />
         </Columns>
     </RadzenDataGrid>
-
-    @* <table class="table table-table-striped table-bordered">
-        <thead>
-        <tr>
-        <th>Task Id</th>
-        <th>Name</th>
-        <th>Project Id</th>
-        <th>Start Date</th>
-        <th>End Date</th>
-        <th>Duration</th>
-        <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var trackedTask in trackedTasksList)
-        {
-        <tr>
-        <td>@trackedTask.TaskId</td>
-        <td>@trackedTask.Name</td>
-        <td>@trackedTask.ProjectId</td>
-        <td>@trackedTask.StartDate</td>
-        <td>@trackedTask.EndDate</td>
-        <td>@trackedTask.Duration</td>
-        <td>
-        <button type="submit" class="btn btn-danger" @onclick="() => RemoveTrackedTask(trackedTask.TaskId)">
-        <span class="oi oi-delete"></span> Remove
-        </button>
-        </td>
-        </tr>
-        }
-        </tbody>
-        </table>*@
 </div>
