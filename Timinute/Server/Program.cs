@@ -1,5 +1,5 @@
 using AutoMapper;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +26,11 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 IdentitySetup();
 
 builder.Services.AddAuthentication()
-    .AddIdentityServerJwt();
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://localhost:7047";
+        options.TokenValidationParameters.ValidateAudience = false;
+    });
 
 builder.Logging.AddConsole();
 
@@ -154,14 +158,34 @@ void IdentitySetup()
         options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
     });
 
-    builder.Services.AddIdentityServer()
-        .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+    builder.Services.AddIdentityServer(options =>
+    {
+        options.IssuerUri = "https://localhost:7047";
+    })
+        .AddAspNetIdentity<ApplicationUser>()
+        .AddInMemoryIdentityResources(new List<Duende.IdentityServer.Models.IdentityResource>
         {
-            options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Fullname);
-            options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.LastLogin);
-            options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Role);
+            new Duende.IdentityServer.Models.IdentityResources.OpenId(),
+            new Duende.IdentityServer.Models.IdentityResources.Profile(),
         })
-        .AddJwtBearerClientAuthentication();
+        .AddInMemoryApiScopes(new List<Duende.IdentityServer.Models.ApiScope>
+        {
+            new Duende.IdentityServer.Models.ApiScope("Timinute.ServerAPI", "Timinute Server API")
+        })
+        .AddInMemoryClients(new List<Duende.IdentityServer.Models.Client>
+        {
+            new Duende.IdentityServer.Models.Client
+            {
+                ClientId = "Timinute.Client",
+                AllowedGrantTypes = Duende.IdentityServer.Models.GrantTypes.Code,
+                RequirePkce = true,
+                RequireClientSecret = false,
+                AllowedCorsOrigins = { "https://localhost:7047" },
+                AllowedScopes = { "openid", "profile", "Timinute.ServerAPI" },
+                RedirectUris = { "https://localhost:7047/authentication/login-callback" },
+                PostLogoutRedirectUris = { "https://localhost:7047/authentication/logout-callback" },
+            }
+        });
 }
 
 void DependecyInjection()

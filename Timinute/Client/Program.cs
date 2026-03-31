@@ -21,6 +21,12 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 
-builder.Services.AddApiAuthorization();
+builder.Services.AddOidcAuthentication(options =>
+{
+    options.ProviderOptions.Authority = builder.HostEnvironment.BaseAddress;
+    options.ProviderOptions.ClientId = "Timinute.Client";
+    options.ProviderOptions.ResponseType = "code";
+    options.ProviderOptions.DefaultScopes.Add("Timinute.ServerAPI");
+});
 
 await builder.Build().RunAsync();

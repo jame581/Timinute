@@ -1,6 +1,4 @@
-﻿using Duende.IdentityServer.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -24,11 +22,9 @@ namespace Timinute.Server.Tests.Helpers
 
         public static async Task<ApplicationDbContext> GetDefaultApplicationDbContext(string databaseName = "Test_DB", bool fillTestDate = true, bool deleteAll = true, bool analyticsTest = false)
         {
-            var someOptions = Options.Create(new OperationalStoreOptions());
-
             var dbContextOptions = GetDbContextOptions(databaseName);
 
-            var context = new ApplicationDbContext(dbContextOptions, someOptions);
+            var context = new ApplicationDbContext(dbContextOptions);
 
             if (deleteAll)
             {
