@@ -1,5 +1,5 @@
 using AutoMapper;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +28,8 @@ IdentitySetup();
 builder.Services.AddAuthentication()
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://localhost:7047";
-        options.TokenValidationParameters.ValidateAudience = false;
+        options.Authority = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+        options.Audience = "Timinute.ServerAPI";
     });
 
 builder.Logging.AddConsole();
@@ -158,32 +158,37 @@ void IdentitySetup()
         options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
     });
 
+    var baseUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+
     builder.Services.AddIdentityServer(options =>
     {
-        options.IssuerUri = "https://localhost:7047";
+        options.IssuerUri = baseUrl;
     })
         .AddAspNetIdentity<ApplicationUser>()
-        .AddInMemoryIdentityResources(new List<Duende.IdentityServer.Models.IdentityResource>
+        .AddInMemoryIdentityResources(new List<IdentityResource>
         {
-            new Duende.IdentityServer.Models.IdentityResources.OpenId(),
-            new Duende.IdentityServer.Models.IdentityResources.Profile(),
+            new IdentityResources.OpenId
+            {
+                UserClaims = { "sub", Constants.Claims.Fullname, Constants.Claims.LastLogin, Constants.Claims.Role }
+            },
+            new IdentityResources.Profile(),
         })
-        .AddInMemoryApiScopes(new List<Duende.IdentityServer.Models.ApiScope>
+        .AddInMemoryApiScopes(new List<ApiScope>
         {
-            new Duende.IdentityServer.Models.ApiScope("Timinute.ServerAPI", "Timinute Server API")
+            new ApiScope("Timinute.ServerAPI", "Timinute Server API")
         })
-        .AddInMemoryClients(new List<Duende.IdentityServer.Models.Client>
+        .AddInMemoryClients(new List<Client>
         {
-            new Duende.IdentityServer.Models.Client
+            new Client
             {
                 ClientId = "Timinute.Client",
-                AllowedGrantTypes = Duende.IdentityServer.Models.GrantTypes.Code,
+                AllowedGrantTypes = GrantTypes.Code,
                 RequirePkce = true,
                 RequireClientSecret = false,
-                AllowedCorsOrigins = { "https://localhost:7047" },
+                AllowedCorsOrigins = { baseUrl },
                 AllowedScopes = { "openid", "profile", "Timinute.ServerAPI" },
-                RedirectUris = { "https://localhost:7047/authentication/login-callback" },
-                PostLogoutRedirectUris = { "https://localhost:7047/authentication/logout-callback" },
+                RedirectUris = { $"{baseUrl}/authentication/login-callback" },
+                PostLogoutRedirectUris = { $"{baseUrl}/authentication/logout-callback" },
             }
         });
 }
