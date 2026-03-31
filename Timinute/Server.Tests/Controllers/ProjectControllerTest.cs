@@ -233,6 +233,19 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(projectToCreate.Name, newlyCreatedProject!.Name);
         }
 
+        [Fact]
+        public async Task Delete_Project_Another_User_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "DeleteAuthTest");
+            ProjectController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            // Try to delete ApplicationUser1's project
+            var actionResult = await controller.DeleteProject("ProjectId1");
+
+            Assert.NotNull(actionResult);
+            Assert.IsType<UnauthorizedResult>(actionResult);
+        }
+
         protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)

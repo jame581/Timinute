@@ -279,6 +279,29 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
         }
 
+        [Fact]
+        public async Task Update_TrackedTask_Another_User_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "ApplicationUser2");
+
+            var trackedTaskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1",  // belongs to ApplicationUser1
+                Name = "Hacked Name",
+                StartDate = DateTime.UtcNow,
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<UnauthorizedResult>(actionResult.Result);
+
+            var unauthorizedResult = actionResult.Result as UnauthorizedResult;
+            Assert.NotNull(unauthorizedResult);
+            Assert.Equal((int)System.Net.HttpStatusCode.Unauthorized, unauthorizedResult!.StatusCode);
+        }
+
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
@@ -289,7 +312,7 @@ namespace Timinute.Server.Tests.Controllers
             var repositoryFactory = new RepositoryFactory(applicationDbContext);
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {
-                                        new Claim("sub", "ApplicationUser1"),
+                                        new Claim("sub", userId),
                                         new Claim(ClaimTypes.Name, "test1@email.com")
                                         }
             ));

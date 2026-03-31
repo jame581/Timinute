@@ -173,6 +173,33 @@ namespace Timinute.Server.Tests.Repositories
 
             await Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () => await repository.Update(trackedTaskToUpdate));
         }
+
+        [Fact]
+        public async Task Delete_Existing_TrackedTask_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
+            var repository = new BaseRepository<TrackedTask>(dbContext);
+
+            var task = await repository.GetById("TrackedTaskId1");
+            Assert.NotNull(task);
+
+            await repository.Delete(task!);
+
+            var deleted = await repository.GetById("TrackedTaskId1");
+            Assert.Null(deleted);
+        }
+
+        [Fact]
+        public async Task Delete_TrackedTask_By_Id_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
+            var repository = new BaseRepository<TrackedTask>(dbContext);
+
+            await repository.Delete("TrackedTaskId2");
+
+            var deleted = await repository.GetById("TrackedTaskId2");
+            Assert.Null(deleted);
+        }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
     }
 }

@@ -169,5 +169,32 @@ namespace Timinute.Server.Tests.Repositories
                 await Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () => await repository.Update(trackedTaskToUpdate));
             }
         }
+
+        [Fact]
+        public async Task Delete_Existing_Project_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
+            var repository = new BaseRepository<Project>(dbContext);
+
+            var project = await repository.GetById("ProjectId4");
+            Assert.NotNull(project);
+
+            await repository.Delete(project!);
+
+            var deleted = await repository.GetById("ProjectId4");
+            Assert.Null(deleted);
+        }
+
+        [Fact]
+        public async Task Delete_Project_By_Id_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
+            var repository = new BaseRepository<Project>(dbContext);
+
+            await repository.Delete("ProjectId5");
+
+            var deleted = await repository.GetById("ProjectId5");
+            Assert.Null(deleted);
+        }
     }
 }

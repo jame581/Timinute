@@ -88,6 +88,25 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Get_Work_Time_Per_Months_Test()
+        {
+            AnalyticsController controller = await CreateController();
+
+            var actionResult = await controller.GetWorkTimePerMonths();
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+
+            Assert.NotNull(okResult);
+            Assert.IsAssignableFrom<List<WorkTimePerMonthDto>>(okResult!.Value);
+            var workTimePerMonths = okResult.Value as List<WorkTimePerMonthDto>;
+
+            Assert.NotNull(workTimePerMonths);
+            Assert.Equal(2, workTimePerMonths!.Count);
+        }
+
+        [Fact]
         public async Task Get_Work_Time_Per_Months()
         {
             AnalyticsController controller = await CreateController();
