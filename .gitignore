@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Duende IdentityServer signing keys
+**/keys/
+
+# Claude Code
+CLAUDE.md
+.claude/
