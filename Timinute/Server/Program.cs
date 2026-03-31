@@ -210,6 +210,15 @@ void IdentitySetup()
     {
         identityServerBuilder.AddDeveloperSigningCredential();
     }
+    else
+    {
+        // Duende IdentityServer enables automatic key management by default.
+        // Keys are generated, rotated, and persisted to the /keys directory.
+        identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.KeyManagementOptions>(options =>
+        {
+            options.Enabled = true;
+        });
+    }
 }
 
 void DependecyInjection()
