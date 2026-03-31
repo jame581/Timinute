@@ -1,4 +1,5 @@
 using Duende.IdentityServer.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,11 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // Identity configuration
 IdentitySetup();
 
-builder.Services.AddAuthentication()
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(options =>
     {
         options.Authority = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
@@ -159,7 +164,7 @@ void IdentitySetup()
 
     var baseUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
 
-    builder.Services.AddIdentityServer(options =>
+    var identityServerBuilder = builder.Services.AddIdentityServer(options =>
     {
         options.IssuerUri = baseUrl;
     })
@@ -190,6 +195,11 @@ void IdentitySetup()
                 PostLogoutRedirectUris = { $"{baseUrl}/authentication/logout-callback" },
             }
         });
+
+    if (builder.Environment.IsDevelopment())
+    {
+        identityServerBuilder.AddDeveloperSigningCredential();
+    }
 }
 
 void DependecyInjection()
