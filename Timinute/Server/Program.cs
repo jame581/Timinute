@@ -184,6 +184,13 @@ void IdentitySetup()
         {
             new ApiScope("Timinute.ServerAPI", "Timinute Server API")
         })
+        .AddInMemoryApiResources(new List<ApiResource>
+        {
+            new ApiResource("Timinute.ServerAPI", "Timinute Server API")
+            {
+                Scopes = { "Timinute.ServerAPI" }
+            }
+        })
         .AddInMemoryClients(new List<Client>
         {
             new Client
