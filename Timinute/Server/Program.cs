@@ -77,7 +77,7 @@ builder.Services.AddControllers(options =>
 DependecyInjection();
 
 // Auto Mapper Configurations
-AutoMapperConfiguration();
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
 // Swagger Configuration
 SwaggerSetup();
@@ -200,15 +200,6 @@ void DependecyInjection()
     builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
 }
 
-void AutoMapperConfiguration()
-{
-    var mappingConfig = new MapperConfiguration(mc =>
-    {
-        mc.AddProfile(new MappingProfile());
-    });
-
-    builder.Services.AddSingleton(mappingConfig.CreateMapper());
-}
 
 void SwaggerSetup()
 {
