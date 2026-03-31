@@ -36,7 +36,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_Project_By_ProjectId_Test()
+        public async Task Get_Project_By_ProjectId_Test()
         {
             await using (var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName))
             {
@@ -51,7 +51,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_Project_Where_ProjectId_Test()
+        public async Task Get_Project_Where_ProjectId_Test()
         {
             using (var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName))
             {
@@ -66,7 +66,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_Project_By_Name_Test()
+        public async Task Get_Project_By_Name_Test()
         {
             using (var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName))
             {

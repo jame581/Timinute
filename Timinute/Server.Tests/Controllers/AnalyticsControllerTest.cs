@@ -25,8 +25,9 @@ namespace Timinute.Server.Tests.Controllers
 
         public AnalyticsControllerTest()
         {
-            var myProfile = new MappingProfile();
-            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(myProfile));
+            var configExpression = new MapperConfigurationExpression();
+            configExpression.AddProfile<MappingProfile>();
+            var configuration = new MapperConfiguration(configExpression, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
             _mapper = new Mapper(configuration);
 
             _loggerMock = new Mock<ILogger<AnalyticsController>>();

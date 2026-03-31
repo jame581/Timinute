@@ -41,7 +41,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_TrackedTask_By_TaskId_Test()
+        public async Task Get_TrackedTask_By_TaskId_Test()
         {
             await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
 
@@ -55,7 +55,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_TrackedTask_Where_TaskId_Test()
+        public async Task Get_TrackedTask_Where_TaskId_Test()
         {
             using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
 
@@ -69,7 +69,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_TrackedTask_By_Name_Test()
+        public async Task Get_TrackedTask_By_Name_Test()
         {
             using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
 
@@ -83,7 +83,7 @@ namespace Timinute.Server.Tests.Repositories
         }
 
         [Fact]
-        public async void Get_TrackedTask_By_Duration_Test()
+        public async Task Get_TrackedTask_By_Duration_Test()
         {
             using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
 
