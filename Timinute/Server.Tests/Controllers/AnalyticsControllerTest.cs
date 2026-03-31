@@ -38,7 +38,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime lastMonth = DateTime.Now.AddMonths(-1);
+            DateTime lastMonth = DateTime.UtcNow.AddMonths(-1);
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = lastMonth.Year, Month = lastMonth.Month });
 
@@ -65,7 +65,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime thisMonth = DateTime.Now;
+            DateTime thisMonth = DateTime.UtcNow;
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = thisMonth.Year, Month = thisMonth.Month });
 

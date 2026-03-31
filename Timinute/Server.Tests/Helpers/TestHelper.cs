@@ -98,9 +98,9 @@ namespace Timinute.Server.Tests.Helpers
                 new ApplicationUser { Id = "ApplicationUser1000", Email = "test1000@email.com", FirstName = "Jan", LastName = "Testovic", EmailConfirmed = true, UserName = "janek100", PasswordHash = "3037c1616052562ebec4291009d17541"},
             };
 
-            var now = DateTime.Now;
-            var month = new DateTime(now.Year, now.Month, 1).ToUniversalTime();
-            var first = new DateTime(now.Year, now.Month, 1).AddMonths(-1).ToUniversalTime();
+            var now = DateTime.UtcNow;
+            var month = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var first = month.AddMonths(-1);
 
             var projects = new List<Project>
             {

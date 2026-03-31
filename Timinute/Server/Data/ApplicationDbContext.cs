@@ -7,8 +7,6 @@ namespace Timinute.Server.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {
-        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
-        public DbSet<ApplicationRole> ApplicationRoles { get; set; }
         public DbSet<TrackedTask> TrackedTasks { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
 

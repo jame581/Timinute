@@ -34,6 +34,9 @@ builder.Services.AddAuthentication(options =>
     {
         options.Authority = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
         options.Audience = "Timinute.ServerAPI";
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters.NameClaimType = "name";
+        options.TokenValidationParameters.RoleClaimType = "role";
     });
 
 builder.Logging.AddConsole();
