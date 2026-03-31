@@ -27,8 +27,8 @@ IdentitySetup();
 
 builder.Services.AddAuthentication(options =>
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = "ApplicationDefinedPolicy";
+        options.DefaultChallengeScheme = "ApplicationDefinedPolicy";
     })
     .AddJwtBearer(options =>
     {
@@ -37,6 +37,17 @@ builder.Services.AddAuthentication(options =>
         options.MapInboundClaims = false;
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
+    })
+    .AddPolicyScheme("ApplicationDefinedPolicy", "ApplicationDefinedPolicy", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            string? authorization = context.Request.Headers.Authorization;
+            if (!string.IsNullOrEmpty(authorization) && authorization.StartsWith("Bearer "))
+                return JwtBearerDefaults.AuthenticationScheme;
+
+            return IdentityConstants.ApplicationScheme;
+        };
     });
 
 builder.Logging.AddConsole();
