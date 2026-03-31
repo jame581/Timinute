@@ -36,7 +36,7 @@ builder.Services.AddAuthentication(options =>
         options.Audience = "Timinute.ServerAPI";
         options.MapInboundClaims = false;
         options.TokenValidationParameters.NameClaimType = "name";
-        options.TokenValidationParameters.RoleClaimType = "role";
+        options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
     });
 
 builder.Logging.AddConsole();
