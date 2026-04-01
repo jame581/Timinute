@@ -77,12 +77,15 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
+            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+            var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId;
+
             var pagedTrackedTaskList = await taskRepository.GetPaged(pagingParameters,
                 t => t.UserId == userId
                     && (from == null || t.StartDate >= from.Value.ToUniversalTime())
                     && (to == null || t.StartDate <= to.Value.ToUniversalTime())
-                    && (projectId == null || t.ProjectId == projectId)
-                    && (search == null || t.Name.Contains(search)),
+                    && (normalizedProjectId == null || t.ProjectId == normalizedProjectId)
+                    && (normalizedSearch == null || t.Name.Contains(normalizedSearch)),
                 orderBy: $"{nameof(TrackedTask.StartDate)} desc",
                 includeProperties: "Project");
 

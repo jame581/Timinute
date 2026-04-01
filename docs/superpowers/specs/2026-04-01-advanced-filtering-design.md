@@ -23,7 +23,7 @@ Query params (all optional, combined with AND):
 - `from` (`DateTimeOffset?`) — StartDate >= from
 - `to` (`DateTimeOffset?`) — StartDate <= to
 - `projectId` (`string?`) — exact match on ProjectId
-- `search` (`string?`) — case-insensitive Contains on task Name
+- `search` (`string?`) — Contains on task Name (case sensitivity depends on DB collation)
 
 Also accepts `PagingParameters` (PageNumber, PageSize) from query string.
 

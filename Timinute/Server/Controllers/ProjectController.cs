@@ -71,9 +71,16 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
+            if (minTaskCount.HasValue && minTaskCount.Value < 0)
+            {
+                return BadRequest("minTaskCount must be >= 0.");
+            }
+
+            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+
             var pagedProjectList = await projectRepository.GetPaged(pagingParameters,
                 p => p.UserId == userId
-                    && (search == null || p.Name.Contains(search))
+                    && (normalizedSearch == null || p.Name.Contains(normalizedSearch))
                     && (!minTaskCount.HasValue || p.TrackedTasks!.Count >= minTaskCount.Value),
                 orderBy: nameof(Project.Name));
 
