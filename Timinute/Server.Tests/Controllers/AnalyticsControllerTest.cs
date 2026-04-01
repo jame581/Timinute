@@ -25,8 +25,9 @@ namespace Timinute.Server.Tests.Controllers
 
         public AnalyticsControllerTest()
         {
-            var myProfile = new MappingProfile();
-            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(myProfile));
+            var configExpression = new MapperConfigurationExpression();
+            configExpression.AddProfile<MappingProfile>();
+            var configuration = new MapperConfiguration(configExpression, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
             _mapper = new Mapper(configuration);
 
             _loggerMock = new Mock<ILogger<AnalyticsController>>();
@@ -37,7 +38,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime lastMonth = DateTime.Now.AddMonths(-1);
+            DateTime lastMonth = DateTime.UtcNow.AddMonths(-1);
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = lastMonth.Year, Month = lastMonth.Month });
 
@@ -64,7 +65,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime thisMonth = DateTime.Now;
+            DateTime thisMonth = DateTime.UtcNow;
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = thisMonth.Year, Month = thisMonth.Month });
 
@@ -84,6 +85,38 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.Equal("10:00:00", amountOfWorkTimeDto.AmountWorkTimeText);
             Assert.Equal(TimeSpan.FromHours(10).TotalSeconds, amountOfWorkTimeDto.AmountWorkTime);
+        }
+
+        [Fact]
+        public async Task Get_Work_Time_Per_Months_Test()
+        {
+            AnalyticsController controller = await CreateController();
+
+            var actionResult = await controller.GetWorkTimePerMonths();
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+
+            Assert.NotNull(okResult);
+            Assert.IsAssignableFrom<List<WorkTimePerMonthDto>>(okResult!.Value);
+            var workTimePerMonths = okResult.Value as List<WorkTimePerMonthDto>;
+
+            Assert.NotNull(workTimePerMonths);
+            Assert.Equal(2, workTimePerMonths!.Count);
+
+            var thisMonth = DateTime.UtcNow;
+            var lastMonth = thisMonth.AddMonths(-1);
+            var thisMonthLabel = new DateTime(thisMonth.Year, thisMonth.Month, 1).ToString("yyyy MMM");
+            var lastMonthLabel = new DateTime(lastMonth.Year, lastMonth.Month, 1).ToString("yyyy MMM");
+
+            Assert.Contains(workTimePerMonths, w =>
+                w.Time == thisMonthLabel &&
+                w.WorkTimeInSeconds == TimeSpan.FromHours(10).TotalSeconds);
+
+            Assert.Contains(workTimePerMonths, w =>
+                w.Time == lastMonthLabel &&
+                w.WorkTimeInSeconds == TimeSpan.FromHours(28).TotalSeconds);
         }
 
         [Fact]
