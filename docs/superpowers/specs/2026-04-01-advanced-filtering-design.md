@@ -45,11 +45,13 @@ Returns: `ActionResult<IEnumerable<ProjectDto>>` with `X-Pagination` header.
 
 ## Implementation
 
-Both endpoints use the existing `IRepository<T>` methods. No new repository code.
+Both endpoints use the existing `IRepository<T>.GetPaged` method. No new repository code.
 
 **TrackedTask search:** Build a filter expression from query params, pass to `GetPaged` with `orderBy: StartDate desc` and `includeProperties: "Project"`.
 
-**Project search with minTaskCount:** Load user's projects with `TrackedTasks` included via `Get`, filter by name search, filter by task count in-memory, then apply pagination. User-scoped data is small enough for this approach.
+**Project search with minTaskCount:** Use `GetPaged` with `p.TrackedTasks!.Count >= minTaskCount` in the filter expression — EF Core translates this to a SQL COUNT subquery. Ordered by Name.
+
+**Search case sensitivity:** `string.Contains(search)` without `StringComparison` parameter is used for EF Core translatability. Case sensitivity depends on database collation (SQL Server default `SQL_Latin1_General_CP1_CI_AS` is case-insensitive). InMemory provider in tests uses case-sensitive comparison.
 
 ## Files to Modify
 

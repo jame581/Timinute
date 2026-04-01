@@ -71,37 +71,24 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            // Use Get instead of GetPaged because minTaskCount filtering requires
-            // in-memory evaluation of the TrackedTasks collection count.
-            var projects = await projectRepository.Get(
+            var pagedProjectList = await projectRepository.GetPaged(pagingParameters,
                 p => p.UserId == userId
-                    && (search == null || p.Name.Contains(search)),
-                includeProperties: nameof(Project.TrackedTasks));
-
-            if (minTaskCount.HasValue)
-            {
-                projects = projects.Where(p => (p.TrackedTasks?.Count ?? 0) >= minTaskCount.Value);
-            }
-
-            var projectList = projects.ToList();
-            var totalCount = projectList.Count;
-            var pagedProjects = projectList
-                .Skip((pagingParameters.PageNumber - 1) * pagingParameters.PageSize)
-                .Take(pagingParameters.PageSize)
-                .ToList();
+                    && (search == null || p.Name.Contains(search))
+                    && (!minTaskCount.HasValue || p.TrackedTasks!.Count >= minTaskCount.Value),
+                orderBy: nameof(Project.Name));
 
             var metadata = new PaginationHeaderDto
             {
-                TotalCount = totalCount,
-                PageSize = pagingParameters.PageSize,
-                CurrentPage = pagingParameters.PageNumber,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pagingParameters.PageSize),
-                HasNext = pagingParameters.PageNumber * pagingParameters.PageSize < totalCount,
-                HasPrevious = pagingParameters.PageNumber > 1
+                TotalCount = pagedProjectList.TotalCount,
+                PageSize = pagedProjectList.PageSize,
+                CurrentPage = pagedProjectList.CurrentPage,
+                TotalPages = pagedProjectList.TotalPages,
+                HasNext = pagedProjectList.HasNext,
+                HasPrevious = pagedProjectList.HasPrevious
             };
 
             Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
-            return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjects));
+            return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjectList));
         }
 
         // GET: api/Project
