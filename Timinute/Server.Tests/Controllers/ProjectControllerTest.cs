@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -259,6 +260,55 @@ namespace Timinute.Server.Tests.Controllers
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
             Assert.NotNull(notFoundResult);
             Assert.Equal("Project not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Search_Projects_By_Name()
+        {
+            ProjectController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchProjects(pagingParams, "Project 1", null);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+            var projects = okResult!.Value as IEnumerable<ProjectDto>;
+            Assert.NotNull(projects);
+            Assert.Single(projects!);
+            Assert.Equal("ProjectId1", projects!.First().ProjectId);
+        }
+
+        [Fact]
+        public async Task Search_Projects_By_MinTaskCount()
+        {
+            ProjectController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchProjects(pagingParams, null, 1);
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var projects = okResult!.Value as IEnumerable<ProjectDto>;
+            Assert.NotNull(projects);
+            Assert.Single(projects!);
+            Assert.Equal("ProjectId1", projects!.First().ProjectId);
+        }
+
+        [Fact]
+        public async Task Search_Projects_Another_User_Empty()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchAuthTest");
+            ProjectController controller = await CreateController(applicationDbContext, "NonExistentUser");
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchProjects(pagingParams, null, null);
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var projects = okResult!.Value as IEnumerable<ProjectDto>;
+            Assert.NotNull(projects);
+            Assert.Empty(projects!);
         }
 
         protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")

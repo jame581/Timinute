@@ -57,6 +57,51 @@ namespace Timinute.Server.Controllers
             return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjectList));
         }
 
+        // GET: api/Project/search
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ProjectDto>>> SearchProjects(
+            [FromQuery] PagingParameters pagingParameters,
+            [FromQuery] string? search = null,
+            [FromQuery] int? minTaskCount = null)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var projects = await projectRepository.Get(
+                p => p.UserId == userId
+                    && (search == null || p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)),
+                includeProperties: nameof(Project.TrackedTasks));
+
+            if (minTaskCount.HasValue)
+            {
+                projects = projects.Where(p => (p.TrackedTasks?.Count ?? 0) >= minTaskCount.Value);
+            }
+
+            var projectList = projects.ToList();
+            var totalCount = projectList.Count;
+            var pagedProjects = projectList
+                .Skip((pagingParameters.PageNumber - 1) * pagingParameters.PageSize)
+                .Take(pagingParameters.PageSize)
+                .ToList();
+
+            var metadata = new PaginationHeaderDto
+            {
+                TotalCount = totalCount,
+                PageSize = pagingParameters.PageSize,
+                CurrentPage = pagingParameters.PageNumber,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pagingParameters.PageSize),
+                HasNext = pagingParameters.PageNumber * pagingParameters.PageSize < totalCount,
+                HasPrevious = pagingParameters.PageNumber > 1
+            };
+
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
+            return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjects));
+        }
+
         // GET: api/Project
         [HttpGet("{id}")]
         public async Task<ActionResult<ProjectDto>> GetProject(string id)
