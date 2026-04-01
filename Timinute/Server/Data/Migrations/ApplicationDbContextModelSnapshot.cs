@@ -162,7 +162,7 @@ namespace Timinute.Server.Data.Migrations
                         new
                         {
                             Id = "b0a2e199-0a21-4158-8586-b1c2e2a1d64c",
-                            ConcurrencyStamp = "e0c194a8-630c-48db-9aef-771b9cf30fd4",
+                            ConcurrencyStamp = "e0c194a8-0001-0001-0001-000000000001",
                             Description = "Basic role with lowest rights.",
                             Name = "Basic",
                             NormalizedName = "BASIC"
@@ -170,7 +170,7 @@ namespace Timinute.Server.Data.Migrations
                         new
                         {
                             Id = "f3c1a2d7-4e5b-4f8a-9c6d-1a2b3c4d5e6f",
-                            ConcurrencyStamp = "9d00a0e8-b940-40ee-a6ea-a88911c6748f",
+                            ConcurrencyStamp = "e0c194a8-0001-0001-0001-000000000002",
                             Description = "Admin role with highest rights.",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
@@ -259,7 +259,7 @@ namespace Timinute.Server.Data.Migrations
                         {
                             Id = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "ca77974c-549e-4cef-b2d2-0c99d5262ac9",
+                            ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000001",
                             Email = "test1@email.com",
                             EmailConfirmed = true,
                             FirstName = "Jan",
@@ -267,7 +267,7 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "fc901c2d-c679-4b16-90d3-14eac4c5e11e",
+                            SecurityStamp = "s0c194a8-0001-0001-0001-000000000001",
                             TwoFactorEnabled = false,
                             UserName = "test1@email.com"
                         },
@@ -275,7 +275,7 @@ namespace Timinute.Server.Data.Migrations
                         {
                             Id = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "cef30cea-4435-4ca0-b6e8-4c7604d20e85",
+                            ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000002",
                             Email = "test2@email.com",
                             EmailConfirmed = true,
                             FirstName = "Ivana",
@@ -283,7 +283,7 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "7b6972df-8f90-4683-a967-7d627eb11ef8",
+                            SecurityStamp = "s0c194a8-0001-0001-0001-000000000002",
                             TwoFactorEnabled = false,
                             UserName = "test2@email.com"
                         },
@@ -291,7 +291,7 @@ namespace Timinute.Server.Data.Migrations
                         {
                             Id = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "c1eaad09-10e1-4ef8-9664-c140b6e4f158",
+                            ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000003",
                             Email = "test3@email.com",
                             EmailConfirmed = true,
                             FirstName = "Marek",
@@ -299,7 +299,7 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "5e5f55fc-67ea-491f-8f15-df612711700a",
+                            SecurityStamp = "s0c194a8-0001-0001-0001-000000000003",
                             TwoFactorEnabled = false,
                             UserName = "test3@email.com"
                         });
