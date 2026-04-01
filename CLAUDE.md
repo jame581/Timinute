@@ -28,7 +28,7 @@ dotnet ef migrations add <MigrationName> --project Timinute/Server/Timinute.Serv
 dotnet ef database update --project Timinute/Server/Timinute.Server.csproj
 ```
 
-**Database setup** requires Docker Desktop. Run `scripts/SetupDockerSql.ps1` to create a SQL Server 2019 container (port 44555), then `scripts/MigrateDatabase.ps1` to apply migrations.
+**Database setup** requires Docker Desktop. Run `scripts/SetupDockerSql.ps1` to create a SQL Server 2025 container (port 44555), then `scripts/MigrateDatabase.ps1` to apply migrations.
 
 ## Architecture
 

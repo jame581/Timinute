@@ -4,7 +4,7 @@ if("$(docker ps -a | Select-string -Pattern timinute.sql.server)") {
   docker rm -f timinute.sql.server
 }
 
-docker pull mcr.microsoft.com/mssql/server:2019-latest
+docker pull mcr.microsoft.com/mssql/server:2025-latest
 
 docker run `
   -e "ACCEPT_EULA=Y" `
@@ -15,6 +15,6 @@ docker run `
   --hostname timinute.sql.server `
   --restart unless-stopped `
   -d `
-  mcr.microsoft.com/mssql/server:2019-latest
+  mcr.microsoft.com/mssql/server:2025-latest
 
 docker network connect timinute-database timinute.sql.server
