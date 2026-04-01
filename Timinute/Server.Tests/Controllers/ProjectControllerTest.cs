@@ -246,6 +246,22 @@ namespace Timinute.Server.Tests.Controllers
             Assert.IsType<UnauthorizedResult>(actionResult);
         }
 
+        [Fact]
+        public async Task Get_Project_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "GetAuthTest");
+            ProjectController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            var actionResult = await controller.GetProject("ProjectId1");
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
+        }
+
         protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)

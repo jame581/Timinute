@@ -69,7 +69,7 @@ namespace Timinute.Server.Controllers
             }
 
             var project = await projectRepository.GetById(id);
-            if (project == null)
+            if (project == null || project.UserId != userId)
             {
                 return NotFound("Project not found!");
             }
