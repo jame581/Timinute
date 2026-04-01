@@ -43,7 +43,7 @@ builder.Services.AddAuthentication(options =>
         options.ForwardDefaultSelector = context =>
         {
             string? authorization = context.Request.Headers.Authorization;
-            if (!string.IsNullOrEmpty(authorization) && authorization.StartsWith("Bearer "))
+            if (!string.IsNullOrWhiteSpace(authorization) && authorization.TrimStart().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 return JwtBearerDefaults.AuthenticationScheme;
 
             return IdentityConstants.ApplicationScheme;
@@ -175,7 +175,9 @@ void IdentitySetup()
         options.ClaimsIdentity.RoleClaimType = Constants.Claims.Role;
     });
 
-    var baseUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+    var configuredUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+    var authorityUri = new Uri(configuredUrl);
+    var baseUrl = authorityUri.GetLeftPart(UriPartial.Authority);
 
     var identityServerBuilder = builder.Services.AddIdentityServer(options =>
     {
