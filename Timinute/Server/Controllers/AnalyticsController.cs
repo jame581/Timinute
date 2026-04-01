@@ -101,7 +101,7 @@ namespace Timinute.Server.Controllers
             foreach (var projectTimeByMonth in groupedByDate)
             {
                 var projectDataItemsPerMonth = new ProjectDataItemsPerMonthDto();
-                projectDataItemsPerMonth.Time = new DateTime(projectTimeByMonth.Key.Year, projectTimeByMonth.Key.Month, 1);
+                projectDataItemsPerMonth.Time = new DateTimeOffset(projectTimeByMonth.Key.Year, projectTimeByMonth.Key.Month, 1, 0, 0, 0, TimeSpan.Zero);
                 projectDataItemsPerMonth.ProjectDataItems = new List<ProjectDataItemDto>();
 
                 foreach (var item in projectTimeByMonth)
@@ -146,7 +146,7 @@ namespace Timinute.Server.Controllers
             foreach (var projectTimeByMonth in groupedByDate)
             {
                 var workTimePerMonth = new WorkTimePerMonthDto();
-                workTimePerMonth.Time = new DateTime(projectTimeByMonth.Key.Year, projectTimeByMonth.Key.Month, 1).ToString("yyyy MMM");
+                workTimePerMonth.Time = new DateTimeOffset(projectTimeByMonth.Key.Year, projectTimeByMonth.Key.Month, 1, 0, 0, 0, TimeSpan.Zero).ToString("yyyy MMM");
                 workTimePerMonth.WorkTimeInSeconds = projectTimeByMonth.Sum(x => x.Duration.TotalSeconds);
                 workTimePerMonthsDto.Add(workTimePerMonth);
             }
@@ -166,7 +166,7 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var month = new DateTime(amountWorkTimeByMonthDto.Year, amountWorkTimeByMonthDto.Month, 1).ToUniversalTime();
+            var month = new DateTimeOffset(amountWorkTimeByMonthDto.Year, amountWorkTimeByMonthDto.Month, 1, 0, 0, 0, TimeSpan.Zero);
             var last = month.AddMonths(1).AddDays(-1);
 
             var trackedTaskList = await trackedTaskRepository.Get(

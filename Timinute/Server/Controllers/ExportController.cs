@@ -29,8 +29,8 @@ namespace Timinute.Server.Controllers
         [HttpGet("tasks")]
         public async Task<ActionResult> ExportTasks(
             [FromQuery] string? format = "csv",
-            [FromQuery] DateTime? from = null,
-            [FromQuery] DateTime? to = null,
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null,
             [FromQuery] string? projectId = null,
             [FromQuery] string? search = null)
         {
@@ -51,10 +51,10 @@ namespace Timinute.Server.Controllers
             {
                 Name = SanitizeForExport(t.Name),
                 ProjectName = SanitizeForExport(t.Project?.Name ?? "None"),
-                StartDate = t.StartDate.ToString("yyyy-MM-dd HH:mm"),
-                EndDate = t.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "",
+                StartDate = t.StartDate.UtcDateTime.ToString("yyyy-MM-dd HH:mm"),
+                EndDate = t.EndDate?.UtcDateTime.ToString("yyyy-MM-dd HH:mm") ?? "",
                 Duration = FormatDuration(t.Duration),
-                Date = t.StartDate.ToString("yyyy-MM-dd"),
+                Date = t.StartDate.UtcDateTime.ToString("yyyy-MM-dd"),
             }).ToList();
 
             var resolvedFormat = ResolveFormat(format);
@@ -65,8 +65,8 @@ namespace Timinute.Server.Controllers
         [HttpGet("projects")]
         public async Task<ActionResult> ExportProjects(
             [FromQuery] string? format = "csv",
-            [FromQuery] DateTime? from = null,
-            [FromQuery] DateTime? to = null,
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null,
             [FromQuery] string? search = null)
         {
             var userId = User.FindFirstValue(Constants.Claims.UserId);
@@ -101,8 +101,8 @@ namespace Timinute.Server.Controllers
         [HttpGet("analytics")]
         public async Task<ActionResult> ExportAnalytics(
             [FromQuery] string? format = "csv",
-            [FromQuery] DateTime? from = null,
-            [FromQuery] DateTime? to = null)
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null)
         {
             var userId = User.FindFirstValue(Constants.Claims.UserId);
             if (string.IsNullOrEmpty(userId))
@@ -128,7 +128,7 @@ namespace Timinute.Server.Controllers
 
                     return new AnalyticsExportDto
                     {
-                        Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("yyyy MMM"),
+                        Month = new DateTimeOffset(g.Key.Year, g.Key.Month, 1, 0, 0, 0, TimeSpan.Zero).ToString("yyyy MMM"),
                         TotalHours = FormatDuration(TimeSpan.FromSeconds(g.Sum(t => t.Duration.TotalSeconds))),
                         TopProject = SanitizeForExport(topProjectName),
                         TopProjectHours = FormatDuration(TimeSpan.FromSeconds(topProjectSeconds)),
