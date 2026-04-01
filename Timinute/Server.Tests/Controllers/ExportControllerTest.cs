@@ -65,8 +65,8 @@ namespace Timinute.Server.Tests.Controllers
         {
             ExportController controller = await CreateController();
 
-            var from = new System.DateTime(2021, 10, 1);
-            var to = new System.DateTime(2021, 10, 31);
+            var from = new System.DateTimeOffset(2021, 10, 1, 0, 0, 0, System.TimeSpan.Zero);
+            var to = new System.DateTimeOffset(2021, 10, 31, 0, 0, 0, System.TimeSpan.Zero);
 
             var actionResult = await controller.ExportTasks("csv", from, to, null, null);
 

@@ -88,13 +88,13 @@ namespace Timinute.Server.Data
 
             var trackedTasks = new List<TrackedTask>
             {
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project A", Duration = TimeSpan.FromHours(2), StartDate = new DateTime(2022, 1, 1, 9, 0, 0), EndDate = new DateTime(2022, 1, 1, 11, 0, 0), UserId = applicationUsers[0].Id },
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project B", Duration = TimeSpan.FromHours(3), StartDate = new DateTime(2022, 2, 2, 10, 0, 0), EndDate = new DateTime(2022, 2, 2, 13, 0, 0), UserId = applicationUsers[0].Id },
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project C", Duration = TimeSpan.FromHours(4), StartDate = new DateTime(2022, 1, 1, 11, 0, 0), EndDate = new DateTime(2022, 1, 1, 15, 0, 0), UserId = applicationUsers[0].Id },
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project D", Duration = TimeSpan.FromHours(5), StartDate = new DateTime(2022, 2, 2, 12, 0, 0), EndDate = new DateTime(2022, 2, 2, 17, 0, 0), UserId = applicationUsers[1].Id },
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project E", Duration = TimeSpan.FromHours(6), StartDate = new DateTime(2022, 1, 1, 13, 0, 0), EndDate = new DateTime(2022, 1, 1, 19, 0, 0), UserId = applicationUsers[1].Id },
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project F", Duration = TimeSpan.FromHours(7), StartDate = new DateTime(2022, 2, 2, 14, 0, 0), EndDate = new DateTime(2022, 2, 2, 21, 0, 0), UserId = applicationUsers[2].Id },
-                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project G", Duration = TimeSpan.FromHours(7), StartDate = new DateTime(2022, 2, 2, 14, 0, 0), EndDate = new DateTime(2022, 2, 2, 21, 0, 0), UserId = applicationUsers[2].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project A", Duration = TimeSpan.FromHours(2), StartDate = new DateTimeOffset(2022, 1, 1, 9, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 1, 1, 11, 0, 0, TimeSpan.Zero), UserId = applicationUsers[0].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project B", Duration = TimeSpan.FromHours(3), StartDate = new DateTimeOffset(2022, 2, 2, 10, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 2, 2, 13, 0, 0, TimeSpan.Zero), UserId = applicationUsers[0].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project C", Duration = TimeSpan.FromHours(4), StartDate = new DateTimeOffset(2022, 1, 1, 11, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 1, 1, 15, 0, 0, TimeSpan.Zero), UserId = applicationUsers[0].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project D", Duration = TimeSpan.FromHours(5), StartDate = new DateTimeOffset(2022, 2, 2, 12, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 2, 2, 17, 0, 0, TimeSpan.Zero), UserId = applicationUsers[1].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project E", Duration = TimeSpan.FromHours(6), StartDate = new DateTimeOffset(2022, 1, 1, 13, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 1, 1, 19, 0, 0, TimeSpan.Zero), UserId = applicationUsers[1].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project F", Duration = TimeSpan.FromHours(7), StartDate = new DateTimeOffset(2022, 2, 2, 14, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 2, 2, 21, 0, 0, TimeSpan.Zero), UserId = applicationUsers[2].Id },
+                new TrackedTask { TaskId = Guid.NewGuid().ToString(), Name = "Project G", Duration = TimeSpan.FromHours(7), StartDate = new DateTimeOffset(2022, 2, 2, 14, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2022, 2, 2, 21, 0, 0, TimeSpan.Zero), UserId = applicationUsers[2].Id },
             };
 
             builder.Entity<TrackedTask>().HasData(trackedTasks);

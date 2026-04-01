@@ -38,7 +38,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime lastMonth = DateTime.UtcNow.AddMonths(-1);
+            DateTimeOffset lastMonth = DateTimeOffset.UtcNow.AddMonths(-1);
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = lastMonth.Year, Month = lastMonth.Month });
 
@@ -65,7 +65,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime thisMonth = DateTime.UtcNow;
+            DateTimeOffset thisMonth = DateTimeOffset.UtcNow;
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = thisMonth.Year, Month = thisMonth.Month });
 
@@ -105,10 +105,10 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(workTimePerMonths);
             Assert.Equal(2, workTimePerMonths!.Count);
 
-            var thisMonth = DateTime.UtcNow;
+            var thisMonth = DateTimeOffset.UtcNow;
             var lastMonth = thisMonth.AddMonths(-1);
-            var thisMonthLabel = new DateTime(thisMonth.Year, thisMonth.Month, 1).ToString("yyyy MMM");
-            var lastMonthLabel = new DateTime(lastMonth.Year, lastMonth.Month, 1).ToString("yyyy MMM");
+            var thisMonthLabel = new DateTimeOffset(thisMonth.Year, thisMonth.Month, 1, 0, 0, 0, TimeSpan.Zero).ToString("yyyy MMM");
+            var lastMonthLabel = new DateTimeOffset(lastMonth.Year, lastMonth.Month, 1, 0, 0, 0, TimeSpan.Zero).ToString("yyyy MMM");
 
             Assert.Contains(workTimePerMonths, w =>
                 w.Time == thisMonthLabel &&
@@ -136,8 +136,8 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.NotNull(projectDataItemsPerMonthDtos);
 
-            var today = DateTime.Today.ToUniversalTime();
-            var month = new DateTime(today.Year, today.Month, 1).ToUniversalTime();
+            var today = DateTimeOffset.UtcNow;
+            var month = new DateTimeOffset(today.Year, today.Month, 1, 0, 0, 0, TimeSpan.Zero);
             var first = month.AddMonths(-1);
 
             Assert.Equal(2, projectDataItemsPerMonthDtos!.Count);

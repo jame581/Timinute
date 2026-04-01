@@ -193,7 +193,7 @@ namespace Timinute.Server.Tests.Controllers
 
             TrackedTaskController controller = await CreateController(applicationDbContext);
 
-            DateTime startDate = DateTime.Now;
+            DateTimeOffset startDate = DateTimeOffset.UtcNow;
 
             // create category with the same ID but updated data
             var trackedTaskToUpdate = new UpdateTrackedTaskDto
@@ -217,7 +217,7 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.Equal(trackedTaskToUpdate.TaskId, updatedTrackedTask!.TaskId);
             Assert.Equal(trackedTaskToUpdate.Name, updatedTrackedTask.Name);
-            Assert.Equal(trackedTaskToUpdate.StartDate, updatedTrackedTask.StartDate.ToLocalTime());
+            Assert.Equal(trackedTaskToUpdate.StartDate!.Value.UtcDateTime, updatedTrackedTask.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -225,7 +225,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             TrackedTaskController controller = await CreateController();
 
-            DateTime startDate = DateTime.Now;
+            DateTimeOffset startDate = DateTimeOffset.UtcNow;
 
             // create category with the same ID but updated data
             var trackedTaskToUpdate = new UpdateTrackedTaskDto
@@ -252,7 +252,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             TrackedTaskController controller = await CreateController();
 
-            DateTime startDate = DateTime.Now;
+            DateTimeOffset startDate = DateTimeOffset.UtcNow;
 
             // create category with the same ID but updated data
             var trackedTaskToCreate = new CreateTrackedTaskDto
@@ -275,7 +275,7 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(newlyCreatedTrackedTask);
 
             Assert.Equal(trackedTaskToCreate.Name, newlyCreatedTrackedTask!.Name);
-            Assert.Equal(trackedTaskToCreate.StartDate, newlyCreatedTrackedTask!.StartDate.ToLocalTime());
+            Assert.Equal(trackedTaskToCreate.StartDate!.Value.UtcDateTime, newlyCreatedTrackedTask!.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
             Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
         }
 
@@ -289,7 +289,7 @@ namespace Timinute.Server.Tests.Controllers
             {
                 TaskId = "TrackedTaskId1",  // belongs to ApplicationUser1
                 Name = "Hacked Name",
-                StartDate = DateTime.UtcNow,
+                StartDate = DateTimeOffset.UtcNow,
             };
 
             var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
@@ -328,8 +328,8 @@ namespace Timinute.Server.Tests.Controllers
             {
                 TaskId = "TrackedTaskId1",
                 Name = "Updated Task",
-                StartDate = new DateTime(2021, 10, 1, 10, 0, 0),
-                EndDate = new DateTime(2021, 10, 1, 8, 0, 0),
+                StartDate = new DateTimeOffset(2021, 10, 1, 10, 0, 0, TimeSpan.Zero),
+                EndDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero),
             };
 
             var actionResult = await controller.UpdateTrackedTask(taskToUpdate);

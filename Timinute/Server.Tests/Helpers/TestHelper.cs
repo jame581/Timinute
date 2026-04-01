@@ -62,14 +62,14 @@ namespace Timinute.Server.Tests.Helpers
 
             var trackedTasks = new List<TrackedTask>
             {
-                new TrackedTask { TaskId = "TrackedTaskId1", Name = "Task 1", User = applicationUsers[0], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 10, 0, 0), Duration = TimeSpan.FromHours(2) },
-                new TrackedTask { TaskId = "TrackedTaskId2", Name = "Task 2", User = applicationUsers[0], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 12, 0, 0), Duration = TimeSpan.FromHours(4) },
-                new TrackedTask { TaskId = "TrackedTaskId3", Name = "Task 3", User = applicationUsers[0], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 12, 0, 0), Duration = TimeSpan.FromHours(4) },
-                new TrackedTask { TaskId = "TrackedTaskId4", Name = "Task 4", User = applicationUsers[0], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 12, 0, 0), Duration = TimeSpan.FromHours(4) },
-                new TrackedTask { TaskId = "TrackedTaskId5", Name = "Task 5", User = applicationUsers[1], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 12, 0, 0), Duration = TimeSpan.FromHours(4) },
-                new TrackedTask { TaskId = "TrackedTaskId6", Name = "Task 6", User = applicationUsers[1], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 14, 0, 0), Duration = TimeSpan.FromHours(6) },
-                new TrackedTask { TaskId = "TrackedTaskId7", Name = "Task 7", User = applicationUsers[1], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 14, 0, 0), Duration = TimeSpan.FromHours(6) },
-                new TrackedTask { TaskId = "TrackedTaskId8", Name = "Task 8", User = applicationUsers[2], StartDate = new DateTime(2021, 10, 1, 8, 0, 0), EndDate = new DateTime(2021, 10, 1, 15, 0, 0), Duration = TimeSpan.FromHours(7) },
+                new TrackedTask { TaskId = "TrackedTaskId1", Name = "Task 1", User = applicationUsers[0], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 10, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(2) },
+                new TrackedTask { TaskId = "TrackedTaskId2", Name = "Task 2", User = applicationUsers[0], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 12, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(4) },
+                new TrackedTask { TaskId = "TrackedTaskId3", Name = "Task 3", User = applicationUsers[0], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 12, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(4) },
+                new TrackedTask { TaskId = "TrackedTaskId4", Name = "Task 4", User = applicationUsers[0], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 12, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(4) },
+                new TrackedTask { TaskId = "TrackedTaskId5", Name = "Task 5", User = applicationUsers[1], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 12, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(4) },
+                new TrackedTask { TaskId = "TrackedTaskId6", Name = "Task 6", User = applicationUsers[1], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 14, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(6) },
+                new TrackedTask { TaskId = "TrackedTaskId7", Name = "Task 7", User = applicationUsers[1], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 14, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(6) },
+                new TrackedTask { TaskId = "TrackedTaskId8", Name = "Task 8", User = applicationUsers[2], StartDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero), EndDate = new DateTimeOffset(2021, 10, 1, 15, 0, 0, TimeSpan.Zero), Duration = TimeSpan.FromHours(7) },
             };
 
             var projects = new List<Project>
@@ -98,8 +98,8 @@ namespace Timinute.Server.Tests.Helpers
                 new ApplicationUser { Id = "ApplicationUser1000", Email = "test1000@email.com", FirstName = "Jan", LastName = "Testovic", EmailConfirmed = true, UserName = "janek100", PasswordHash = "3037c1616052562ebec4291009d17541"},
             };
 
-            var now = DateTime.UtcNow;
-            var month = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var now = DateTimeOffset.UtcNow;
+            var month = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
             var first = month.AddMonths(-1);
 
             var projects = new List<Project>

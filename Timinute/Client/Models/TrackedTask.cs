@@ -35,8 +35,8 @@ namespace Timinute.Client.Models
             TaskId = trackedTask.TaskId;
             Name = trackedTask.Name;
             Duration = trackedTask.Duration;
-            StartDate = trackedTask.StartDate.ToLocalTime();
-            EndDate = trackedTask.EndDate?.ToLocalTime();
+            StartDate = trackedTask.StartDate.LocalDateTime;
+            EndDate = trackedTask.EndDate?.LocalDateTime;
             ProjectId = trackedTask.ProjectId;
             UserId = trackedTask.UserId;
 
