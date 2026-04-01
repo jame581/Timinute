@@ -61,6 +61,45 @@ namespace Timinute.Server.Controllers
             return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(pagedTrackedTaskList));
         }
 
+        // GET: api/TrackedTask/search
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<TrackedTaskDto>>> SearchTrackedTasks(
+            [FromQuery] PagingParameters pagingParameters,
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null,
+            [FromQuery] string? projectId = null,
+            [FromQuery] string? search = null)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var pagedTrackedTaskList = await taskRepository.GetPaged(pagingParameters,
+                t => t.UserId == userId
+                    && (from == null || t.StartDate >= from.Value.ToUniversalTime())
+                    && (to == null || t.StartDate <= to.Value.ToUniversalTime())
+                    && (projectId == null || t.ProjectId == projectId)
+                    && (search == null || t.Name.Contains(search, StringComparison.OrdinalIgnoreCase)),
+                orderBy: $"{nameof(TrackedTask.StartDate)} desc",
+                includeProperties: "Project");
+
+            var metadata = new PaginationHeaderDto
+            {
+                TotalCount = pagedTrackedTaskList.TotalCount,
+                PageSize = pagedTrackedTaskList.PageSize,
+                CurrentPage = pagedTrackedTaskList.CurrentPage,
+                TotalPages = pagedTrackedTaskList.TotalPages,
+                HasNext = pagedTrackedTaskList.HasNext,
+                HasPrevious = pagedTrackedTaskList.HasPrevious
+            };
+
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
+            return Ok(mapper.Map<IEnumerable<TrackedTaskDto>>(pagedTrackedTaskList));
+        }
+
         // GET: api/TrackedTask
         [HttpGet("{id}")]
         public async Task<ActionResult<TrackedTaskDto>> GetTrackedTask(string id)

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
@@ -340,6 +341,88 @@ namespace Timinute.Server.Tests.Controllers
             var badRequestResult = actionResult.Result as BadRequestObjectResult;
             Assert.NotNull(badRequestResult);
             Assert.Equal("End date must be strictly after start date.", badRequestResult!.Value);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_DateRange()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+            var from = new DateTimeOffset(2021, 10, 1, 0, 0, 0, TimeSpan.Zero);
+            var to = new DateTimeOffset(2021, 10, 31, 0, 0, 0, TimeSpan.Zero);
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, from, to, null, null);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Equal(4, tasks!.Count());
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_ProjectId()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, "ProjectId1", null);
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Equal(3, tasks!.Count());
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_Name()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, "Task 1");
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Single(tasks!);
+            Assert.Equal("TrackedTaskId1", tasks!.First().TaskId);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_Combined_Filters()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+            var from = new DateTimeOffset(2021, 10, 1, 0, 0, 0, TimeSpan.Zero);
+            var to = new DateTimeOffset(2021, 10, 31, 0, 0, 0, TimeSpan.Zero);
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, from, to, "ProjectId1", "Task");
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Equal(3, tasks!.Count());
+        }
+
+        [Fact]
+        public async Task Search_Tasks_Another_User_Empty()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "NonExistentUser");
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, null);
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Empty(tasks!);
         }
 
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
