@@ -177,12 +177,11 @@ namespace Timinute.Server.Tests.Controllers
             var actionResult = await controller.UpdateProject(projectToUpdate);
 
             Assert.NotNull(actionResult);
-            Assert.IsAssignableFrom<UnauthorizedResult>(actionResult.Result);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
 
-            var unauthorizedResult = actionResult.Result as UnauthorizedResult;
-            Assert.NotNull(unauthorizedResult);
-
-            Assert.Equal((int)HttpStatusCode.Unauthorized, unauthorizedResult.StatusCode);
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
         }
 
         [Fact]
@@ -243,7 +242,23 @@ namespace Timinute.Server.Tests.Controllers
             var actionResult = await controller.DeleteProject("ProjectId1");
 
             Assert.NotNull(actionResult);
-            Assert.IsType<UnauthorizedResult>(actionResult);
+            Assert.IsType<NotFoundObjectResult>(actionResult);
+        }
+
+        [Fact]
+        public async Task Get_Project_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "GetAuthTest");
+            ProjectController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            var actionResult = await controller.GetProject("ProjectId1");
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
         }
 
         protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")

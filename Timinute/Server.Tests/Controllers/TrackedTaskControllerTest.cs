@@ -295,11 +295,51 @@ namespace Timinute.Server.Tests.Controllers
             var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
 
             Assert.NotNull(actionResult);
-            Assert.IsAssignableFrom<UnauthorizedResult>(actionResult.Result);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
 
-            var unauthorizedResult = actionResult.Result as UnauthorizedResult;
-            Assert.NotNull(unauthorizedResult);
-            Assert.Equal((int)System.Net.HttpStatusCode.Unauthorized, unauthorizedResult!.StatusCode);
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Get_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "GetAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            var actionResult = await controller.GetTrackedTask("TrackedTaskId1");
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_EndDate_Before_StartDate_Returns_BadRequest_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "EndDateTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            var taskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1",
+                Name = "Updated Task",
+                StartDate = new DateTime(2021, 10, 1, 10, 0, 0),
+                EndDate = new DateTime(2021, 10, 1, 8, 0, 0),
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(taskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<BadRequestObjectResult>(actionResult.Result);
+
+            var badRequestResult = actionResult.Result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+            Assert.Equal("End date must be strictly after start date.", badRequestResult!.Value);
         }
 
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")

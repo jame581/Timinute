@@ -73,7 +73,7 @@ namespace Timinute.Server.Controllers
             }
 
             var trackedTask = await taskRepository.GetById(id);
-            if (trackedTask == null)
+            if (trackedTask == null || trackedTask.UserId != userId)
             {
                 return NotFound("Tracked task not found!");
             }
@@ -93,8 +93,9 @@ namespace Timinute.Server.Controllers
 
             var newTrackedTask = mapper.Map<TrackedTask>(trackedTask);
             newTrackedTask.UserId = userId;
-            newTrackedTask.StartDate = trackedTask.StartDate.ToUniversalTime();
-            newTrackedTask.EndDate = trackedTask.StartDate + newTrackedTask.Duration;
+            var utcStart = trackedTask.StartDate!.Value.ToUniversalTime();
+            newTrackedTask.StartDate = utcStart;
+            newTrackedTask.EndDate = utcStart + newTrackedTask.Duration;
 
             await taskRepository.Insert(newTrackedTask);
             return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
@@ -120,7 +121,7 @@ namespace Timinute.Server.Controllers
 
             if (trackedTaskToDelete.UserId != userId)
             {
-                return Unauthorized();
+                return NotFound("Tracked task not found!");
             }
 
             await taskRepository.Delete(id);
@@ -151,7 +152,7 @@ namespace Timinute.Server.Controllers
 
             if (foundTrackedTask.UserId != userId)
             {
-                return Unauthorized();
+                return NotFound("Tracked task not found!");
             }
 
             var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
@@ -160,6 +161,12 @@ namespace Timinute.Server.Controllers
             if (updatedTrackedTask.EndDate.HasValue)
             {
                 updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
+
+                if (updatedTrackedTask.EndDate.Value <= updatedTrackedTask.StartDate)
+                {
+                    return BadRequest("End date must be strictly after start date.");
+                }
+
                 updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
             }
 

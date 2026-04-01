@@ -69,7 +69,7 @@ namespace Timinute.Server.Controllers
             }
 
             var project = await projectRepository.GetById(id);
-            if (project == null)
+            if (project == null || project.UserId != userId)
             {
                 return NotFound("Project not found!");
             }
@@ -114,7 +114,7 @@ namespace Timinute.Server.Controllers
 
             if (projectToDelete.UserId != userId)
             {
-                return Unauthorized();
+                return NotFound("Project not found!");
             }
 
             await projectRepository.Delete(projectToDelete);
@@ -144,7 +144,7 @@ namespace Timinute.Server.Controllers
 
             if (foundProject.UserId != userId)
             {
-                return Unauthorized();
+                return NotFound("Project not found!");
             }
 
             var updatedProject = mapper.Map(project, foundProject);
