@@ -143,7 +143,7 @@ namespace Timinute.Server.Controllers
 
         private ActionResult GenerateFile<T>(List<T> data, string resolvedFormat, string filePrefix)
         {
-            var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var date = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd");
 
             if (resolvedFormat == "xlsx")
             {
