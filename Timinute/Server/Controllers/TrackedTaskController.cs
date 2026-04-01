@@ -78,7 +78,7 @@ namespace Timinute.Server.Controllers
             }
 
             var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-            var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId;
+            var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
 
             var pagedTrackedTaskList = await taskRepository.GetPaged(pagingParameters,
                 t => t.UserId == userId

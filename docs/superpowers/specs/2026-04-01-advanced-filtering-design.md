@@ -36,7 +36,7 @@ Sorted by StartDate descending. Includes Project navigation property.
 On existing `ProjectController`. `[Authorize]`.
 
 Query params (all optional, combined with AND):
-- `search` (`string?`) — case-insensitive Contains on project Name
+- `search` (`string?`) — Contains on project Name (case sensitivity depends on DB collation)
 - `minTaskCount` (`int?`) — only projects with at least N tracked tasks
 
 Also accepts `PagingParameters` from query string.
@@ -65,11 +65,11 @@ Both endpoints use the existing `IRepository<T>.GetPaged` method. No new reposit
 **TrackedTask search (5 tests):**
 - `Search_Tasks_By_DateRange` — only tasks within range
 - `Search_Tasks_By_ProjectId` — filter by project
-- `Search_Tasks_By_Name` — case-insensitive search
+- `Search_Tasks_By_Name` — name search (case sensitivity depends on DB collation)
 - `Search_Tasks_Combined_Filters` — AND logic with multiple params
 - `Search_Tasks_Another_User_Empty` — user isolation
 
 **Project search (3 tests):**
-- `Search_Projects_By_Name` — case-insensitive search
+- `Search_Projects_By_Name` — name search (case sensitivity depends on DB collation)
 - `Search_Projects_By_MinTaskCount` — count filtering
 - `Search_Projects_Another_User_Empty` — user isolation

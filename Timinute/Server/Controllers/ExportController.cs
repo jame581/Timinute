@@ -38,12 +38,15 @@ namespace Timinute.Server.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
+            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+            var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
+
             var tasks = await taskRepository.Get(
                 t => t.UserId == userId
                     && (from == null || t.StartDate >= from.Value.ToUniversalTime())
                     && (to == null || t.StartDate <= to.Value.ToUniversalTime())
-                    && (projectId == null || t.ProjectId == projectId)
-                    && (search == null || t.Name.Contains(search)),
+                    && (normalizedProjectId == null || t.ProjectId == normalizedProjectId)
+                    && (normalizedSearch == null || t.Name.Contains(normalizedSearch)),
                 orderBy: t => t.OrderByDescending(x => x.StartDate),
                 includeProperties: nameof(Project));
 
