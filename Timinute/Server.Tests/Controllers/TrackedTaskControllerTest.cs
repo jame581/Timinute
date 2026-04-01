@@ -302,6 +302,22 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal((int)System.Net.HttpStatusCode.Unauthorized, unauthorizedResult!.StatusCode);
         }
 
+        [Fact]
+        public async Task Get_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "GetAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            var actionResult = await controller.GetTrackedTask("TrackedTaskId1");
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)

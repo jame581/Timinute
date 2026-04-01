@@ -73,7 +73,7 @@ namespace Timinute.Server.Controllers
             }
 
             var trackedTask = await taskRepository.GetById(id);
-            if (trackedTask == null)
+            if (trackedTask == null || trackedTask.UserId != userId)
             {
                 return NotFound("Tracked task not found!");
             }
