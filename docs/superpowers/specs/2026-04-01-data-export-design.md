@@ -34,7 +34,7 @@ Returns tracked tasks for the current user.
 
 Columns: Name, ProjectName, StartDate, EndDate, Duration (HH:mm:ss), Date (yyyy-MM-dd)
 
-Sorted by StartDate desc. Includes Project navigation property for ProjectName.
+Sorted by StartDate descending. Includes Project navigation property for ProjectName.
 
 ### GET /export/projects
 
@@ -79,7 +79,7 @@ public interface IExportService
 
 ### ExportService
 
-Single implementation using CsvHelper for CSV and ClosedXML for Excel. Registered as transient in DI.
+Single implementation using CsvHelper for CSV and ClosedXML for Excel. Registered as singleton in DI (stateless, thread-safe). Includes CSV injection protection via a custom string converter that escapes formula-triggering characters.
 
 - `ToCsv<T>`: Uses CsvHelper to write headers + rows to a MemoryStream, returns bytes.
 - `ToExcel<T>`: Creates XLWorkbook with one worksheet, inserts headers from property names, fills rows, returns bytes.

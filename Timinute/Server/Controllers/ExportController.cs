@@ -43,21 +43,23 @@ namespace Timinute.Server.Controllers
                     && (from == null || t.StartDate >= from.Value.ToUniversalTime())
                     && (to == null || t.StartDate <= to.Value.ToUniversalTime())
                     && (projectId == null || t.ProjectId == projectId)
-                    && (search == null || t.Name.Contains(search)),
+                    && (search == null || t.Name.Contains(search, StringComparison.OrdinalIgnoreCase)),
+                orderBy: t => t.OrderByDescending(x => x.StartDate),
                 includeProperties: nameof(Project));
 
             var exportData = tasks.Select(t => new TaskExportDto
             {
-                Name = t.Name,
-                ProjectName = t.Project?.Name ?? "None",
+                Name = SanitizeForExport(t.Name),
+                ProjectName = SanitizeForExport(t.Project?.Name ?? "None"),
                 StartDate = t.StartDate.ToString("yyyy-MM-dd HH:mm"),
                 EndDate = t.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "",
                 Duration = FormatDuration(t.Duration),
                 Date = t.StartDate.ToString("yyyy-MM-dd"),
             }).ToList();
 
-            logger.LogInformation("User {UserId} exported {Count} tracked tasks as {Format}", userId, exportData.Count, format);
-            return GenerateFile(exportData, format, "tracked-tasks");
+            var resolvedFormat = ResolveFormat(format);
+            logger.LogInformation("User exported {Count} tracked tasks as {Format}", exportData.Count, resolvedFormat);
+            return GenerateFile(exportData, resolvedFormat, "tracked-tasks");
         }
 
         [HttpGet("projects")]
@@ -77,26 +79,23 @@ namespace Timinute.Server.Controllers
                     && (to == null || t.StartDate <= to.Value.ToUniversalTime()),
                 includeProperties: nameof(Project));
 
-            var exportData = tasks
-                .GroupBy(t => t.ProjectId ?? "None")
-                .Select(g =>
-                {
-                    var projectName = g.First().Project?.Name ?? "None";
-                    if (!string.IsNullOrEmpty(search) && !projectName.Contains(search, StringComparison.OrdinalIgnoreCase))
-                        return null;
+            var groups = tasks.GroupBy(t => t.ProjectId ?? "None");
 
-                    return new ProjectExportDto
-                    {
-                        ProjectName = projectName,
-                        TotalHours = FormatDuration(TimeSpan.FromSeconds(g.Sum(t => t.Duration.TotalSeconds))),
-                        TaskCount = g.Count(),
-                    };
-                })
-                .Where(x => x != null)
-                .ToList();
+            if (!string.IsNullOrEmpty(search))
+            {
+                groups = groups.Where(g => (g.First().Project?.Name ?? "None").Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
 
-            logger.LogInformation("User {UserId} exported {Count} project summaries as {Format}", userId, exportData!.Count, format);
-            return GenerateFile(exportData, format, "projects");
+            var exportData = groups.Select(g => new ProjectExportDto
+            {
+                ProjectName = SanitizeForExport(g.First().Project?.Name ?? "None"),
+                TotalHours = FormatDuration(TimeSpan.FromSeconds(g.Sum(t => t.Duration.TotalSeconds))),
+                TaskCount = g.Count(),
+            }).ToList();
+
+            var resolvedFormat = ResolveFormat(format);
+            logger.LogInformation("User exported {Count} project summaries as {Format}", exportData.Count, resolvedFormat);
+            return GenerateFile(exportData, resolvedFormat, "projects");
         }
 
         [HttpGet("analytics")]
@@ -131,21 +130,22 @@ namespace Timinute.Server.Controllers
                     {
                         Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("yyyy MMM"),
                         TotalHours = FormatDuration(TimeSpan.FromSeconds(g.Sum(t => t.Duration.TotalSeconds))),
-                        TopProject = topProjectName,
+                        TopProject = SanitizeForExport(topProjectName),
                         TopProjectHours = FormatDuration(TimeSpan.FromSeconds(topProjectSeconds)),
                     };
                 })
                 .ToList();
 
-            logger.LogInformation("User {UserId} exported {Count} monthly analytics as {Format}", userId, exportData.Count, format);
-            return GenerateFile(exportData, format, "analytics");
+            var resolvedFormat = ResolveFormat(format);
+            logger.LogInformation("User exported {Count} monthly analytics as {Format}", exportData.Count, resolvedFormat);
+            return GenerateFile(exportData, resolvedFormat, "analytics");
         }
 
-        private ActionResult GenerateFile<T>(List<T> data, string? format, string filePrefix)
+        private ActionResult GenerateFile<T>(List<T> data, string resolvedFormat, string filePrefix)
         {
             var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
-            if (format?.ToLowerInvariant() == "xlsx")
+            if (resolvedFormat == "xlsx")
             {
                 var bytes = exportService.ToExcel(data, filePrefix);
                 return File(bytes,
@@ -157,10 +157,27 @@ namespace Timinute.Server.Controllers
             return File(csvBytes, "text/csv", $"{filePrefix}-export-{date}.csv");
         }
 
+        private static string ResolveFormat(string? format)
+        {
+            var normalized = format?.ToLowerInvariant();
+            return normalized == "xlsx" ? "xlsx" : "csv";
+        }
+
         private static string FormatDuration(TimeSpan duration)
         {
             int hours = (duration.Days * 24) + duration.Hours;
             return $"{hours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
+        }
+
+        private static string SanitizeForExport(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            if (value[0] is '=' or '+' or '-' or '@')
+                return "'" + value;
+
+            return value;
         }
     }
 }
