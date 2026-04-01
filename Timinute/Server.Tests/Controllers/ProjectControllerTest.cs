@@ -177,12 +177,11 @@ namespace Timinute.Server.Tests.Controllers
             var actionResult = await controller.UpdateProject(projectToUpdate);
 
             Assert.NotNull(actionResult);
-            Assert.IsAssignableFrom<UnauthorizedResult>(actionResult.Result);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
 
-            var unauthorizedResult = actionResult.Result as UnauthorizedResult;
-            Assert.NotNull(unauthorizedResult);
-
-            Assert.Equal((int)HttpStatusCode.Unauthorized, unauthorizedResult.StatusCode);
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
         }
 
         [Fact]
@@ -243,7 +242,7 @@ namespace Timinute.Server.Tests.Controllers
             var actionResult = await controller.DeleteProject("ProjectId1");
 
             Assert.NotNull(actionResult);
-            Assert.IsType<UnauthorizedResult>(actionResult);
+            Assert.IsType<NotFoundObjectResult>(actionResult);
         }
 
         [Fact]

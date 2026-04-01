@@ -295,11 +295,11 @@ namespace Timinute.Server.Tests.Controllers
             var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
 
             Assert.NotNull(actionResult);
-            Assert.IsAssignableFrom<UnauthorizedResult>(actionResult.Result);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
 
-            var unauthorizedResult = actionResult.Result as UnauthorizedResult;
-            Assert.NotNull(unauthorizedResult);
-            Assert.Equal((int)System.Net.HttpStatusCode.Unauthorized, unauthorizedResult!.StatusCode);
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Tracked task not found!", notFoundResult!.Value);
         }
 
         [Fact]

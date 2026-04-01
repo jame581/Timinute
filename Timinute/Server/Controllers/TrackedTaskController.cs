@@ -120,7 +120,7 @@ namespace Timinute.Server.Controllers
 
             if (trackedTaskToDelete.UserId != userId)
             {
-                return Unauthorized();
+                return NotFound("Tracked task not found!");
             }
 
             await taskRepository.Delete(id);
@@ -151,7 +151,7 @@ namespace Timinute.Server.Controllers
 
             if (foundTrackedTask.UserId != userId)
             {
-                return Unauthorized();
+                return NotFound("Tracked task not found!");
             }
 
             var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
@@ -161,7 +161,7 @@ namespace Timinute.Server.Controllers
             {
                 updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
 
-                if (updatedTrackedTask.EndDate.Value < updatedTrackedTask.StartDate)
+                if (updatedTrackedTask.EndDate.Value <= updatedTrackedTask.StartDate)
                 {
                     return BadRequest("End date must be after start date.");
                 }
