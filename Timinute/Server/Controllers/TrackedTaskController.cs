@@ -160,6 +160,12 @@ namespace Timinute.Server.Controllers
             if (updatedTrackedTask.EndDate.HasValue)
             {
                 updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
+
+                if (updatedTrackedTask.EndDate.Value < updatedTrackedTask.StartDate)
+                {
+                    return BadRequest("End date must be after start date.");
+                }
+
                 updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
             }
 
