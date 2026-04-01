@@ -103,6 +103,9 @@ namespace Timinute.Server.Data.Migrations
                 oldType: "datetime2",
                 oldNullable: true);
 
+            // Backfill NULL descriptions before making column non-nullable
+            migrationBuilder.Sql("UPDATE AspNetRoles SET Description = '' WHERE Description IS NULL");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Description",
                 table: "AspNetRoles",
