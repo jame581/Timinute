@@ -174,8 +174,16 @@ namespace Timinute.Server.Controllers
             if (string.IsNullOrEmpty(value))
                 return value;
 
-            if (value[0] is '=' or '+' or '-' or '@')
-                return "'" + value;
+            foreach (var c in value)
+            {
+                if (char.IsWhiteSpace(c))
+                    continue;
+
+                if (c is '=' or '+' or '-' or '@')
+                    return "'" + value;
+
+                break;
+            }
 
             return value;
         }
