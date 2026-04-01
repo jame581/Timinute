@@ -23,7 +23,7 @@ builder.Services.AddScoped<DialogService>();
 
 builder.Services.AddOidcAuthentication(options =>
 {
-    options.ProviderOptions.Authority = builder.HostEnvironment.BaseAddress;
+    options.ProviderOptions.Authority = builder.HostEnvironment.BaseAddress.TrimEnd('/');
     options.ProviderOptions.ClientId = "Timinute.Client";
     options.ProviderOptions.ResponseType = "code";
     options.ProviderOptions.DefaultScopes.Add("Timinute.ServerAPI");

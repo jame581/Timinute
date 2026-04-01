@@ -134,7 +134,6 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseIdentityServer();
-app.UseAuthentication();
 app.UseAuthorization();
 
 
@@ -173,7 +172,7 @@ void IdentitySetup()
     {
         options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
         options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
-        options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+        options.ClaimsIdentity.RoleClaimType = Constants.Claims.Role;
     });
 
     var baseUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
