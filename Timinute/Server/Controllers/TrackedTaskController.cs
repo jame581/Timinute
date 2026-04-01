@@ -93,8 +93,8 @@ namespace Timinute.Server.Controllers
 
             var newTrackedTask = mapper.Map<TrackedTask>(trackedTask);
             newTrackedTask.UserId = userId;
-            newTrackedTask.StartDate = trackedTask.StartDate.ToUniversalTime();
-            newTrackedTask.EndDate = trackedTask.StartDate + newTrackedTask.Duration;
+            newTrackedTask.StartDate = trackedTask.StartDate!.Value.ToUniversalTime();
+            newTrackedTask.EndDate = trackedTask.StartDate.Value + newTrackedTask.Duration;
 
             await taskRepository.Insert(newTrackedTask);
             return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
@@ -163,7 +163,7 @@ namespace Timinute.Server.Controllers
 
                 if (updatedTrackedTask.EndDate.Value <= updatedTrackedTask.StartDate)
                 {
-                    return BadRequest("End date must be after start date.");
+                    return BadRequest("End date must be strictly after start date.");
                 }
 
                 updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;

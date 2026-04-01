@@ -10,7 +10,12 @@ namespace Timinute.Shared.Validators
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
-            if (value is TimeSpan duration && duration <= TimeSpan.Zero)
+            if (value is not TimeSpan duration)
+            {
+                return new ValidationResult("A valid duration is required.");
+            }
+
+            if (duration <= TimeSpan.Zero)
             {
                 return new ValidationResult(ErrorMessage);
             }

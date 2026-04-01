@@ -9,11 +9,11 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public string TaskId { get; set; } = null!;
 
         [Required]
-        [StringLength(50, ErrorMessage = "Name of task is too long.", MinimumLength = 2)]
+        [StringLength(50, ErrorMessage = "Name of task must be between 2 and 50 characters long.", MinimumLength = 2)]
         public string Name { get; set; } = null!;
 
         [Required]
-        public DateTime StartDate { get; set; }
+        public DateTime? StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
 

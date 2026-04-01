@@ -339,7 +339,7 @@ namespace Timinute.Server.Tests.Controllers
 
             var badRequestResult = actionResult.Result as BadRequestObjectResult;
             Assert.NotNull(badRequestResult);
-            Assert.Equal("End date must be after start date.", badRequestResult!.Value);
+            Assert.Equal("End date must be strictly after start date.", badRequestResult!.Value);
         }
 
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
