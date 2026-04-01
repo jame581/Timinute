@@ -11,6 +11,10 @@ namespace Timinute.Server.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropColumn(
+                name: "Discriminator",
+                table: "AspNetRoles");
+
             migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "StartDate",
                 table: "TrackedTasks",
@@ -32,6 +36,13 @@ namespace Timinute.Server.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "Discriminator",
+                table: "AspNetRoles",
+                type: "nvarchar(max)",
+                nullable: false,
+                defaultValue: "ApplicationRole");
+
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartDate",
                 table: "TrackedTasks",
