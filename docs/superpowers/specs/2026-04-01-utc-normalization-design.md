@@ -83,9 +83,9 @@ Radzen DatePicker outputs `DateTime`. `System.Text.Json` serializes to ISO 8601.
 
 The client-side model `Timinute/Client/Models/TrackedTask.cs` must remain `DateTime` for Radzen binding. The conversion happens at the boundary:
 - **Inbound (DTO → Client model):** `TrackedTask(TrackedTaskDto dto)` constructor calls `.ToLocalTime()` — with `DateTimeOffset`, use `.LocalDateTime` instead
-- **Outbound (Client → API):** JSON serialization of `DateTime` produces ISO 8601. Server binds to `DateTimeOffset` with the appropriate offset.
+- **Outbound (Client → API):** Client creates `DateTime` values via `DateTime.Now` (Kind=Local), so `System.Text.Json` serializes them with the local timezone offset (e.g., `2026-04-01T10:00:00+02:00`). The server's `DateTimeOffset` model binder parses the offset correctly. Note: if a `DateTime` with Kind=Unspecified reaches serialization, no offset is included and the server assumes its own local offset — but this doesn't happen in practice since `DateTime.Now` produces Kind=Local.
 
-The client model `DateTime.Now` usages (`AddTrackedTask.razor.cs`, `TrackTaskTime.razor.cs`, `Dashboard.razor.cs`) are correct for the client — local time is intentional for UI display. The server handles UTC conversion.
+The client model `DateTime.Now` usages (`AddTrackedTask.razor.cs`, `TrackTaskTime.razor.cs`, `Dashboard.razor.cs`) are correct for the client — local time is intentional for UI display. The server calls `.ToUniversalTime()` on the received `DateTimeOffset` to normalize to UTC before storage.
 
 ## Files to Modify
 
