@@ -12,7 +12,7 @@ using Timinute.Server.Data;
 namespace Timinute.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260401192127_MigrateDateTimeToDateTimeOffset")]
+    [Migration("20260401195250_MigrateDateTimeToDateTimeOffset")]
     partial class MigrateDateTimeToDateTimeOffset
     {
         /// <inheritdoc />
