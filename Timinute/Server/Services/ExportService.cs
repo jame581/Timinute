@@ -22,7 +22,20 @@ namespace Timinute.Server.Services
         {
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add(sheetName);
-            worksheet.Cell(1, 1).InsertTable(data);
+
+            var dataList = data.ToList();
+            if (dataList.Count > 0)
+            {
+                worksheet.Cell(1, 1).InsertTable(dataList);
+            }
+            else
+            {
+                var properties = typeof(T).GetProperties();
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    worksheet.Cell(1, i + 1).Value = properties[i].Name;
+                }
+            }
 
             using var memoryStream = new MemoryStream();
             workbook.SaveAs(memoryStream);

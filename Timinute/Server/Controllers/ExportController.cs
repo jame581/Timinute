@@ -15,7 +15,6 @@ namespace Timinute.Server.Controllers
     public class ExportController : ControllerBase
     {
         private readonly IRepository<TrackedTask> taskRepository;
-        private readonly IRepository<Project> projectRepository;
         private readonly IExportService exportService;
         private readonly ILogger<ExportController> logger;
 
@@ -25,7 +24,6 @@ namespace Timinute.Server.Controllers
             this.logger = logger;
 
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
-            projectRepository = repositoryFactory.GetRepository<Project>();
         }
 
         [HttpGet("tasks")]
@@ -58,6 +56,7 @@ namespace Timinute.Server.Controllers
                 Date = t.StartDate.ToString("yyyy-MM-dd"),
             }).ToList();
 
+            logger.LogInformation("User {UserId} exported {Count} tracked tasks as {Format}", userId, exportData.Count, format);
             return GenerateFile(exportData, format, "tracked-tasks");
         }
 
@@ -96,7 +95,8 @@ namespace Timinute.Server.Controllers
                 .Where(x => x != null)
                 .ToList();
 
-            return GenerateFile(exportData!, format, "projects");
+            logger.LogInformation("User {UserId} exported {Count} project summaries as {Format}", userId, exportData!.Count, format);
+            return GenerateFile(exportData, format, "projects");
         }
 
         [HttpGet("analytics")]
@@ -137,6 +137,7 @@ namespace Timinute.Server.Controllers
                 })
                 .ToList();
 
+            logger.LogInformation("User {UserId} exported {Count} monthly analytics as {Format}", userId, exportData.Count, format);
             return GenerateFile(exportData, format, "analytics");
         }
 

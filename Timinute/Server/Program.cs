@@ -240,7 +240,7 @@ void DependecyInjection()
     // DI
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
     builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
-    builder.Services.AddTransient<IExportService, ExportService>();
+    builder.Services.AddSingleton<IExportService, ExportService>();
 }
 
 

@@ -98,6 +98,55 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Single(lines); // header only, no data
         }
 
+        [Fact]
+        public async Task Export_Projects_Csv_Returns_File_With_Grouped_Data()
+        {
+            ExportController controller = await CreateController();
+
+            var actionResult = await controller.ExportProjects("csv", null, null, null);
+
+            Assert.NotNull(actionResult);
+            Assert.IsType<FileContentResult>(actionResult);
+
+            var fileResult = actionResult as FileContentResult;
+            Assert.NotNull(fileResult);
+            Assert.Equal("text/csv", fileResult!.ContentType);
+            Assert.Contains("projects-export-", fileResult.FileDownloadName);
+
+            var csv = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
+            var lines = csv.Trim().Split('\n');
+
+            // ApplicationUser1 has tasks in ProjectId1 + some without project
+            Assert.True(lines.Length >= 2); // header + at least 1 project row
+            Assert.Contains("ProjectName", lines[0]);
+            Assert.Contains("TotalHours", lines[0]);
+            Assert.Contains("TaskCount", lines[0]);
+        }
+
+        [Fact]
+        public async Task Export_Analytics_Csv_Returns_File_With_Monthly_Data()
+        {
+            ExportController controller = await CreateController();
+
+            var actionResult = await controller.ExportAnalytics("csv", null, null);
+
+            Assert.NotNull(actionResult);
+            Assert.IsType<FileContentResult>(actionResult);
+
+            var fileResult = actionResult as FileContentResult;
+            Assert.NotNull(fileResult);
+            Assert.Equal("text/csv", fileResult!.ContentType);
+            Assert.Contains("analytics-export-", fileResult.FileDownloadName);
+
+            var csv = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
+            var lines = csv.Trim().Split('\n');
+
+            Assert.True(lines.Length >= 2); // header + at least 1 month
+            Assert.Contains("Month", lines[0]);
+            Assert.Contains("TotalHours", lines[0]);
+            Assert.Contains("TopProject", lines[0]);
+        }
+
         protected override async Task<ExportController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
