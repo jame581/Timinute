@@ -79,7 +79,7 @@ public interface IExportService
 
 ### ExportService
 
-Single implementation using CsvHelper for CSV and ClosedXML for Excel. Registered as singleton in DI (stateless, thread-safe). Includes CSV injection protection via a custom string converter that escapes formula-triggering characters.
+Single implementation using CsvHelper for CSV and ClosedXML for Excel. Registered as singleton in DI (stateless, thread-safe). CSV injection protection is applied at the controller level via `SanitizeForExport()` which prefixes formula-triggering characters (`=`, `+`, `-`, `@`) with a single quote on all user-controlled string fields during DTO mapping.
 
 - `ToCsv<T>`: Uses CsvHelper to write headers + rows to a MemoryStream, returns bytes.
 - `ToExcel<T>`: Creates XLWorkbook with one worksheet, inserts headers from property names, fills rows, returns bytes.

@@ -341,7 +341,7 @@ git commit -m "test: add Excel export tests"
 In `Timinute/Server/Program.cs`, in the `DependecyInjection()` method, add:
 
 ```csharp
-builder.Services.AddTransient<IExportService, ExportService>();
+builder.Services.AddSingleton<IExportService, ExportService>();
 ```
 
 Add the using at the function scope or file level:
