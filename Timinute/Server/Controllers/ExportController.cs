@@ -43,7 +43,7 @@ namespace Timinute.Server.Controllers
                     && (from == null || t.StartDate >= from.Value.ToUniversalTime())
                     && (to == null || t.StartDate <= to.Value.ToUniversalTime())
                     && (projectId == null || t.ProjectId == projectId)
-                    && (search == null || t.Name.Contains(search, StringComparison.OrdinalIgnoreCase)),
+                    && (search == null || t.Name.Contains(search)),
                 orderBy: t => t.OrderByDescending(x => x.StartDate),
                 includeProperties: nameof(Project));
 

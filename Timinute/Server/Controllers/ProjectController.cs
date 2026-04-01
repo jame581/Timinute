@@ -71,9 +71,11 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
+            // Use Get instead of GetPaged because minTaskCount filtering requires
+            // in-memory evaluation of the TrackedTasks collection count.
             var projects = await projectRepository.Get(
                 p => p.UserId == userId
-                    && (search == null || p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)),
+                    && (search == null || p.Name.Contains(search)),
                 includeProperties: nameof(Project.TrackedTasks));
 
             if (minTaskCount.HasValue)
