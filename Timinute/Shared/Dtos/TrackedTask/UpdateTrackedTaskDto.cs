@@ -13,9 +13,9 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public string Name { get; set; } = null!;
 
         [Required]
-        public DateTime? StartDate { get; set; }
+        public DateTimeOffset? StartDate { get; set; }
 
-        public DateTime? EndDate { get; set; }
+        public DateTimeOffset? EndDate { get; set; }
 
         public string? ProjectId { get; set; }
 

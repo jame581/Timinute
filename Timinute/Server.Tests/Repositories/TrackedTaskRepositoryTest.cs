@@ -99,7 +99,7 @@ namespace Timinute.Server.Tests.Repositories
         [Fact]
         public async Task Add_TrackedTask_Test()
         {
-            var dateNow = DateTime.UtcNow;
+            var dateNow = DateTimeOffset.UtcNow;
             var newTrackedTask = new TrackedTask { TaskId = "TrackedTaskId100", Name = "Task 100", UserId = "ApplicationUser1", StartDate = dateNow, EndDate = dateNow.AddHours(3), Duration = TimeSpan.FromHours(3) };
 
             int countBefore;
@@ -124,7 +124,7 @@ namespace Timinute.Server.Tests.Repositories
         [Fact]
         public async Task Add_TrackedTask_Without_User_Test()
         {
-            var dateNow = DateTime.UtcNow;
+            var dateNow = DateTimeOffset.UtcNow;
             var newTrackedTask = new TrackedTask { TaskId = "TrackedTaskId100", Name = "Task 100", StartDate = dateNow, EndDate = dateNow.AddHours(3), Duration = TimeSpan.FromHours(3) };
 
             using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName);
