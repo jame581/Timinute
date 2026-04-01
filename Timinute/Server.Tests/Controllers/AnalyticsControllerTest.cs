@@ -104,6 +104,19 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.NotNull(workTimePerMonths);
             Assert.Equal(2, workTimePerMonths!.Count);
+
+            var thisMonth = DateTime.UtcNow;
+            var lastMonth = thisMonth.AddMonths(-1);
+            var thisMonthLabel = new DateTime(thisMonth.Year, thisMonth.Month, 1).ToString("yyyy MMM");
+            var lastMonthLabel = new DateTime(lastMonth.Year, lastMonth.Month, 1).ToString("yyyy MMM");
+
+            Assert.Contains(workTimePerMonths, w =>
+                w.Time == thisMonthLabel &&
+                w.WorkTimeInSeconds == TimeSpan.FromHours(10).TotalSeconds);
+
+            Assert.Contains(workTimePerMonths, w =>
+                w.Time == lastMonthLabel &&
+                w.WorkTimeInSeconds == TimeSpan.FromHours(28).TotalSeconds);
         }
 
         [Fact]

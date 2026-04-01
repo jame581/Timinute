@@ -28,13 +28,6 @@ namespace Timinute.Server.Areas.Identity
                 new Claim(Constants.Claims.LastLogin, user.LastLoginDate.HasValue ? user.LastLoginDate.Value.ToString("HH:mm dd/MM/yyyy") : string.Empty),
             });
 
-            var roles = await userManager.GetRolesAsync(user);
-
-            foreach (var role in roles)
-            {
-                claims.AddClaim(new Claim(Constants.Claims.Role, role));
-            }
-
             return claims;
         }
     }
