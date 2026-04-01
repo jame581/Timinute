@@ -418,9 +418,9 @@ if (updatedTrackedTask.EndDate.HasValue)
 {
     updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
 
-    if (updatedTrackedTask.EndDate.Value < updatedTrackedTask.StartDate)
+    if (updatedTrackedTask.EndDate.Value <= updatedTrackedTask.StartDate)
     {
-        return BadRequest("End date must be after start date.");
+        return BadRequest("End date must be strictly after start date.");
     }
 
     updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
@@ -441,7 +441,7 @@ Expected: 50/50 pass
 
 ```bash
 git add Timinute/Server/Controllers/TrackedTaskController.cs Timinute/Server.Tests/Controllers/TrackedTaskControllerTest.cs
-git commit -m "feat: validate EndDate >= StartDate in UpdateTrackedTask"
+git commit -m "feat: validate EndDate > StartDate in UpdateTrackedTask"
 ```
 
 ---

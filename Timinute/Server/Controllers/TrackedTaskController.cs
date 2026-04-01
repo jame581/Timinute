@@ -93,8 +93,9 @@ namespace Timinute.Server.Controllers
 
             var newTrackedTask = mapper.Map<TrackedTask>(trackedTask);
             newTrackedTask.UserId = userId;
-            newTrackedTask.StartDate = trackedTask.StartDate!.Value.ToUniversalTime();
-            newTrackedTask.EndDate = trackedTask.StartDate.Value + newTrackedTask.Duration;
+            var utcStart = trackedTask.StartDate!.Value.ToUniversalTime();
+            newTrackedTask.StartDate = utcStart;
+            newTrackedTask.EndDate = utcStart + newTrackedTask.Duration;
 
             await taskRepository.Insert(newTrackedTask);
             return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
