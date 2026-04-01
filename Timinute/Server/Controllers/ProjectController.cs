@@ -57,6 +57,47 @@ namespace Timinute.Server.Controllers
             return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjectList));
         }
 
+        // GET: api/Project/search
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ProjectDto>>> SearchProjects(
+            [FromQuery] PagingParameters pagingParameters,
+            [FromQuery] string? search = null,
+            [FromQuery] int? minTaskCount = null)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (minTaskCount.HasValue && minTaskCount.Value < 0)
+            {
+                return BadRequest("minTaskCount must be >= 0.");
+            }
+
+            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+
+            var pagedProjectList = await projectRepository.GetPaged(pagingParameters,
+                p => p.UserId == userId
+                    && (normalizedSearch == null || p.Name.Contains(normalizedSearch))
+                    && (!minTaskCount.HasValue || p.TrackedTasks!.Count >= minTaskCount.Value),
+                orderBy: nameof(Project.Name));
+
+            var metadata = new PaginationHeaderDto
+            {
+                TotalCount = pagedProjectList.TotalCount,
+                PageSize = pagedProjectList.PageSize,
+                CurrentPage = pagedProjectList.CurrentPage,
+                TotalPages = pagedProjectList.TotalPages,
+                HasNext = pagedProjectList.HasNext,
+                HasPrevious = pagedProjectList.HasPrevious
+            };
+
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(metadata));
+            return Ok(mapper.Map<IEnumerable<ProjectDto>>(pagedProjectList));
+        }
+
         // GET: api/Project
         [HttpGet("{id}")]
         public async Task<ActionResult<ProjectDto>> GetProject(string id)

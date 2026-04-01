@@ -275,7 +275,7 @@ public async Task<ActionResult<IEnumerable<ProjectDto>>> SearchProjects(
 
     var projects = await projectRepository.Get(
         p => p.UserId == userId
-            && (search == null || p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)),
+            && (search == null || p.Name.Contains(search)),
         includeProperties: nameof(Project.TrackedTasks));
 
     if (minTaskCount.HasValue)
