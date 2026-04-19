@@ -17,5 +17,10 @@ namespace Timinute.Server.Repository
         Task<IEnumerable<TEntity>> GetWithRawSql(string query, params object[] parameters);
         Task Insert(TEntity entity);
         Task Update(TEntity entityToUpdate);
+
+        Task SoftDelete(object id);
+        Task Restore(object id);
+        Task<IEnumerable<TEntity>> GetDeleted(Expression<Func<TEntity, bool>>? filter = null);
+        Task<int> PurgeExpired(DateTimeOffset olderThan);
     }
 }
