@@ -56,6 +56,12 @@ namespace Timinute.Client.Helpers
                 public const string Delete = Api;
 
                 public const string Update = Api;
+
+                public const string Trash = $"{Api}/trash";
+
+                public static string Restore(string id) => $"{Api}/{id}/restore";
+
+                public static string Purge(string id) => $"{Api}/{id}/purge";
             }
 
             public static class Project
@@ -71,6 +77,12 @@ namespace Timinute.Client.Helpers
                 public const string Delete = Api;
 
                 public const string Update = Api;
+
+                public const string Trash = $"{Api}/trash";
+
+                public static string Restore(string id) => $"{Api}/{id}/restore";
+
+                public static string Purge(string id) => $"{Api}/{id}/purge";
             }
 
             public static class Analytics

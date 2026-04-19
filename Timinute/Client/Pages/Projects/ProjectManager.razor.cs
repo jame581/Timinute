@@ -38,6 +38,9 @@ namespace Timinute.Client.Pages.Projects
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
 
+        [Inject]
+        private Timinute.Client.Services.UndoNotificationService undoNotifier { get; set; } = null!;
+
         #endregion
 
         protected override async Task OnInitializedAsync()
@@ -161,7 +164,11 @@ namespace Timinute.Client.Pages.Projects
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     await radzenDataGrid.Reload();
-                    notificationService.Notify(NotificationSeverity.Success, "Success", "Project was removed", 3000);
+                    undoNotifier.ShowUndo("Project", project.Name, async () =>
+                    {
+                        await client.PostAsync(Constants.API.Project.Restore(project.ProjectId), null);
+                        await radzenDataGrid.Reload();
+                    });
                 }
             }
             catch (Exception ex)
