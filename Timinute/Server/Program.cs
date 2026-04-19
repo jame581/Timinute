@@ -241,6 +241,7 @@ void DependecyInjection()
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
     builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
     builder.Services.AddSingleton<IExportService, ExportService>();
+    builder.Services.AddHostedService<TrashPurgeService>();
 }
 
 

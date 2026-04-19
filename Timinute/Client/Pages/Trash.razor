@@ -1,0 +1,97 @@
+@page "/trash"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject IHttpClientFactory ClientFactory
+@inject Radzen.NotificationService Notifier
+@inject Radzen.DialogService DialogService
+@using System.Net.Http.Json
+@using Radzen
+@using Radzen.Blazor
+@using Timinute.Client.Helpers
+@using Timinute.Shared.Dtos.Trash
+
+<h1>Trash</h1>
+
+<p>Items here are permanently deleted after 30 days.</p>
+
+<h3>Deleted Projects</h3>
+<RadzenDataGrid Data="@deletedProjects" TItem="TrashItemDto" EmptyText="No deleted projects.">
+    <Columns>
+        <RadzenDataGridColumn TItem="TrashItemDto" Property="Name" Title="Name" />
+        <RadzenDataGridColumn TItem="TrashItemDto" Property="DeletedAt" Title="Deleted on" FormatString="{0:g}" />
+        <RadzenDataGridColumn TItem="TrashItemDto" Property="DaysRemaining" Title="Days remaining" />
+        <RadzenDataGridColumn TItem="TrashItemDto" Title="Actions" Sortable="false" Filterable="false">
+            <Template Context="item">
+                <RadzenButton Text="Restore" Size="ButtonSize.Small" Class="m-1" Click="@(async () => await RestoreProject(item.Id))" />
+                <RadzenButton Text="Delete Permanently" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Class="m-1"
+                              Click="@(async () => await PurgeProject(item))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+<h3 style="margin-top: 2rem;">Deleted Tasks</h3>
+<RadzenDataGrid Data="@deletedTasks" TItem="TrashItemDto" EmptyText="No deleted tasks.">
+    <Columns>
+        <RadzenDataGridColumn TItem="TrashItemDto" Property="Name" Title="Name" />
+        <RadzenDataGridColumn TItem="TrashItemDto" Property="DeletedAt" Title="Deleted on" FormatString="{0:g}" />
+        <RadzenDataGridColumn TItem="TrashItemDto" Property="DaysRemaining" Title="Days remaining" />
+        <RadzenDataGridColumn TItem="TrashItemDto" Title="Actions" Sortable="false" Filterable="false">
+            <Template Context="item">
+                <RadzenButton Text="Restore" Size="ButtonSize.Small" Class="m-1" Click="@(async () => await RestoreTask(item.Id))" />
+                <RadzenButton Text="Delete Permanently" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Class="m-1"
+                              Click="@(async () => await PurgeTask(item))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private List<TrashItemDto> deletedProjects = new();
+    private List<TrashItemDto> deletedTasks = new();
+
+    private HttpClient Http => ClientFactory.CreateClient(Constants.API.ClientName);
+
+    protected override async Task OnInitializedAsync() => await Refresh();
+
+    private async Task Refresh()
+    {
+        deletedProjects = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.Project.Trash) ?? new();
+        deletedTasks = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.TrackedTask.Trash) ?? new();
+    }
+
+    private async Task RestoreProject(string id)
+    {
+        await Http.PostAsync(Constants.API.Project.Restore(id), null);
+        Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Project restored", Duration = 3000 });
+        await Refresh();
+    }
+
+    private async Task RestoreTask(string id)
+    {
+        await Http.PostAsync(Constants.API.TrackedTask.Restore(id), null);
+        Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Task restored", Duration = 3000 });
+        await Refresh();
+    }
+
+    private async Task PurgeProject(TrashItemDto item)
+    {
+        var confirm = await DialogService.Confirm($"Permanently delete project '{item.Name}'? This cannot be undone.", "Confirm",
+            new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+        if (confirm == true)
+        {
+            await Http.DeleteAsync(Constants.API.Project.Purge(item.Id));
+            await Refresh();
+        }
+    }
+
+    private async Task PurgeTask(TrashItemDto item)
+    {
+        var confirm = await DialogService.Confirm($"Permanently delete task '{item.Name}'? This cannot be undone.", "Confirm",
+            new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+        if (confirm == true)
+        {
+            await Http.DeleteAsync(Constants.API.TrackedTask.Purge(item.Id));
+            await Refresh();
+        }
+    }
+}

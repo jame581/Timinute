@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
@@ -14,6 +16,7 @@ using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.TrackedTask;
+using Timinute.Shared.Dtos.Trash;
 using Xunit;
 
 namespace Timinute.Server.Tests.Controllers
@@ -425,6 +428,104 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Empty(tasks!);
         }
 
+        [Fact]
+        public async Task Delete_TrackedTask_Soft_Deletes_Row_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SoftDeleteTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var stillInDb = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(stillInDb);
+            Assert.NotNull(stillInDb!.DeletedAt);
+
+            var hidden = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.Null(hidden);
+        }
+
+        [Fact]
+        public async Task Restore_TrackedTask_Returns_Task_To_Default_Query_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "RestoreTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            var actionResult = await controller.RestoreTrackedTask("TrackedTaskId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var restored = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(restored);
+            Assert.Null(restored!.DeletedAt);
+        }
+
+        [Fact]
+        public async Task Restore_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "RestoreTaskAuth");
+            TrackedTaskController owner = await CreateController(applicationDbContext);
+            await owner.DeleteTrackedTask("TrackedTaskId1");
+
+            TrackedTaskController other = await CreateController(applicationDbContext, "ApplicationUser10");
+            var actionResult = await other.RestoreTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NotFoundObjectResult>(actionResult);
+        }
+
+        [Fact]
+        public async Task GetTrash_TrackedTasks_Returns_Only_Deleted_Owned_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "TrashTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteTrackedTask("TrackedTaskId1");
+            await controller.DeleteTrackedTask("TrackedTaskId2");
+
+            var actionResult = await controller.GetTrashTrackedTasks();
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+            var items = okResult!.Value as IEnumerable<TrashItemDto>;
+            Assert.NotNull(items);
+            var list = items!.ToList();
+            Assert.Equal(2, list.Count);
+            Assert.All(list, i => Assert.InRange(i.DaysRemaining, 29, 30));
+        }
+
+        [Fact]
+        public async Task Purge_TrackedTask_Hard_Removes_Row_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "PurgeTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            var actionResult = await controller.PurgeTrackedTask("TrackedTaskId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var row = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.Null(row);
+        }
+
+        [Fact]
+        public async Task Purge_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "PurgeTaskAuth");
+            TrackedTaskController owner = await CreateController(applicationDbContext);
+            await owner.DeleteTrackedTask("TrackedTaskId1");
+
+            TrackedTaskController other = await CreateController(applicationDbContext, "ApplicationUser10");
+            var actionResult = await other.PurgeTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NotFoundObjectResult>(actionResult);
+        }
+
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
@@ -440,7 +541,11 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
+                .Build();
+
+            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration)
             {
                 ControllerContext = new ControllerContext
                 {

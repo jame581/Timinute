@@ -9,6 +9,7 @@ using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.TrackedTask;
+using Timinute.Shared.Dtos.Trash;
 
 namespace Timinute.Server.Controllers
 {
@@ -21,11 +22,13 @@ namespace Timinute.Server.Controllers
         private readonly IRepository<TrackedTask> taskRepository;
         private readonly IMapper mapper;
         private readonly ILogger<TrackedTaskController> logger;
+        private readonly IConfiguration configuration;
 
-        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger)
+        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration)
         {
             this.mapper = mapper;
             this.logger = logger;
+            this.configuration = configuration;
 
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }
@@ -165,11 +168,84 @@ namespace Timinute.Server.Controllers
                 return NotFound("Tracked task not found!");
             }
 
-            await taskRepository.Delete(id);
+            await taskRepository.SoftDelete(id);
 
-            logger.LogInformation($"Tracked task with Id {id} was deleted.");
+            logger.LogInformation($"Tracked task with Id {id} was soft-deleted.");
             return NoContent();
 
+        }
+
+        // RESTORE: api/TrackedTask/{id}/restore
+        [HttpPost("{id}/restore")]
+        public async Task<ActionResult> RestoreTrackedTask(string id)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var deleted = (await taskRepository.GetDeleted(t => t.TaskId == id && t.UserId == userId)).FirstOrDefault();
+            if (deleted == null)
+            {
+                return NotFound("Tracked task not found!");
+            }
+
+            await taskRepository.Restore(id);
+
+            logger.LogInformation($"Tracked task with Id {id} was restored.");
+            return NoContent();
+        }
+
+        // GET: api/TrackedTask/trash
+        [HttpGet("trash")]
+        public async Task<ActionResult<IEnumerable<TrashItemDto>>> GetTrashTrackedTasks()
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var retentionDays = configuration.GetValue<int>("TrashRetention:Days", 30);
+            var now = DateTimeOffset.UtcNow;
+
+            var deleted = await taskRepository.GetDeleted(t => t.UserId == userId);
+
+            var items = deleted.Select(t => new TrashItemDto
+            {
+                Id = t.TaskId,
+                Name = t.Name,
+                DeletedAt = t.DeletedAt!.Value,
+                DaysRemaining = Math.Max(0, (int)Math.Ceiling(retentionDays - (now - t.DeletedAt.Value).TotalDays))
+            });
+
+            return Ok(items);
+        }
+
+        // PURGE: api/TrackedTask/{id}/purge
+        [HttpDelete("{id}/purge")]
+        public async Task<ActionResult> PurgeTrackedTask(string id)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var deleted = (await taskRepository.GetDeleted(t => t.TaskId == id && t.UserId == userId)).FirstOrDefault();
+            if (deleted == null)
+            {
+                return NotFound("Tracked task not found!");
+            }
+
+            await taskRepository.Delete(id);
+
+            logger.LogInformation($"Tracked task with Id {id} was purged.");
+            return NoContent();
         }
 
         // UPDATE: api/TrackedTask

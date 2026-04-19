@@ -200,6 +200,72 @@ namespace Timinute.Server.Tests.Repositories
             var deleted = await repository.GetById("TrackedTaskId2");
             Assert.Null(deleted);
         }
+
+        [Fact]
+        public async Task SoftDelete_Marks_Entity_And_Hides_From_Default_Query_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "SoftDelete");
+            var repository = new BaseRepository<TrackedTask>(dbContext);
+
+            await repository.SoftDelete("TrackedTaskId3");
+
+            var found = await repository.GetById("TrackedTaskId3");
+            Assert.Null(found);
+
+            var stillInDb = await dbContext.TrackedTasks.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId3");
+            Assert.NotNull(stillInDb);
+            Assert.NotNull(stillInDb!.DeletedAt);
+        }
+
+        [Fact]
+        public async Task Restore_Clears_DeletedAt_And_Restores_To_Default_Query_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "Restore");
+            var repository = new BaseRepository<TrackedTask>(dbContext);
+
+            await repository.SoftDelete("TrackedTaskId4");
+            Assert.Null(await repository.GetById("TrackedTaskId4"));
+
+            await repository.Restore("TrackedTaskId4");
+
+            var restored = await repository.GetById("TrackedTaskId4");
+            Assert.NotNull(restored);
+            Assert.Null(restored!.DeletedAt);
+        }
+
+        [Fact]
+        public async Task GetDeleted_Returns_Only_SoftDeleted_Entities_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "GetDeleted");
+            var repository = new BaseRepository<TrackedTask>(dbContext);
+
+            await repository.SoftDelete("TrackedTaskId3");
+            await repository.SoftDelete("TrackedTaskId4");
+
+            var deleted = (await repository.GetDeleted()).ToList();
+
+            Assert.Equal(2, deleted.Count);
+            Assert.All(deleted, t => Assert.NotNull(t.DeletedAt));
+        }
+
+        [Fact]
+        public async Task PurgeExpired_Removes_Old_SoftDeleted_Only_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "Purge");
+            var repository = new BaseRepository<TrackedTask>(dbContext);
+
+            await repository.SoftDelete("TrackedTaskId3");
+            await repository.SoftDelete("TrackedTaskId4");
+
+            var aged = await dbContext.TrackedTasks.IgnoreQueryFilters().AsTracking()
+                .FirstAsync(t => t.TaskId == "TrackedTaskId3");
+            aged.DeletedAt = DateTimeOffset.UtcNow.AddDays(-40);
+            await dbContext.SaveChangesAsync();
+
+            var purgedCount = await repository.PurgeExpired(DateTimeOffset.UtcNow.AddDays(-30));
+
+            Assert.Equal(1, purgedCount);
+        }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
     }
 }

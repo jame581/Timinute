@@ -39,6 +39,9 @@ namespace Timinute.Client.Pages.TrackedTasks
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
 
+        [Inject]
+        private Timinute.Client.Services.UndoNotificationService undoNotifier { get; set; } = null!;
+
         #endregion
 
         protected override async Task OnInitializedAsync()
@@ -158,7 +161,11 @@ namespace Timinute.Client.Pages.TrackedTasks
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     await radzenDataGrid.Reload();
-                    notificationService.Notify(NotificationSeverity.Success, "Success", "Tracked Task was removed", 3000);
+                    undoNotifier.ShowUndo("Task", trackedTask.Name, async () =>
+                    {
+                        await client.PostAsync(Constants.API.TrackedTask.Restore(trackedTask.TaskId), null);
+                        await radzenDataGrid.Reload();
+                    });
                 }
             }
             catch (Exception ex)

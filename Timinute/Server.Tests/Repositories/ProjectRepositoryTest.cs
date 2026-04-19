@@ -196,5 +196,77 @@ namespace Timinute.Server.Tests.Repositories
             var deleted = await repository.GetById("ProjectId5");
             Assert.Null(deleted);
         }
+
+        [Fact]
+        public async Task SoftDelete_Marks_Entity_And_Hides_From_Default_Query_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "SoftDelete");
+            var repository = new BaseRepository<Project>(dbContext);
+
+            await repository.SoftDelete("ProjectId4");
+
+            var found = await repository.GetById("ProjectId4");
+            Assert.Null(found);
+
+            var stillInDb = await dbContext.Projects.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.ProjectId == "ProjectId4");
+            Assert.NotNull(stillInDb);
+            Assert.NotNull(stillInDb!.DeletedAt);
+        }
+
+        [Fact]
+        public async Task Restore_Clears_DeletedAt_And_Restores_To_Default_Query_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "Restore");
+            var repository = new BaseRepository<Project>(dbContext);
+
+            await repository.SoftDelete("ProjectId5");
+            Assert.Null(await repository.GetById("ProjectId5"));
+
+            await repository.Restore("ProjectId5");
+
+            var restored = await repository.GetById("ProjectId5");
+            Assert.NotNull(restored);
+            Assert.Null(restored!.DeletedAt);
+        }
+
+        [Fact]
+        public async Task GetDeleted_Returns_Only_SoftDeleted_Entities_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "GetDeleted");
+            var repository = new BaseRepository<Project>(dbContext);
+
+            await repository.SoftDelete("ProjectId4");
+            await repository.SoftDelete("ProjectId5");
+
+            var deleted = (await repository.GetDeleted()).ToList();
+
+            Assert.Equal(2, deleted.Count);
+            Assert.All(deleted, p => Assert.NotNull(p.DeletedAt));
+            Assert.Contains(deleted, p => p.ProjectId == "ProjectId4");
+            Assert.Contains(deleted, p => p.ProjectId == "ProjectId5");
+        }
+
+        [Fact]
+        public async Task PurgeExpired_Removes_Old_SoftDeleted_Only_Test()
+        {
+            await using var dbContext = await TestHelper.GetDefaultApplicationDbContext(dbName + "Purge");
+            var repository = new BaseRepository<Project>(dbContext);
+
+            await repository.SoftDelete("ProjectId4");
+            await repository.SoftDelete("ProjectId5");
+
+            var aged = await dbContext.Projects.IgnoreQueryFilters().AsTracking()
+                .FirstAsync(p => p.ProjectId == "ProjectId4");
+            aged.DeletedAt = DateTimeOffset.UtcNow.AddDays(-40);
+            await dbContext.SaveChangesAsync();
+
+            var purgedCount = await repository.PurgeExpired(DateTimeOffset.UtcNow.AddDays(-30));
+
+            Assert.Equal(1, purgedCount);
+
+            var remaining = await dbContext.Projects.IgnoreQueryFilters().Where(p => p.ProjectId == "ProjectId4" || p.ProjectId == "ProjectId5").ToListAsync();
+            Assert.Single(remaining);
+            Assert.Equal("ProjectId5", remaining[0].ProjectId);
+        }
     }
 }
