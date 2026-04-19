@@ -27,6 +27,12 @@ namespace Timinute.Server.Data
 
             builder.Entity<Project>().HasKey(t => t.ProjectId);
 
+            builder.Entity<Project>()
+                .HasQueryFilter(p => p.DeletedAt == null);
+
+            builder.Entity<Project>()
+                .HasIndex(p => p.DeletedAt);
+
             builder.Entity<TrackedTask>()
                 .Property(x => x.TaskId)
                 .ValueGeneratedOnAdd()
@@ -45,6 +51,12 @@ namespace Timinute.Server.Data
                 .IsRequired();
 
             builder.Entity<TrackedTask>().HasKey(t => t.TaskId);
+
+            builder.Entity<TrackedTask>()
+                .HasQueryFilter(t => t.DeletedAt == null);
+
+            builder.Entity<TrackedTask>()
+                .HasIndex(t => t.DeletedAt);
 
             // Setup relationship
 
