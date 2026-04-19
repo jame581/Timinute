@@ -8,8 +8,8 @@ docker pull mcr.microsoft.com/mssql/server:2025-latest
 
 docker run `
   -e "ACCEPT_EULA=Y" `
-  -e "SA_PASSWORD=TiminuteAdmin." `
-  -e 'MSSQL_PID=Express' `
+  -e "MSSQL_SA_PASSWORD=TiminuteAdmin." `
+  -e "MSSQL_PID=Express" `
   -p 44555:1433 `
   --name timinute.sql.server `
   --hostname timinute.sql.server `
