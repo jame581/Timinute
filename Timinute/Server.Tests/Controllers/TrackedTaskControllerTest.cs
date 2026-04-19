@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
@@ -14,6 +16,7 @@ using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.TrackedTask;
+using Timinute.Shared.Dtos.Trash;
 using Xunit;
 
 namespace Timinute.Server.Tests.Controllers
@@ -423,6 +426,25 @@ namespace Timinute.Server.Tests.Controllers
             var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
             Assert.NotNull(tasks);
             Assert.Empty(tasks!);
+        }
+
+        [Fact]
+        public async Task Delete_TrackedTask_Soft_Deletes_Row_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SoftDeleteTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var stillInDb = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(stillInDb);
+            Assert.NotNull(stillInDb!.DeletedAt);
+
+            var hidden = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.Null(hidden);
         }
 
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")

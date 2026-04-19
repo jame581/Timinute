@@ -165,9 +165,9 @@ namespace Timinute.Server.Controllers
                 return NotFound("Tracked task not found!");
             }
 
-            await taskRepository.Delete(id);
+            await taskRepository.SoftDelete(id);
 
-            logger.LogInformation($"Tracked task with Id {id} was deleted.");
+            logger.LogInformation($"Tracked task with Id {id} was soft-deleted.");
             return NoContent();
 
         }
