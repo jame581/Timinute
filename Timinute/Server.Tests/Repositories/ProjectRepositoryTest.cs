@@ -255,8 +255,9 @@ namespace Timinute.Server.Tests.Repositories
             await repository.SoftDelete("ProjectId4");
             await repository.SoftDelete("ProjectId5");
 
-            var aged = await dbContext.Projects.FindAsync("ProjectId4");
-            aged!.DeletedAt = DateTimeOffset.UtcNow.AddDays(-40);
+            var aged = await dbContext.Projects.IgnoreQueryFilters().AsTracking()
+                .FirstAsync(p => p.ProjectId == "ProjectId4");
+            aged.DeletedAt = DateTimeOffset.UtcNow.AddDays(-40);
             await dbContext.SaveChangesAsync();
 
             var purgedCount = await repository.PurgeExpired(DateTimeOffset.UtcNow.AddDays(-30));

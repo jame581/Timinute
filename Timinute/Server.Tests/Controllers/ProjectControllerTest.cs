@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;
@@ -14,6 +16,7 @@ using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Project;
+using Timinute.Shared.Dtos.Trash;
 using Xunit;
 
 namespace Timinute.Server.Tests.Controllers
@@ -311,6 +314,118 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Empty(projects!);
         }
 
+        [Fact]
+        public async Task Delete_Project_Soft_Deletes_Project_And_Cascades_To_Tasks_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CascadeDelete");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.DeleteProject("ProjectId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var project = await applicationDbContext.Projects.IgnoreQueryFilters().FirstAsync(p => p.ProjectId == "ProjectId1");
+            Assert.NotNull(project.DeletedAt);
+
+            var tasks = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .Where(t => t.ProjectId == "ProjectId1")
+                .ToListAsync();
+
+            Assert.Equal(3, tasks.Count);
+            Assert.All(tasks, t => Assert.Equal(project.DeletedAt, t.DeletedAt));
+        }
+
+        [Fact]
+        public async Task Restore_Project_Restores_Cascaded_Tasks_Only_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CascadeRestore");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            var taskConfig = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
+                .Build();
+            var taskController = new TrackedTaskController(
+                new RepositoryFactory(applicationDbContext),
+                _mapper,
+                new Mock<ILogger<TrackedTaskController>>().Object,
+                taskConfig)
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext
+                    {
+                        User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("sub", "ApplicationUser1") }))
+                    }
+                }
+            };
+
+            await taskController.DeleteTrackedTask("TrackedTaskId1");
+            await controller.DeleteProject("ProjectId1");
+
+            var actionResult = await controller.RestoreProject("ProjectId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var task2 = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId2");
+            var task3 = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId3");
+            Assert.NotNull(task2);
+            Assert.NotNull(task3);
+
+            var task1 = await applicationDbContext.TrackedTasks.IgnoreQueryFilters().FirstAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(task1.DeletedAt);
+
+            var project = await applicationDbContext.Projects.FirstOrDefaultAsync(p => p.ProjectId == "ProjectId1");
+            Assert.NotNull(project);
+        }
+
+        [Fact]
+        public async Task GetTrash_Projects_Returns_Only_Deleted_Owned_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "TrashProjects");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteProject("ProjectId4");
+            await controller.DeleteProject("ProjectId5");
+
+            var actionResult = await controller.GetTrashProjects();
+            var okResult = actionResult.Result as OkObjectResult;
+            var items = (okResult!.Value as IEnumerable<TrashItemDto>)!.ToList();
+
+            Assert.Equal(2, items.Count);
+            Assert.All(items, i => Assert.InRange(i.DaysRemaining, 29, 30));
+        }
+
+        [Fact]
+        public async Task Purge_Project_Hard_Removes_Project_Row_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "PurgeProject");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteProject("ProjectId1");
+
+            var actionResult = await controller.PurgeProject("ProjectId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var project = await applicationDbContext.Projects.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ProjectId == "ProjectId1");
+            Assert.Null(project);
+
+            var taskCount = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .CountAsync(t => t.TaskId == "TrackedTaskId1" || t.TaskId == "TrackedTaskId2" || t.TaskId == "TrackedTaskId3");
+            Assert.Equal(3, taskCount);
+        }
+
+        [Fact]
+        public async Task Purge_Project_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "PurgeProjectAuth");
+            ProjectController owner = await CreateController(applicationDbContext);
+            await owner.DeleteProject("ProjectId1");
+
+            ProjectController other = await CreateController(applicationDbContext, "ApplicationUser10");
+            var actionResult = await other.PurgeProject("ProjectId1");
+
+            Assert.IsType<NotFoundObjectResult>(actionResult);
+        }
+
         protected override async Task<ProjectController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
@@ -326,7 +441,11 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            ProjectController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
+                .Build();
+
+            ProjectController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration)
             {
                 ControllerContext = new ControllerContext
                 {

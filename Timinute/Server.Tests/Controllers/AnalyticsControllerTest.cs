@@ -187,11 +187,11 @@ namespace Timinute.Server.Tests.Controllers
                     Assert.Equal(TimeSpan.FromHours(10), item.Time);
                 }, item =>
                 {
-                    Assert.Equal("None", item.ProjectId);
+                    Assert.Equal("ProjectId1002", item.ProjectId);
                     Assert.Equal(TimeSpan.FromHours(7), item.Time);
                 }, item =>
                 {
-                    Assert.Equal("ProjectId1002", item.ProjectId);
+                    Assert.Equal("None", item.ProjectId);
                     Assert.Equal(TimeSpan.FromHours(7), item.Time);
                 }, item =>
                 {

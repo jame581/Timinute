@@ -31,7 +31,12 @@ namespace Timinute.Server.Repository
 
         public async Task Delete(object id)
         {
-            TEntity? entityToDelete = await dbSet.FindAsync(id);
+            var keyProperty = context.Model.FindEntityType(typeof(TEntity))!
+                .FindPrimaryKey()!.Properties[0].Name;
+
+            TEntity? entityToDelete = await dbSet.IgnoreQueryFilters()
+                .Where($"{keyProperty} == @0", id)
+                .FirstOrDefaultAsync();
 
             if (entityToDelete != null)
                 await Delete(entityToDelete);
@@ -166,6 +171,7 @@ namespace Timinute.Server.Repository
         {
             dbSet.Update(entityToUpdate);
             await context.SaveChangesAsync();
+            context.Entry(entityToUpdate).State = EntityState.Detached;
         }
 
         public async Task SoftDelete(object id)
@@ -174,7 +180,9 @@ namespace Timinute.Server.Repository
             if (entity is ISoftDeletable softDeletable)
             {
                 softDeletable.DeletedAt = DateTimeOffset.UtcNow;
+                dbSet.Update(entity);
                 await context.SaveChangesAsync();
+                context.Entry(entity).State = EntityState.Detached;
             }
             else if (entity != null)
             {
@@ -185,14 +193,19 @@ namespace Timinute.Server.Repository
 
         public async Task Restore(object id)
         {
-            // FindAsync bypasses query filters and checks the identity map first,
-            // returning a tracked entity so that SaveChangesAsync will persist changes.
-            var entity = await context.Set<TEntity>().FindAsync(id);
+            var keyProperty = context.Model.FindEntityType(typeof(TEntity))!
+                .FindPrimaryKey()!.Properties[0].Name;
+
+            var entity = await dbSet.IgnoreQueryFilters()
+                .Where($"{keyProperty} == @0", id)
+                .FirstOrDefaultAsync();
 
             if (entity is ISoftDeletable softDeletable)
             {
                 softDeletable.DeletedAt = null;
+                dbSet.Update(entity);
                 await context.SaveChangesAsync();
+                context.Entry(entity).State = EntityState.Detached;
             }
             else if (entity != null)
             {

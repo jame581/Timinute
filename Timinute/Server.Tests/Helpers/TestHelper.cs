@@ -88,6 +88,7 @@ namespace Timinute.Server.Tests.Helpers
             context.Projects.AddRange(projects);
 
             await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
         }
 
         private static async Task FillAnalyticsData(ApplicationDbContext context)
@@ -137,6 +138,7 @@ namespace Timinute.Server.Tests.Helpers
             context.Projects.AddRange(projects);
 
             await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
         }
     }
 }
