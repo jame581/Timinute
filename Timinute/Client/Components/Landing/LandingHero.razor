@@ -1,0 +1,147 @@
+@implements IDisposable
+@inject IJSRuntime JS
+
+<section class="lhero">
+    <div>
+        <div class="lhero__eyebrow">
+            <span class="lhero__eyebrow-pill">v2.0</span>
+            A fresh, focused redesign · Apr 2026
+        </div>
+
+        <h1 class="lhero__h1">
+            The free time tracker<br />
+            <span class="lhero__h1-mu">that respects your </span>
+            <span class="lhero__underlined">
+                minutes
+                <svg class="lhero__underline" viewBox="0 0 240 14" preserveAspectRatio="none">
+                    <path d="M2 8 Q 60 2, 120 7 T 238 6" stroke="var(--accent)" stroke-width="3" fill="none" stroke-linecap="round" />
+                </svg>
+            </span>.
+        </h1>
+
+        <p class="lhero__intro">
+            Track work hours across projects, get clear weekly overviews, see exactly where your time goes. Open source, self-hostable, free forever.
+        </p>
+
+        <div class="lhero__ctas">
+            <a class="lhero__cta-primary" href="authentication/register">
+                Register and start tracking <AuroraIcons Name="arrowR" Size="15" />
+            </a>
+            <a class="lhero__cta-ghost" href="https://github.com/jame581/Timinute" target="_blank" rel="noopener">
+                <AuroraIcons Name="github" Size="15" /> Star on GitHub
+                <span class="lhero__star-count">· 1.2k</span>
+            </a>
+        </div>
+
+        <div class="lhero__trust">
+            <span class="lhero__trust-item"><AuroraIcons Name="check" Size="14" /> No credit card</span>
+            <span class="lhero__trust-item"><AuroraIcons Name="check" Size="14" /> Self-host ready</span>
+            <span class="lhero__trust-item"><AuroraIcons Name="check" Size="14" /> MIT license</span>
+        </div>
+    </div>
+
+    <div class="lhero__card-wrap">
+        <div class="lhero__card-glow"></div>
+        <div class="lhero__card">
+            <div class="lhero__card-eyebrow">
+                <span class="lhero__card-dot aurora-pulse"></span>
+                Tracking · live preview
+            </div>
+
+            <div class="lhero__card-timer">
+                <span>@FormatPart(0)</span><span class="lhero__card-timer-sep">:</span><span>@FormatPart(1)</span><span class="lhero__card-timer-sep">:</span><span class="lhero__card-timer-accent">@FormatPart(2)</span>
+            </div>
+
+            <div class="lhero__card-row">
+                <span class="lhero__card-pill">
+                    <span class="lhero__card-pill-dot"></span>
+                    Secret Project
+                </span>
+                <span class="lhero__card-task">Pair: timer logic refactor</span>
+            </div>
+
+            <div class="lhero__card-stat">
+                <div class="lhero__card-stat-label">This week so far</div>
+                <div class="lhero__card-stat-row">
+                    <span class="lhero__card-stat-value">24h 30m</span>
+                    <span class="lhero__card-stat-delta">+12% vs last week</span>
+                </div>
+                <div class="lhero__card-spark">
+                    @{
+                        var bars = new[] { 3, 5, 2, 7, 4, 6, 8, 5, 4, 9, 6, 7 };
+                    }
+                    @for (int i = 0; i < bars.Length; i++)
+                    {
+                        var heightPct = bars[i] * 10;
+                        var classes = "lhero__card-spark-bar" + (i == bars.Length - 1 ? " lhero__card-spark-bar--last" : "");
+                        <div class="@classes" style="height: @(heightPct)%;"></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private int seconds = 1827;
+    private System.Timers.Timer? tickTimer;
+    private bool disposed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Decorative timer; respect prefers-reduced-motion. Default to "on"
+        // if the JS check fails for any reason — the previous behavior.
+        bool reducedMotion = false;
+        try
+        {
+            reducedMotion = await JS.InvokeAsync<bool>(
+                "eval",
+                "window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches");
+        }
+        catch
+        {
+            reducedMotion = false;
+        }
+
+        if (reducedMotion || disposed) return;
+
+        tickTimer = new System.Timers.Timer(1000) { AutoReset = true };
+        tickTimer.Elapsed += async (_, _) =>
+        {
+            if (disposed) return;
+            seconds++;
+            try
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (ObjectDisposedException) { /* race with Dispose */ }
+        };
+        tickTimer.Start();
+    }
+
+    private string FormatPart(int idx)
+    {
+        var h = seconds / 3600;
+        var m = (seconds % 3600) / 60;
+        var s = seconds % 60;
+        return idx switch
+        {
+            0 => h.ToString("00"),
+            1 => m.ToString("00"),
+            _ => s.ToString("00"),
+        };
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        if (tickTimer is not null)
+        {
+            tickTimer.Stop();
+            tickTimer.Dispose();
+            tickTimer = null;
+        }
+    }
+}

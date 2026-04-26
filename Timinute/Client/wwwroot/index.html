@@ -12,16 +12,132 @@
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
     <link href="css/aurora.css" rel="stylesheet" />
+    <link href="css/landing.css" rel="stylesheet" />
     <link href="Timinute.Client.styles.css" rel="stylesheet" />
     <link href="manifest.json" rel="manifest" />
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
 
     <link rel="stylesheet" href="_content/Radzen.Blazor/css/default-base.css">
+
+    <style>
+        /* Inline boot splash — Aurora-styled. Replaced by Blazor on mount.
+           Uses literal hex/RGB values because aurora.css custom properties
+           may not be parsed yet on first paint. */
+        /* These html/body resets persist after Blazor mounts — that's intentional.
+           They keep the Aurora screens flush to the viewport and the background
+           matches --bg in aurora.css. Don't strip them when refactoring the splash. */
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #F5F2EC;
+        }
+
+        .aurora-boot {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #1A1A24;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .aurora-boot__brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .aurora-boot__mark {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #5B5BF5, #9D7CFF);
+            box-shadow: 0 12px 32px -10px rgba(91, 91, 245, .55);
+            display: grid;
+            place-items: center;
+            animation: aurora-boot-float 3s ease-in-out infinite;
+        }
+
+        .aurora-boot__wordmark {
+            font-weight: 600;
+            font-size: 32px;
+            letter-spacing: -0.8px;
+            color: #1A1A24;
+        }
+
+        .aurora-boot__wordmark-dot {
+            color: #5B5BF5;
+        }
+
+        .aurora-boot__sub {
+            color: #6B6878;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .aurora-boot__progress {
+            position: relative;
+            width: 180px;
+            height: 3px;
+            background: #E8E2D5;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .aurora-boot__progress::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 35%;
+            background: linear-gradient(90deg, transparent, #5B5BF5, transparent);
+            border-radius: 999px;
+            animation: aurora-boot-bar 1.4s ease-in-out infinite;
+        }
+
+        @keyframes aurora-boot-float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-4px); }
+        }
+
+        @keyframes aurora-boot-bar {
+            0%   { left: -35%; }
+            100% { left: 100%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .aurora-boot__mark,
+            .aurora-boot__progress::after {
+                animation: none;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div id="app">Loading...</div>
+    <div id="app">
+        <div class="aurora-boot" role="status" aria-live="polite">
+            <div class="aurora-boot__brand">
+                <div class="aurora-boot__mark" aria-hidden="true">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="13" r="8" />
+                        <path d="M12 9v4l2.5 2" />
+                        <path d="M9 2h6" />
+                    </svg>
+                </div>
+                <div class="aurora-boot__wordmark">timinute<span class="aurora-boot__wordmark-dot">.</span></div>
+            </div>
+            <p class="aurora-boot__sub">Warming up your workspace…</p>
+            <div class="aurora-boot__progress" aria-hidden="true"></div>
+            <span class="aurora-boot__sub" style="font-size: 12px; opacity: .7;">If this takes a while, check your connection.</span>
+        </div>
+    </div>
 
     <div id="blazor-error-ui">
         An unhandled error has occurred.
