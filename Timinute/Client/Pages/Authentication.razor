@@ -1,7 +1,20 @@
-﻿@page "/authentication/{action}"
+@page "/authentication/{action}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+
 <RemoteAuthenticatorView Action="@Action" />
 
-@code{
+@code {
     [Parameter] public string? Action { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // OIDC's RemoteAuthenticatorView does not handle registration — it shows
+        // "Registration is not supported." Redirect to the server-side Identity
+        // Razor Page that does.
+        if (string.Equals(Action, "register", System.StringComparison.OrdinalIgnoreCase))
+        {
+            Navigation.NavigateTo("Identity/Account/Register", forceLoad: true);
+        }
+    }
 }
