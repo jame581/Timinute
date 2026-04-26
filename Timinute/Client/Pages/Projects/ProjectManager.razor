@@ -1,60 +1,218 @@
-﻿@page "/projectmanager"
+@page "/projectmanager"
 @attribute [Authorize]
 
 @using Timinute.Client.Helpers
 @using Timinute.Client.Models
+@using Timinute.Client.Components
+@using Timinute.Shared.Dtos.Project
+@using Timinute.Shared.Dtos.TrackedTask
 
-<PageTitle>Manage Projects</PageTitle>
+@inject IHttpClientFactory ClientFactory
+@inject Radzen.NotificationService Notifier
+@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.UndoNotificationService UndoNotifier
+@inject Timinute.Client.Services.ProjectColorService ColorService
 
-<h3>Manage Projects</h3>
+<PageTitle>Projects</PageTitle>
 
-<div class="container">
-
-    <div class="d-flex justify-content-center">
-        <AddProject OnAddProject="@HandleProjectAdded" />
+<div class="aurora-pm-page">
+    <!-- Header row -->
+    <div class="aurora-pm-header">
+        <div class="aurora-pm-search">
+            <span class="aurora-pm-search__icon">
+                <AuroraIcons Name="search" Size="16" />
+            </span>
+            <input class="aurora-pm-search__input" type="text"
+                   placeholder="Search projects…"
+                   @bind="SearchText" @bind:event="oninput" />
+        </div>
+        <div style="flex: 1;"></div>
+        <AuroraButton Variant="primary" OnClick="OpenAdd">
+            <AuroraIcons Name="plus" Size="16" />
+            <span>New project</span>
+        </AuroraButton>
     </div>
 
-    <h3 class="p-3 text-center">Display a list of projects</h3>
-
-    <RadzenDataGrid @ref="radzenDataGrid" Data="@projectsList" TItem="Project" Count="@pagingAttributes.TotalCount"
-                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
-                    EditMode="DataGridEditMode.Single" RowUpdate="@OnProjectUpdate" RowCreate="@OnProjectCreate"
-                    AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pagingAttributes.PageSize" PagerHorizontalAlign="HorizontalAlign.Center">
-        <EmptyTemplate>
-            <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No projects to display.</p>
-        </EmptyTemplate>
-        <Columns>
-            <RadzenDataGridColumn Visible="false" TItem="Project" Property="ProjectId" Title="Project ID" />
-            <RadzenDataGridColumn TItem="Project" Property="Name" Title="Project Name">
-                <EditTemplate Context="project">
-                    <RadzenTextBox @bind-Value="project.Name" Style="width:100%; display: block" Name="ProjectName" />
-                    <RadzenRequiredValidator Text="Project name is required" Component="ProjectName" Popup="true" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-
-            <RadzenDataGridColumn TItem="Project" Context="project" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
-                <Template Context="project">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRow(project))" @onclick:stopPropagation="true">
-                    </RadzenButton>
-                </Template>
-                <EditTemplate Context="project">
-                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRow(project))">
-                    </RadzenButton>
-                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEdit(project))">
-                    </RadzenButton>
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Project" Context="project" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
-                <Template Context="project">
-                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => RemoveProject(project))" @onclick:stopPropagation="true">
-                    </RadzenButton>
-                </Template>
-                <EditTemplate Context="project">
-                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => RemoveProject(project))">
-                    </RadzenButton>
-                </EditTemplate>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
-
+    @if (IsLoading)
+    {
+        <div class="aurora-pm-loading">Loading…</div>
+    }
+    else if (FilteredProjects.Count == 0)
+    {
+        <AuroraCard>
+            <div class="aurora-pm-empty">
+                @(string.IsNullOrEmpty(SearchText) ? "No projects yet — create your first one." : "No matches.")
+            </div>
+        </AuroraCard>
+    }
+    else
+    {
+        <div class="aurora-pm-grid">
+            @foreach (var p in FilteredProjects)
+            {
+                var color = ColorService.GetColor(p);
+                var stat = StatsFor(p.ProjectId);
+                <AuroraCard Class="aurora-pm-card">
+                    <div class="aurora-pm-card__top">
+                        <ProjectAvatar Name="@p.Name" Color="@color" Size="40" />
+                        <div class="aurora-pm-card__meta">
+                            <div class="aurora-pm-card__name">@p.Name</div>
+                            <div class="aurora-pm-card__sub">Active</div>
+                        </div>
+                        <div class="aurora-pm-card__more-wrap">
+                            <button class="aurora-tt-icon-btn" title="Edit" @onclick="() => OpenEdit(p)">
+                                <AuroraIcons Name="edit" Size="14" />
+                            </button>
+                            <button class="aurora-tt-icon-btn aurora-tt-icon-btn--danger" title="Delete" @onclick="() => DeleteProject(p)">
+                                <AuroraIcons Name="trash" Size="14" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="aurora-pm-card__strip">
+                        <div class="aurora-pm-stat">
+                            <div class="aurora-pm-stat__label">This month</div>
+                            <div class="aurora-pm-stat__value">@stat.MonthHoursWhole<span class="aurora-pm-stat__unit">h</span> @stat.MonthMinutes<span class="aurora-pm-stat__unit">m</span></div>
+                        </div>
+                        <div class="aurora-pm-stat">
+                            <div class="aurora-pm-stat__label">Sessions</div>
+                            <div class="aurora-pm-stat__value">@stat.MonthSessions</div>
+                        </div>
+                    </div>
+                    <div class="aurora-pm-spark" style="--spark-color: @color;">
+                        @{
+                            var max = stat.SparkMonths.Count == 0 ? 1.0 : System.Math.Max(1.0, stat.SparkMonths.Max());
+                        }
+                        @foreach (var v in stat.SparkMonths)
+                        {
+                            var h = (v / max) * 32;
+                            <div class="aurora-pm-spark__bar" style="height: @($"{h.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}px"); background: @color;"></div>
+                        }
+                    </div>
+                </AuroraCard>
+            }
+        </div>
+    }
 </div>
+
+@code {
+    private bool IsLoading = true;
+    private string SearchText = "";
+    private List<ProjectDto> AllProjects = new();
+    private List<TrackedTaskDto> AllTasks = new();
+
+    private record CardStats(int MonthHoursWhole, int MonthMinutes, int MonthSessions, IList<double> SparkMonths);
+
+    private List<ProjectDto> FilteredProjects
+    {
+        get
+        {
+            var f = (SearchText ?? "").Trim();
+            if (string.IsNullOrEmpty(f)) return AllProjects;
+            return AllProjects.Where(p => p.Name.Contains(f, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        IsLoading = true;
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            var projTask = client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.Get);
+            var taskTask = client.GetFromJsonAsync<List<TrackedTaskDto>>(Constants.API.TrackedTask.Get);
+            await Task.WhenAll(projTask, taskTask);
+            AllProjects = projTask.Result ?? new();
+            AllTasks = taskTask.Result ?? new();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load", ex.Message, 4000);
+            AllProjects = new();
+            AllTasks = new();
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private CardStats StatsFor(string projectId)
+    {
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        var projectTasks = AllTasks.Where(t => t.ProjectId == projectId).ToList();
+
+        var monthTasks = projectTasks
+            .Where(t => t.StartDate.LocalDateTime >= startOfMonth && t.StartDate.LocalDateTime < startOfNextMonth)
+            .ToList();
+
+        var monthHours = monthTasks.Sum(t => t.Duration.TotalHours);
+        var monthHoursWhole = (int)System.Math.Floor(monthHours);
+        var monthMinutes = (int)System.Math.Round((monthHours - monthHoursWhole) * 60);
+
+        var sparks = new List<double>();
+        for (int i = 11; i >= 0; i--)
+        {
+            var ms = startOfMonth.AddMonths(-i);
+            var msEnd = ms.AddMonths(1);
+            var v = projectTasks
+                .Where(t => t.StartDate.LocalDateTime >= ms && t.StartDate.LocalDateTime < msEnd)
+                .Sum(t => t.Duration.TotalHours);
+            sparks.Add(v);
+        }
+
+        return new CardStats(monthHoursWhole, monthMinutes, monthTasks.Count, sparks);
+    }
+
+    private async Task OpenAdd()
+    {
+        await DialogService.OpenAsync<AddProject>(
+            "New project",
+            new Dictionary<string, object?>(),
+            new Radzen.DialogOptions { Width = "640px" });
+        await Reload();
+    }
+
+    private async Task OpenEdit(ProjectDto p)
+    {
+        // Inline edit: prompt for new name; rename via API. Color edit deferred to follow-up.
+        var newName = await DialogService.Confirm($"Current name: {p.Name}", "Edit project (name)", new Radzen.ConfirmOptions
+        {
+            OkButtonText = "Close"
+        });
+        // Quick edit not implemented in v1 — placeholder.
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteProject(ProjectDto p)
+    {
+        var confirm = await DialogService.Confirm(
+            $"Move project '{p.Name}' to trash? Its tracked tasks will move with it.",
+            "Confirm",
+            new Radzen.ConfirmOptions { OkButtonText = "Move to trash", CancelButtonText = "Cancel" });
+
+        if (confirm != true) return;
+
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            var resp = await client.DeleteAsync($"{Constants.API.Project.Delete}/{p.ProjectId}");
+            resp.EnsureSuccessStatusCode();
+            UndoNotifier.ShowUndo("Project", p.Name, async () =>
+            {
+                await client.PostAsync(Constants.API.Project.Restore(p.ProjectId), null);
+                await Reload();
+            });
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Delete failed", ex.Message, 4000);
+        }
+    }
+}
