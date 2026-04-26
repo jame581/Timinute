@@ -1,28 +1,25 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 <head>
     <RadzenTheme Theme="material" @rendermode="RenderMode.InteractiveAuto" />
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </head>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="aurora-app">
+    <NavMenu />
 
-    <main>
-        <div class="top-row px-4 auth">
-            <LoginDisplay />
-            <a href="https://github.com/jame581/Timinute" target="_blank">GitHub</a>
-            <a href="https://www.buymeacoffee.com/jame581" target="_blank" class="d-none d-md-block">
-                <img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 150px !important;">
-            </a>
-        </div>
+    <main class="aurora-main">
+        <AuthorizeView>
+            <Authorized>
+                <Topbar />
+            </Authorized>
+        </AuthorizeView>
 
-        <article class="content px-4">
+        <article class="aurora-content">
             @Body
         </article>
-        <RadzenDialog />
-        <RadzenNotification />
     </main>
+
+    <RadzenDialog />
+    <RadzenNotification />
 </div>

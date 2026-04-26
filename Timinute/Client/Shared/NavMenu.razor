@@ -1,87 +1,167 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Timinute</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthState
+@inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
+
+<aside class="aurora-sidebar">
+    <div class="aurora-wordmark">
+        <div class="aurora-wordmark__mark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="13" r="8" />
+                <path d="M12 9v4l2.5 2" />
+                <path d="M9 2h6" />
+            </svg>
+        </div>
+        <span class="aurora-wordmark__text">timinute<span class="aurora-wordmark__dot">.</span></span>
     </div>
-</div>
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <AuthorizeView>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <span class="oi oi-home" aria-hidden="true"></span> Home
-                    </NavLink>
-                </div>
-            </NotAuthorized>
+    <AuthorizeView>
+        <Authorized>
+            <nav class="aurora-nav">
+                <div class="aurora-nav__label">Workspace</div>
+                @foreach (var item in WorkspaceItems)
+                {
+                    <a class="aurora-nav__item @(IsActive(item.Href, item.Match) ? "is-active" : "")" href="@item.Href">
+                        <AuroraIcons Name="@item.Icon" Size="18" />
+                        <span>@item.Label</span>
+                    </a>
+                }
 
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <span class="oi oi-dashboard" aria-hidden="true"></span> Dashboard
-                    </NavLink>
+                <div class="aurora-nav__label" style="margin-top: 18px;">Account</div>
+                @foreach (var item in AccountItems)
+                {
+                    <a class="aurora-nav__item @(IsActive(item.Href, item.Match) ? "is-active" : "")" href="@item.Href">
+                        <AuroraIcons Name="@item.Icon" Size="18" />
+                        <span>@item.Label</span>
+                    </a>
+                }
+            </nav>
+
+            <div class="aurora-sidebar__footer">
+                <div class="aurora-oss-card">
+                    <div class="aurora-oss-card__title">Open source.</div>
+                    <div class="aurora-oss-card__title">Free forever.</div>
+                    <a class="aurora-oss-card__btn" href="https://github.com/jame581/Timinute" target="_blank" rel="noopener">
+                        <AuroraIcons Name="github" Size="14" />
+                        <span>Star on GitHub</span>
+                    </a>
                 </div>
-                <div class="nav-item px-1">
-                    <div class="nav-category-header">
-                        <span class="oi oi-clock" aria-hidden="true"></span> Track time
+
+                <div class="aurora-user-row">
+                    <div class="aurora-user-row__avatar">@UserInitials</div>
+                    <div class="aurora-user-row__meta">
+                        <div class="aurora-user-row__name">@DisplayName</div>
+                        <div class="aurora-user-row__plan">Free plan</div>
                     </div>
+                    <button class="aurora-user-row__logout" @onclick="BeginSignOut" title="Log out">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </button>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="timetracker">
-                        <span class="oi oi-timer" aria-hidden="true"></span> Time tracker
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="trackedtasks">
-                        <span class="oi oi-task" aria-hidden="true"></span> Tracked Tasks
-                    </NavLink>
-                </div> 
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="scheduler">
-                        <span class="oi oi-calendar" aria-hidden="true"></span> Calendar
-                    </NavLink>
-                </div>
-                <div class="nav-item px-1">
-                    <div class="nav-category-header">
-                        <span class="oi oi-wrench" aria-hidden="true"></span> Manage
-                    </div>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="projectmanager">
-                        <span class="oi oi-project" aria-hidden="true"></span> Projects
-                    </NavLink>
-                </div>
-@*                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="trackedtaskmanager">
-                        <span class="oi oi-task" aria-hidden="true"></span> Tracked Tasks
-                    </NavLink>
-                </div>*@
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="trash">
-                        <span class="oi oi-trash" aria-hidden="true"></span> Trash
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="authentication/profile">
-                        <span class="oi oi-people" aria-hidden="true"></span> User Profile
-                    </NavLink>
-                </div>
-            </Authorized>
-
-        </AuthorizeView>
-    </nav>
-</div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <nav class="aurora-nav">
+                <a class="aurora-nav__item" href="">
+                    <AuroraIcons Name="dashboard" Size="18" />
+                    <span>Home</span>
+                </a>
+                <a class="aurora-nav__item" href="authentication/login">
+                    <AuroraIcons Name="user" Size="18" />
+                    <span>Log in</span>
+                </a>
+                <a class="aurora-nav__item" href="authentication/register">
+                    <AuroraIcons Name="plus" Size="18" />
+                    <span>Register</span>
+                </a>
+            </nav>
+        </NotAuthorized>
+    </AuthorizeView>
+</aside>
 
 @code {
-    private bool collapseNavMenu = true;
+    private record NavItem(string Label, string Href, string Icon, NavLinkMatch Match);
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    private static readonly NavItem[] WorkspaceItems =
     {
-        collapseNavMenu = !collapseNavMenu;
+        new("Dashboard",     "",                "dashboard", NavLinkMatch.All),
+        new("Time tracker",  "timetracker",     "timer",     NavLinkMatch.Prefix),
+        new("Tracked tasks", "trackedtasks",    "list",      NavLinkMatch.Prefix),
+        new("Calendar",      "scheduler",       "calendar",  NavLinkMatch.Prefix),
+        new("Projects",      "projectmanager",  "folder",    NavLinkMatch.Prefix),
+        new("Trash",         "trash",           "trash",     NavLinkMatch.Prefix),
+    };
+
+    private static readonly NavItem[] AccountItems =
+    {
+        new("Profile", "authentication/profile", "user",     NavLinkMatch.Prefix),
+        new("Manage",  "authentication/manage",  "settings", NavLinkMatch.Prefix),
+    };
+
+    private string DisplayName = "Account";
+    private string UserInitials = "?";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var user = auth.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var first = user.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
+            var last = user.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value;
+            var name = !string.IsNullOrWhiteSpace(first) || !string.IsNullOrWhiteSpace(last)
+                ? $"{first} {last}".Trim()
+                : (user.Identity.Name ?? "Account");
+            DisplayName = name;
+            UserInitials = ComputeInitials(name);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private bool IsActive(string href, NavLinkMatch match)
+    {
+        var current = Navigation.ToBaseRelativePath(Navigation.Uri);
+        // Strip query string + fragment
+        var hashIdx = current.IndexOf('?');
+        if (hashIdx >= 0) current = current.Substring(0, hashIdx);
+        current = current.TrimEnd('/');
+        var target = href.TrimEnd('/');
+
+        if (match == NavLinkMatch.All)
+        {
+            return current.Equals(target, StringComparison.OrdinalIgnoreCase);
+        }
+        if (string.IsNullOrEmpty(target)) return current.Length == 0;
+        return current.Equals(target, StringComparison.OrdinalIgnoreCase)
+            || current.StartsWith(target + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ComputeInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0].Substring(0, System.Math.Min(2, parts[0].Length)).ToUpperInvariant();
+        return $"{parts[0][0]}{parts[1][0]}".ToUpperInvariant();
+    }
+
+    private async Task BeginSignOut()
+    {
+        await SignOutManager.SetSignOutState();
+        Navigation.NavigateTo("authentication/logout");
     }
 }
