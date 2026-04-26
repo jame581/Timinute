@@ -1,71 +1,261 @@
-﻿@page "/trackedtasks"
+@page "/trackedtasks"
 @attribute [Authorize]
 
-@using Timinute.Client.Components.TrackedTasks
 @using Timinute.Client.Helpers
 @using Timinute.Client.Models
+@using Timinute.Shared.Dtos.TrackedTask
+@using Timinute.Client.Components.Scheduler
+@using Timinute.Client.Components.TrackedTasks
 
-<PageTitle>Tracked Tasks</PageTitle>
+@inject IHttpClientFactory ClientFactory
+@inject Radzen.NotificationService Notifier
+@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.UndoNotificationService UndoNotifier
+@inject Timinute.Client.Services.ProjectColorService ColorService
 
+<PageTitle>Tracked tasks</PageTitle>
 
-<div class="container">
+<div class="aurora-tt-page">
+    <!-- Filter bar -->
+    <div class="aurora-tt-filter">
+        <div class="aurora-tt-filter__search">
+            <span class="aurora-tt-filter__icon">
+                <AuroraIcons Name="search" Size="16" />
+            </span>
+            <input class="aurora-tt-filter__input" type="text"
+                   placeholder="Filter by name, project, tag…"
+                   @bind="FilterText" @bind:event="oninput" />
+        </div>
 
-    <div class="d-flex justify-content-center">
-        <AddTrackedTask OnTrackedTaskAdded="@HandleTrackedTaskAdded" />
+        <AuroraButton Variant="ghost">
+            <AuroraIcons Name="filter" Size="16" />
+            <span>All projects</span>
+        </AuroraButton>
+
+        <AuroraButton Variant="ghost">
+            <AuroraIcons Name="calendar" Size="16" />
+            <span>@DateRangeLabel</span>
+        </AuroraButton>
+
+        <AuroraButton Variant="ghost">
+            <AuroraIcons Name="download" Size="16" />
+            <span>Export</span>
+        </AuroraButton>
+
+        <div style="flex: 1;"></div>
+
+        <AuroraButton Variant="primary" OnClick="OpenNewEntry">
+            <AuroraIcons Name="plus" Size="16" />
+            <span>New entry</span>
+        </AuroraButton>
     </div>
 
-    <h3 class="p-3 text-center">Display a list of tracked tasks</h3>
-    <RadzenDataGrid @ref="radzenDataGrid" Data="@trackedTasksList" TItem="TrackedTask" Count="@pagingAttributes.TotalCount"
-                    IsLoading="@isLoading" LoadData="@LoadData" AllowSorting="true" AllowFiltering="true"
-                    EditMode="DataGridEditMode.Single" RowUpdate="@OnTrackedTaskUpdate" RowCreate="@OnTrackedTaskCreate"
-                    AllowPaging="true" PageSizeOptions="@Constants.Paging.PageSizeOptions" ShowPagingSummary="true" PageSize="@pagingAttributes.PageSize" PagerHorizontalAlign="HorizontalAlign.Center">
-        <EmptyTemplate>
-            <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No tracked tasks to display.</p>
-        </EmptyTemplate>
-        <Columns>
-            <RadzenDataGridColumn Visible="false" TItem="TrackedTask" Property="TaskId" Title="Task ID" />
-            <RadzenDataGridColumn TItem="TrackedTask" Property="Name" Title="Name">
-                <EditTemplate Context="trackedTask">
-                    <RadzenTextBox @bind-Value="trackedTask.Name" Style="width:100%; display: block" Name="TrackedTaskName" />
-                    <RadzenRequiredValidator Text="Task name is required" Component="TrackedTaskName" Popup="true" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="TrackedTask" Property="Project.Name" Title="Project Name" />
-            <RadzenDataGridColumn TItem="TrackedTask" Property="Duration" Title="Duration" />
-            <RadzenDataGridColumn TItem="TrackedTask" Property="StartDate" Title="Start date">
-                <EditTemplate Context="trackedTask">
-                    <RadzenDatePicker @bind-Value="trackedTask.StartDate" ShowTime="true" ShowSeconds="true" MinutesStep="5" SecondsStep="10" DateFormat="dd/MM/yyyy HH:mm:ss" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="TrackedTask" Property="EndDate" Title="End date">
-                <EditTemplate Context="trackedTask">
-                    <RadzenDatePicker @bind-Value="trackedTask.EndDate" ShowTime="true" ShowSeconds="true" MinutesStep="5" SecondsStep="10" DateFormat="dd/MM/yyyy HH:mm:ss" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
-
-            <RadzenDataGridColumn TItem="TrackedTask" Context="trackedTask" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
-                <Template Context="trackedTask">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRow(trackedTask))" @onclick:stopPropagation="true">
-                    </RadzenButton>
-                </Template>
-                <EditTemplate Context="trackedTask">
-                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRow(trackedTask))">
-                    </RadzenButton>
-                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEdit(trackedTask))">
-                    </RadzenButton>
-                </EditTemplate>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="TrackedTask" Context="trackedTask" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="60px">
-                <Template Context="trackedTask">
-                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRow(trackedTask))" @onclick:stopPropagation="true">
-                    </RadzenButton>
-                </Template>
-                <EditTemplate Context="trackedTask">
-                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRow(trackedTask))">
-                    </RadzenButton>
-                </EditTemplate>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
-
+    @if (IsLoading)
+    {
+        <div class="aurora-tt-loading">Loading…</div>
+    }
+    else if (FilteredGroups.Count == 0)
+    {
+        <AuroraCard>
+            <div class="aurora-tt-empty">
+                @(string.IsNullOrEmpty(FilterText) ? "No tracked sessions yet." : "No matches.")
+            </div>
+        </AuroraCard>
+    }
+    else
+    {
+        @foreach (var group in FilteredGroups)
+        {
+            <div class="aurora-tt-day">
+                <div class="aurora-tt-day__header">
+                    <span class="aurora-tt-day__label">@group.Label</span>
+                    <span class="aurora-tt-day__total aurora-mono">@FormatTotal(group.Total)</span>
+                </div>
+                <AuroraCard NoPad="true">
+                    @foreach (var task in group.Tasks)
+                    {
+                        <div class="aurora-tt-row">
+                            <div class="aurora-tt-row__name">@task.Name</div>
+                            <div class="aurora-tt-row__pill">
+                                @if (task.Project != null)
+                                {
+                                    <ProjectPill Name="@task.Project.Name" Color="@ColorService.GetColor(task.Project)" />
+                                }
+                                else
+                                {
+                                    <span class="aurora-tt-row__noproject">No project</span>
+                                }
+                            </div>
+                            <div class="aurora-tt-row__range aurora-mono">@FormatRange(task)</div>
+                            <div class="aurora-tt-row__duration aurora-mono">@FormatDuration(task.Duration)</div>
+                            <div class="aurora-tt-row__actions">
+                                <button class="aurora-tt-icon-btn" title="Edit" @onclick="() => EditTask(task)">
+                                    <AuroraIcons Name="edit" Size="14" />
+                                </button>
+                                <button class="aurora-tt-icon-btn aurora-tt-icon-btn--danger" title="Delete" @onclick="() => DeleteTask(task)">
+                                    <AuroraIcons Name="trash" Size="14" />
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </AuroraCard>
+            </div>
+        }
+    }
 </div>
+
+@code {
+    private bool IsLoading = true;
+    private string FilterText = "";
+    private List<TrackedTaskDto> AllTasks = new();
+
+    private record DayGroup(string Label, DateTime Date, List<TrackedTaskDto> Tasks, TimeSpan Total);
+
+    private string DateRangeLabel
+    {
+        get
+        {
+            var now = DateTime.Today;
+            var start = now.AddDays(-((int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1));
+            var end = start.AddDays(6);
+            return $"{start:MMM d} — {end:MMM d}";
+        }
+    }
+
+    private List<DayGroup> FilteredGroups
+    {
+        get
+        {
+            var f = (FilterText ?? "").Trim();
+            IEnumerable<TrackedTaskDto> source = AllTasks;
+            if (!string.IsNullOrEmpty(f))
+            {
+                source = source.Where(t =>
+                    t.Name.Contains(f, StringComparison.OrdinalIgnoreCase)
+                    || (t.Project?.Name?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
+
+            return source
+                .GroupBy(t => t.StartDate.LocalDateTime.Date)
+                .OrderByDescending(g => g.Key)
+                .Select(g => new DayGroup(
+                    LabelFor(g.Key),
+                    g.Key,
+                    g.OrderByDescending(t => t.StartDate).ToList(),
+                    g.Aggregate(TimeSpan.Zero, (a, t) => a + t.Duration)))
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        IsLoading = true;
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            AllTasks = await client.GetAllPagedAsync<TrackedTaskDto>(Constants.API.TrackedTask.Get);
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load", ex.Message, 4000);
+            AllTasks = new();
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task EditTask(TrackedTaskDto task)
+    {
+        var model = new TrackedTask(task);
+        var result = await DialogService.OpenAsync<EditTrackedTaskForm>(
+            "Edit task",
+            new Dictionary<string, object?> { ["TrackedTask"] = model },
+            new Radzen.DialogOptions { Width = "640px" });
+
+        if (result is TrackedTask updated)
+        {
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
+            var dto = new UpdateTrackedTaskDto
+            {
+                TaskId = updated.TaskId,
+                Name = updated.Name,
+                StartDate = updated.StartDate,
+                EndDate = updated.EndDate,
+                ProjectId = updated.ProjectId
+            };
+            try
+            {
+                var resp = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, dto);
+                resp.EnsureSuccessStatusCode();
+                Notifier.Notify(Radzen.NotificationSeverity.Success, "Saved", "Task updated.", 2000);
+                await Reload();
+            }
+            catch (Exception ex)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Error, "Update failed", ex.Message, 4000);
+            }
+        }
+        else
+        {
+            // Modal might have done a delete via its own button.
+            await Reload();
+        }
+    }
+
+    private async Task DeleteTask(TrackedTaskDto task)
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            var resp = await client.DeleteAsync($"{Constants.API.TrackedTask.Delete}/{task.TaskId}");
+            resp.EnsureSuccessStatusCode();
+            UndoNotifier.ShowUndo("Task", task.Name, async () =>
+            {
+                await client.PostAsync(Constants.API.TrackedTask.Restore(task.TaskId), null);
+                await Reload();
+            });
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Delete failed", ex.Message, 4000);
+        }
+    }
+
+    private async Task OpenNewEntry()
+    {
+        await DialogService.OpenAsync<AddTrackedTask>(
+            "New entry",
+            new Dictionary<string, object?>(),
+            new Radzen.DialogOptions { Width = "640px" });
+        await Reload();
+    }
+
+    private static string LabelFor(DateTime d)
+    {
+        var today = DateTime.Today;
+        if (d == today) return "Today, " + d.ToString("MMM d");
+        if (d == today.AddDays(-1)) return "Yesterday, " + d.ToString("MMM d");
+        if ((today - d).TotalDays < 7) return d.ToString("dddd, MMM d");
+        return d.ToString("MMM d, yyyy");
+    }
+
+    private static string FormatTotal(TimeSpan d) => $"{(int)d.TotalHours}h {d.Minutes:00}m";
+
+    private static string FormatDuration(TimeSpan d)
+    {
+        var hours = (int)d.TotalHours;
+        return hours > 0 ? $"{hours}h {d.Minutes:00}m" : $"{d.Minutes}m";
+    }
+
+    private static string FormatRange(TrackedTaskDto t)
+    {
+        var end = t.EndDate ?? t.StartDate + t.Duration;
+        return $"{t.StartDate.LocalDateTime:HH:mm} → {end.LocalDateTime:HH:mm}";
+    }
+}

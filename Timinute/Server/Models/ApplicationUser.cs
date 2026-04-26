@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
 namespace Timinute.Server.Models
@@ -14,6 +14,8 @@ namespace Timinute.Server.Models
         public string LastName { get; set; } = null!;
 
         public DateTimeOffset? LastLoginDate { get; set; }
+
+        public DateTimeOffset CreatedAt { get; set; }
 
         public ICollection<TrackedTask>? TrackedTasks { get; set; }
 

@@ -1,0 +1,119 @@
+@* Inline SVG icon set mirroring the I object from design_handoff_aurora/shared.jsx.
+   Single outlined family, currentColor stroke, 1.6 stroke width. *@
+
+@code {
+    [Parameter] public string Name { get; set; } = "";
+    [Parameter] public int Size { get; set; } = 18;
+    [Parameter] public double StrokeWidth { get; set; } = 1.6;
+    [Parameter] public string? Class { get; set; }
+}
+
+<svg width="@Size" height="@Size" viewBox="0 0 24 24"
+     fill="none" stroke="currentColor" stroke-width="@StrokeWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+     stroke-linecap="round" stroke-linejoin="round" class="@Class">
+    @switch (Name)
+    {
+        case "dashboard":
+            <rect x="3" y="3" width="7" height="9" rx="1.5" />
+            <rect x="14" y="3" width="7" height="5" rx="1.5" />
+            <rect x="14" y="12" width="7" height="9" rx="1.5" />
+            <rect x="3" y="16" width="7" height="5" rx="1.5" />
+            break;
+        case "timer":
+            <circle cx="12" cy="13" r="8" />
+            <path d="M12 9v4l2.5 2" />
+            <path d="M9 2h6" />
+            break;
+        case "list":
+            <path d="M8 6h13" />
+            <path d="M8 12h13" />
+            <path d="M8 18h13" />
+            <circle cx="3.5" cy="6" r="1" />
+            <circle cx="3.5" cy="12" r="1" />
+            <circle cx="3.5" cy="18" r="1" />
+            break;
+        case "calendar":
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M3 10h18" />
+            <path d="M8 3v4M16 3v4" />
+            break;
+        case "folder":
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+            break;
+        case "user":
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" />
+            break;
+        case "settings":
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+            break;
+        case "play":
+            <polygon points="6 4 20 12 6 20 6 4" fill="currentColor" />
+            break;
+        case "pause":
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+            <rect x="14" y="4" width="4" height="16" rx="1" />
+            break;
+        case "plus":
+            <path d="M12 5v14M5 12h14" />
+            break;
+        case "search":
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+            break;
+        case "arrowL":
+            <path d="M15 6l-6 6 6 6" />
+            break;
+        case "arrowR":
+            <path d="M9 6l6 6-6 6" />
+            break;
+        case "arrowU":
+            <path d="M7 14l5-5 5 5" />
+            break;
+        case "arrowD":
+            <path d="M7 10l5 5 5-5" />
+            break;
+        case "filter":
+            <path d="M3 5h18l-7 9v6l-4-2v-4z" />
+            break;
+        case "edit":
+            <path d="M14 4l6 6-10 10H4v-6z" />
+            break;
+        case "trash":
+            <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+            break;
+        case "more":
+            <circle cx="5" cy="12" r="1.3" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.3" fill="currentColor" />
+            <circle cx="19" cy="12" r="1.3" fill="currentColor" />
+            break;
+        case "check":
+            <path d="M4 12l5 5L20 6" />
+            break;
+        case "bell":
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9z" />
+            <path d="M10 21a2 2 0 0 0 4 0" />
+            break;
+        case "command":
+            <path d="M9 9V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z" />
+            break;
+        case "github":
+            <path d="M12 2a10 10 0 0 0-3.16 19.5c.5.1.66-.22.66-.48v-1.7c-2.78.6-3.36-1.34-3.36-1.34-.46-1.16-1.12-1.46-1.12-1.46-.92-.62.06-.6.06-.6 1.02.08 1.56 1.04 1.56 1.04.9 1.54 2.36 1.1 2.94.84.08-.66.36-1.1.64-1.36-2.22-.26-4.56-1.12-4.56-4.94 0-1.1.4-2 1.04-2.7-.1-.26-.46-1.3.1-2.7 0 0 .84-.28 2.76 1.04a9.6 9.6 0 0 1 5.04 0c1.92-1.32 2.76-1.04 2.76-1.04.56 1.4.2 2.44.1 2.7.64.7 1.04 1.6 1.04 2.7 0 3.84-2.34 4.68-4.56 4.92.36.32.7.94.7 1.9v2.8c0 .26.16.58.66.48A10 10 0 0 0 12 2z" />
+            break;
+        case "download":
+            <path d="M12 4v12M6 12l6 6 6-6M4 20h16" />
+            break;
+        case "trend":
+            <path d="M3 17l6-6 4 4 8-9" />
+            <path d="M14 6h7v7" />
+            break;
+        case "clock":
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+            break;
+        case "sparkle":
+            <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
+            break;
+    }
+</svg>

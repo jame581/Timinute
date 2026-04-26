@@ -26,6 +26,8 @@ namespace Timinute.Server.Areas.Identity
             {
                 new Claim(Constants.Claims.Fullname, $"{user.FirstName} {user.LastName}"),
                 new Claim(Constants.Claims.LastLogin, user.LastLoginDate.HasValue ? user.LastLoginDate.Value.ToString("HH:mm dd/MM/yyyy") : string.Empty),
+                new Claim(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
+                new Claim(ClaimTypes.Surname, user.LastName ?? string.Empty),
             });
 
             return claims;

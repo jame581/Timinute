@@ -1,20 +1,193 @@
-﻿@page "/scheduler"
+@page "/scheduler"
 @attribute [Authorize]
 
+@using Timinute.Client.Components.Scheduler
+@using Timinute.Client.Helpers
 @using Timinute.Client.Models
+@using Timinute.Shared.Dtos.TrackedTask
 
-<h3 class="p-3 text-center">Tracked Task Scheduler</h3>
+@inject IHttpClientFactory ClientFactory
+@inject Radzen.NotificationService Notifier
+@inject Radzen.DialogService DialogService
 
-<RadzenScheduler @ref="radzenScheduler" Data="@trackedTasksList" TItem="TrackedTask"
-                 StartProperty="StartDate" EndProperty="EndDate" TextProperty="Name"
-                 SlotRender=@OnSlotRender  SlotSelect=@OnSlotSelect AppointmentSelect=@OnTrackedTaskSelect AppointmentRender=@OnTrackedTaskRender
-                 style="height: 768px;" SelectedIndex="2">
-    <Template Context="data">
-        <strong>@data.Name</strong>
-    </Template>
-    <ChildContent>
-        <RadzenDayView />
-        <RadzenWeekView />
-        <RadzenMonthView />
-    </ChildContent>
-</RadzenScheduler>
+<PageTitle>Calendar</PageTitle>
+
+<div class="aurora-sched-page">
+    <!-- Toolbar -->
+    <div class="aurora-sched-toolbar">
+        <AuroraButton Variant="ghost" OnClick="PrevWeek">
+            <AuroraIcons Name="arrowL" Size="16" />
+            <span>Prev</span>
+        </AuroraButton>
+        <AuroraButton Variant="sub" OnClick="GoToday">Today</AuroraButton>
+        <AuroraButton Variant="ghost" OnClick="NextWeek">
+            <span>Next</span>
+            <AuroraIcons Name="arrowR" Size="16" />
+        </AuroraButton>
+        <div class="aurora-sched-toolbar__range">@RangeLabel</div>
+
+        <div style="flex: 1;"></div>
+
+        <div class="aurora-sched-segmented">
+            <button class="aurora-sched-segmented__btn" disabled title="Coming soon">Day</button>
+            <button class="aurora-sched-segmented__btn is-active">Week</button>
+            <button class="aurora-sched-segmented__btn" disabled title="Coming soon">Month</button>
+        </div>
+
+        <AuroraButton Variant="primary" OnClick="OpenAdd">
+            <AuroraIcons Name="plus" Size="16" />
+            <span>Add task</span>
+        </AuroraButton>
+    </div>
+
+    <AuroraCard NoPad="true">
+        @if (IsLoading)
+        {
+            <div class="aurora-sched-loading">Loading…</div>
+        }
+        else
+        {
+            <WeekCalendar WeekStart="@WeekStart" Tasks="@WeekTasks"
+                          OnEmptyClick="@OnEmptyCellClicked"
+                          OnEventClick="@OnEventClicked" />
+        }
+    </AuroraCard>
+</div>
+
+@code {
+    private DateTime WeekStart;
+    private bool IsLoading = true;
+    private List<TrackedTaskDto> WeekTasks = new();
+
+    private string RangeLabel
+    {
+        get
+        {
+            var end = WeekStart.AddDays(6);
+            return $"{WeekStart:MMM d} — {end:MMM d, yyyy}";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        WeekStart = StartOfWeek(DateTime.Today);
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        IsLoading = true;
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            var startUtc = WeekStart.Date.ToUniversalTime();
+            var endUtc = WeekStart.Date.AddDays(7).ToUniversalTime();
+            var url = $"{Constants.API.TrackedTask.Api}/search" +
+                      $"?from={Uri.EscapeDataString(startUtc.ToString("o"))}" +
+                      $"&to={Uri.EscapeDataString(endUtc.ToString("o"))}";
+            WeekTasks = await client.GetAllPagedAsync<TrackedTaskDto>(url);
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load", ex.Message, 4000);
+            WeekTasks = new();
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task PrevWeek()
+    {
+        WeekStart = WeekStart.AddDays(-7);
+        await Reload();
+    }
+
+    private async Task NextWeek()
+    {
+        WeekStart = WeekStart.AddDays(7);
+        await Reload();
+    }
+
+    private async Task GoToday()
+    {
+        WeekStart = StartOfWeek(DateTime.Today);
+        await Reload();
+    }
+
+    private async Task OnEmptyCellClicked(DateTime slot)
+    {
+        var result = await DialogService.OpenAsync<AddTrackedTaskForm>(
+            "Add tracked task",
+            new Dictionary<string, object?>
+            {
+                ["Start"] = slot,
+                ["End"] = slot.AddHours(1)
+            },
+            new Radzen.DialogOptions { Width = "640px" });
+
+        if (result is TrackedTask data)
+        {
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
+            var dto = new CreateTrackedTaskDto
+            {
+                Name = data.Name,
+                StartDate = data.StartDate,
+                Duration = data.EndDate.HasValue ? (data.EndDate - data.StartDate).Value : TimeSpan.Zero,
+                ProjectId = data.ProjectId,
+            };
+            try
+            {
+                var resp = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, dto);
+                resp.EnsureSuccessStatusCode();
+                await Reload();
+            }
+            catch (Exception ex)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Error, "Save failed", ex.Message, 4000);
+            }
+        }
+    }
+
+    private async Task OnEventClicked(TrackedTaskDto task)
+    {
+        var model = new TrackedTask(task);
+        var result = await DialogService.OpenAsync<EditTrackedTaskForm>(
+            "Edit tracked task",
+            new Dictionary<string, object?> { ["TrackedTask"] = model },
+            new Radzen.DialogOptions { Width = "640px" });
+
+        if (result is TrackedTask updated)
+        {
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
+            var dto = new UpdateTrackedTaskDto
+            {
+                TaskId = updated.TaskId,
+                EndDate = updated.EndDate,
+                StartDate = updated.StartDate,
+                Name = updated.Name,
+                ProjectId = updated.ProjectId,
+            };
+            try
+            {
+                var resp = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, dto);
+                resp.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Error, "Update failed", ex.Message, 4000);
+            }
+        }
+        await Reload();
+    }
+
+    private async Task OpenAdd()
+    {
+        await OnEmptyCellClicked(DateTime.Today.AddHours(9));
+    }
+
+    private static DateTime StartOfWeek(DateTime d)
+    {
+        int diff = (7 + (int)d.DayOfWeek - (int)DayOfWeek.Monday) % 7;
+        return d.AddDays(-diff).Date;
+    }
+}

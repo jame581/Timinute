@@ -1,0 +1,118 @@
+@page "/profile"
+@attribute [Authorize]
+
+@using Timinute.Client.Helpers
+@using Timinute.Shared.Dtos
+
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
+
+<PageTitle>User profile</PageTitle>
+
+<div class="aurora-profile-page">
+    @if (IsLoading)
+    {
+        <div class="aurora-profile-loading">Loading profile…</div>
+    }
+    else if (Me == null)
+    {
+        <AuroraCard>
+            <div class="aurora-profile-error">Could not load profile.</div>
+        </AuroraCard>
+    }
+    else
+    {
+        <AuroraCard>
+            <div class="aurora-profile__header">
+                <div class="aurora-profile__avatar">@Initials</div>
+                <div class="aurora-profile__meta">
+                    <div class="aurora-profile__name">@Me.FirstName @Me.LastName</div>
+                    <div class="aurora-profile__sub">@Me.Email · joined @Me.CreatedAt.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)</div>
+                </div>
+                <div class="aurora-profile__actions">
+                    <AuroraButton Variant="ghost" OnClick="BeginSignOut">Log out</AuroraButton>
+                    <AuroraButton Variant="primary" OnClick="EditMe">Edit profile</AuroraButton>
+                </div>
+            </div>
+
+            <div class="aurora-profile__stats">
+                <div class="aurora-profile-stat">
+                    <div class="aurora-profile-stat__label">Total tracked</div>
+                    <div class="aurora-profile-stat__value">@TotalTrackedDisplay</div>
+                </div>
+                <div class="aurora-profile-stat">
+                    <div class="aurora-profile-stat__label">Projects</div>
+                    <div class="aurora-profile-stat__value">@Me.ProjectCount</div>
+                </div>
+                <div class="aurora-profile-stat">
+                    <div class="aurora-profile-stat__label">Tasks logged</div>
+                    <div class="aurora-profile-stat__value">@Me.TaskCount</div>
+                </div>
+                <div class="aurora-profile-stat">
+                    <div class="aurora-profile-stat__label">Member since</div>
+                    <div class="aurora-profile-stat__value">@MemberSinceDisplay</div>
+                </div>
+            </div>
+        </AuroraCard>
+    }
+</div>
+
+@code {
+    private bool IsLoading = true;
+    private UserProfileDto? Me;
+
+    private string Initials =>
+        Me == null ? "?" :
+            (string.IsNullOrWhiteSpace(Me.FirstName) ? "" : Me.FirstName.Trim()[0].ToString()) +
+            (string.IsNullOrWhiteSpace(Me.LastName) ? "" : Me.LastName.Trim()[0].ToString());
+
+    private string TotalTrackedDisplay
+    {
+        get
+        {
+            if (Me == null) return "0h";
+            var t = Me.TotalTrackedTime;
+            var h = (int)t.TotalHours;
+            return $"{h}h {t.Minutes:00}m";
+        }
+    }
+
+    private string MemberSinceDisplay
+    {
+        get
+        {
+            if (Me == null) return "—";
+            var span = DateTimeOffset.UtcNow - Me.CreatedAt;
+            var totalMonths = (int)(span.TotalDays / 30.4375);
+            var years = totalMonths / 12;
+            var months = totalMonths % 12;
+            return years > 0 ? $"{years}y {months}mo" : $"{months}mo";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            Me = await client.GetFromJsonAsync<UserProfileDto>("User/me");
+        }
+        catch
+        {
+            Me = null;
+        }
+        IsLoading = false;
+    }
+
+    private void EditMe()
+    {
+        Navigation.NavigateTo("authentication/profile");
+    }
+
+    private async Task BeginSignOut()
+    {
+        await SignOutManager.SetSignOutState();
+        Navigation.NavigateTo("authentication/logout");
+    }
+}

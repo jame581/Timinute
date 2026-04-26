@@ -21,6 +21,7 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<Timinute.Client.Services.UndoNotificationService>();
+builder.Services.AddScoped<Timinute.Client.Services.ProjectColorService>();
 
 builder.Services.AddOidcAuthentication(options =>
 {

@@ -18,6 +18,11 @@ namespace Timinute.Server.Controllers
     [Route("[controller]")]
     public class ProjectController : ControllerBase
     {
+        private static readonly string[] ProjectPalette =
+        {
+            "#6366F1", "#F59E0B", "#10B981", "#EC4899", "#94A3B8"
+        };
+
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<TrackedTask> taskRepository;
         private readonly IMapper mapper;
@@ -135,6 +140,12 @@ namespace Timinute.Server.Controllers
 
             var newProject = mapper.Map<Project>(project);
             newProject.UserId = userId;
+
+            if (string.IsNullOrWhiteSpace(newProject.Color))
+            {
+                var existingCount = (await projectRepository.Get(p => p.UserId == userId)).Count();
+                newProject.Color = ProjectPalette[existingCount % ProjectPalette.Length];
+            }
 
             await projectRepository.Insert(newProject);
             return Ok(mapper.Map<ProjectDto>(newProject));

@@ -1,0 +1,80 @@
+@code {
+    [Parameter] public string Variant { get; set; } = "primary"; // primary | ghost | soft | sub
+    [Parameter] public string? Type { get; set; } = "button";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string VariantClass => $"aurora-btn aurora-btn--{Variant}";
+}
+
+<button type="@Type" class="@VariantClass @Class" disabled="@Disabled" title="@Title" @onclick="OnClick">
+    @ChildContent
+</button>
+
+<style>
+    .aurora-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: var(--r-lg);
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: transform .08s, background .15s, color .15s, border-color .15s;
+        white-space: nowrap;
+    }
+
+    .aurora-btn:active:not(:disabled) {
+        transform: scale(.97);
+    }
+
+    .aurora-btn:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    .aurora-btn--primary {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .aurora-btn--primary:hover:not(:disabled) {
+        background: var(--accent-ink);
+    }
+
+    .aurora-btn--ghost {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--border);
+    }
+
+    .aurora-btn--ghost:hover:not(:disabled) {
+        background: var(--surface-2);
+    }
+
+    .aurora-btn--soft {
+        background: var(--accent-so);
+        color: var(--accent-ink);
+    }
+
+    .aurora-btn--soft:hover:not(:disabled) {
+        filter: brightness(.98);
+    }
+
+    .aurora-btn--sub {
+        background: var(--surface-2);
+        color: var(--text);
+        border-color: var(--border);
+    }
+
+    .aurora-btn--sub:hover:not(:disabled) {
+        background: var(--surface);
+    }
+</style>
