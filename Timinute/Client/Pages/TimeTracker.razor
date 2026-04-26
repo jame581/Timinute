@@ -242,6 +242,8 @@
         {
             Name = TaskName,
             StartDate = startedAt,
+            // Backend requires Duration > 0; placeholder updated on stop.
+            Duration = TimeSpan.FromSeconds(1),
             ProjectId = string.IsNullOrEmpty(SelectedProjectId) ? null : SelectedProjectId,
         };
 

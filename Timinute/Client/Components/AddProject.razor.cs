@@ -28,6 +28,9 @@ namespace Timinute.Client.Components
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
 
+        [Inject]
+        private DialogService DialogService { get; set; } = null!;
+
         #endregion
 
         private void SelectColor(string color)
@@ -60,6 +63,8 @@ namespace Timinute.Client.Components
                 await OnAddProject.InvokeAsync(NewProject);
 
                 NewProject = new Project();
+
+                DialogService.Close(true);
             }
             catch (Exception ex)
             {
