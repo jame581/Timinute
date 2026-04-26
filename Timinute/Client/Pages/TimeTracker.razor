@@ -285,7 +285,9 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
         var startedAt = StartedAt ?? DateTimeOffset.Now;
-        var endedAt = startedAt.LocalDateTime + Elapsed;
+        // Server rejects EndDate <= StartDate; ensure a minimum 1-second span.
+        var effective = Elapsed < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1) : Elapsed;
+        var endedAt = startedAt.LocalDateTime + effective;
 
         var dto = new UpdateTrackedTaskDto
         {
@@ -300,12 +302,17 @@
         {
             var resp = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, dto);
             resp.EnsureSuccessStatusCode();
-            await SessionStorage.RemoveItemAsync("trackedTask");
             Notifier.Notify(Radzen.NotificationSeverity.Success, "Tracking", "Tracker stopped", 2000);
         }
         catch (Exception ex)
         {
             Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not stop", ex.Message, 4000);
+        }
+        finally
+        {
+            // Clear session storage unconditionally — UI is being reset, leaving it would
+            // resurrect a phantom session on next page load.
+            await SessionStorage.RemoveItemAsync("trackedTask");
         }
 
         Running = false;

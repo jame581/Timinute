@@ -115,15 +115,31 @@
 
     private async Task RestoreProject(string id)
     {
-        await Http.PostAsync(Constants.API.Project.Restore(id), null);
-        Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Project restored", Duration = 3000 });
+        try
+        {
+            var resp = await Http.PostAsync(Constants.API.Project.Restore(id), null);
+            resp.EnsureSuccessStatusCode();
+            Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Project restored", Duration = 3000 });
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Restore failed", Detail = ex.Message, Duration = 5000 });
+        }
         await Refresh();
     }
 
     private async Task RestoreTask(string id)
     {
-        await Http.PostAsync(Constants.API.TrackedTask.Restore(id), null);
-        Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Task restored", Duration = 3000 });
+        try
+        {
+            var resp = await Http.PostAsync(Constants.API.TrackedTask.Restore(id), null);
+            resp.EnsureSuccessStatusCode();
+            Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Task restored", Duration = 3000 });
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Restore failed", Detail = ex.Message, Duration = 5000 });
+        }
         await Refresh();
     }
 
@@ -131,21 +147,35 @@
     {
         var confirm = await DialogService.Confirm($"Permanently delete project '{item.Name}'? This cannot be undone.", "Confirm",
             new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
-        if (confirm == true)
+        if (confirm != true) return;
+
+        try
         {
-            await Http.DeleteAsync(Constants.API.Project.Purge(item.Id));
-            await Refresh();
+            var resp = await Http.DeleteAsync(Constants.API.Project.Purge(item.Id));
+            resp.EnsureSuccessStatusCode();
         }
+        catch (Exception ex)
+        {
+            Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Permanent delete failed", Detail = ex.Message, Duration = 5000 });
+        }
+        await Refresh();
     }
 
     private async Task PurgeTask(TrashItemDto item)
     {
         var confirm = await DialogService.Confirm($"Permanently delete task '{item.Name}'? This cannot be undone.", "Confirm",
             new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
-        if (confirm == true)
+        if (confirm != true) return;
+
+        try
         {
-            await Http.DeleteAsync(Constants.API.TrackedTask.Purge(item.Id));
-            await Refresh();
+            var resp = await Http.DeleteAsync(Constants.API.TrackedTask.Purge(item.Id));
+            resp.EnsureSuccessStatusCode();
         }
+        catch (Exception ex)
+        {
+            Notifier.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Permanent delete failed", Detail = ex.Message, Duration = 5000 });
+        }
+        await Refresh();
     }
 }

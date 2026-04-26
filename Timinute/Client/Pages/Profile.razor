@@ -64,8 +64,8 @@
 
     private string Initials =>
         Me == null ? "?" :
-            (string.IsNullOrEmpty(Me.FirstName) ? "" : Me.FirstName[0].ToString()) +
-            (string.IsNullOrEmpty(Me.LastName) ? "" : Me.LastName[0].ToString());
+            (string.IsNullOrWhiteSpace(Me.FirstName) ? "" : Me.FirstName.Trim()[0].ToString()) +
+            (string.IsNullOrWhiteSpace(Me.LastName) ? "" : Me.LastName.Trim()[0].ToString());
 
     private string TotalTrackedDisplay
     {

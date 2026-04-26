@@ -43,7 +43,7 @@ namespace Timinute.Server.Data.Migrations
                 table: "AspNetUsers",
                 type: "datetimeoffset",
                 nullable: false,
-                defaultValue: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
+                defaultValueSql: "SYSUTCDATETIME()");
 
             migrationBuilder.UpdateData(
                 table: "AspNetUsers",

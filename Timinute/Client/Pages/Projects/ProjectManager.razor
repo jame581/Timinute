@@ -60,10 +60,7 @@
                             <div class="aurora-pm-card__sub">Active</div>
                         </div>
                         <div class="aurora-pm-card__more-wrap">
-                            <button class="aurora-tt-icon-btn" title="Edit" @onclick="() => OpenEdit(p)">
-                                <AuroraIcons Name="edit" Size="14" />
-                            </button>
-                            <button class="aurora-tt-icon-btn aurora-tt-icon-btn--danger" title="Delete" @onclick="() => DeleteProject(p)">
+                            <button class="aurora-tt-icon-btn aurora-tt-icon-btn--danger" title="Move to trash" @onclick="() => DeleteProject(p)">
                                 <AuroraIcons Name="trash" Size="14" />
                             </button>
                         </div>
@@ -176,17 +173,6 @@
             new Dictionary<string, object?>(),
             new Radzen.DialogOptions { Width = "640px" });
         await Reload();
-    }
-
-    private async Task OpenEdit(ProjectDto p)
-    {
-        // Inline edit: prompt for new name; rename via API. Color edit deferred to follow-up.
-        var newName = await DialogService.Confirm($"Current name: {p.Name}", "Edit project (name)", new Radzen.ConfirmOptions
-        {
-            OkButtonText = "Close"
-        });
-        // Quick edit not implemented in v1 — placeholder.
-        await Task.CompletedTask;
     }
 
     private async Task DeleteProject(ProjectDto p)
