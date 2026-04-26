@@ -182,8 +182,7 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            var list = await client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.Get);
-            Projects = list ?? new();
+            Projects = await client.GetAllPagedAsync<ProjectDto>(Constants.API.Project.Get);
         }
         catch { Projects = new(); }
     }
@@ -193,9 +192,14 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            var list = await client.GetFromJsonAsync<List<TrackedTaskDto>>(Constants.API.TrackedTask.Get);
             var today = DateTime.Today;
-            TodayTasks = (list ?? new())
+            var fromUtc = today.ToUniversalTime();
+            var toUtc = today.AddDays(1).ToUniversalTime();
+            var url = $"{Constants.API.TrackedTask.Api}/search" +
+                      $"?from={Uri.EscapeDataString(fromUtc.ToString("o"))}" +
+                      $"&to={Uri.EscapeDataString(toUtc.ToString("o"))}";
+            var list = await client.GetAllPagedAsync<TrackedTaskDto>(url);
+            TodayTasks = list
                 .Where(t => t.StartDate.LocalDateTime.Date == today)
                 .OrderByDescending(t => t.StartDate)
                 .ToList();

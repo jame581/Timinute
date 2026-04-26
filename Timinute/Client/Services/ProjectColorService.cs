@@ -19,7 +19,8 @@ namespace Timinute.Client.Services
         public string GetColorById(string? projectId)
         {
             if (string.IsNullOrWhiteSpace(projectId)) return Palette[4];
-            var hash = System.Math.Abs(projectId.GetHashCode());
+            // Mask the sign bit to avoid the int.MinValue overflow that Math.Abs cannot handle.
+            var hash = projectId.GetHashCode() & int.MaxValue;
             return Palette[hash % Palette.Length];
         }
 

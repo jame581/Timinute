@@ -52,7 +52,7 @@
 | `Components/Scheduler/EditTrackedTaskForm.razor` | unchanged | Still used by calendar event click |
 | `Pages/Projects/ProjectManager.razor` | rewritten | 3-column card grid; no Radzen grid |
 | `Components/AddProject.razor` | extended | + 5-swatch color picker |
-| `Pages/Profile.razor` | new | At `/authentication/profile`, replaces profile branch of `Authentication.razor` |
+| `Pages/Profile.razor` | new | At `/profile`, replaces profile branch of `Authentication.razor` (the existing `/authentication/profile` OIDC route remains for Identity profile management) |
 | `Pages/Authentication.razor` | trimmed | Profile branch removed; login/register branches stay (Bootstrap) |
 | `Pages/Trash.razor` | restyled | Two cards (Projects / Tasks), rows mirror tracked-tasks pattern |
 | `Components/LandingPart.razor` | unchanged in phase 1 | Replaced in phase 2 |
@@ -224,7 +224,7 @@ Three rows: hero stats (3 cards), charts (bar + donut), recent activity card.
 - Sparkline: 12 bars, one per month for the past 12 months. Bar height proportional to that month's hours within the project, normalized to the max month value across the 12.
 - Existing `AddProject` modal handles new + edit (now with color picker).
 
-### Profile (`Pages/Profile.razor`, route `/authentication/profile`)
+### Profile (`Pages/Profile.razor`, route `/profile`)
 
 - Single big card with avatar + name + email + "joined {date}". Avatar = `linear-gradient(135deg, var(--accent), #C77BFF)` background, white initials.
 - 4-stat grid: total tracked time, project count, task count, member-since (`now - User.CreatedAt`, formatted as "{years}y {months}mo").

@@ -158,8 +158,7 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            var list = await client.GetFromJsonAsync<List<TrackedTaskDto>>(Constants.API.TrackedTask.Get);
-            AllTasks = list ?? new();
+            AllTasks = await client.GetAllPagedAsync<TrackedTaskDto>(Constants.API.TrackedTask.Get);
         }
         catch (Exception ex)
         {

@@ -149,8 +149,7 @@
 
         try
         {
-            var tasks = await client.GetFromJsonAsync<List<TrackedTaskDto>>(Timinute.Client.Helpers.Constants.API.TrackedTask.Get);
-            AllUserTasks = tasks ?? new();
+            AllUserTasks = await client.GetAllPagedAsync<TrackedTaskDto>(Timinute.Client.Helpers.Constants.API.TrackedTask.Get);
         }
         catch
         {

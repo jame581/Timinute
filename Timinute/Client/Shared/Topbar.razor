@@ -1,4 +1,4 @@
-@implements IDisposable
+@implements IAsyncDisposable
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthState
 @inject Radzen.DialogService DialogService
@@ -15,7 +15,7 @@
             <span class="aurora-search__icon">
                 <AuroraIcons Name="search" Size="16" />
             </span>
-            <input @ref="searchInput" type="text" class="aurora-search__input" placeholder="Search tasks, projects…" />
+            <input type="text" class="aurora-search__input" placeholder="Search tasks, projects…" />
             <span class="aurora-search__chip">⌘K</span>
         </div>
 
@@ -41,8 +41,7 @@
     private string CurrentTitle = "Timinute";
     private string CurrentSubtitle = "";
     private string FirstName = "";
-    private ElementReference searchInput;
-    private DotNetObjectReference<Topbar>? selfRef;
+    private IJSObjectReference? shortcutsModule;
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,23 +61,8 @@
     {
         if (firstRender)
         {
-            selfRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("eval", @"
-                (function() {
-                    if (window.__auroraCmdK) return;
-                    window.__auroraCmdK = true;
-                    document.addEventListener('keydown', function(e) {
-                        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                            var input = document.querySelector('.aurora-search__input');
-                            if (input) {
-                                e.preventDefault();
-                                input.focus();
-                                input.select();
-                            }
-                        }
-                    });
-                })();
-            ");
+            shortcutsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/topbar-shortcuts.js");
+            await shortcutsModule.InvokeVoidAsync("registerCmdKFocus", ".aurora-search__input");
         }
     }
 
@@ -126,9 +110,17 @@
             new Radzen.DialogOptions { Width = "640px" });
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         Navigation.LocationChanged -= OnLocationChanged;
-        selfRef?.Dispose();
+        if (shortcutsModule is not null)
+        {
+            try
+            {
+                await shortcutsModule.InvokeVoidAsync("unregisterCmdKFocus");
+                await shortcutsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { }
+        }
     }
 }

@@ -120,11 +120,11 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            var projTask = client.GetFromJsonAsync<List<ProjectDto>>(Constants.API.Project.Get);
-            var taskTask = client.GetFromJsonAsync<List<TrackedTaskDto>>(Constants.API.TrackedTask.Get);
+            var projTask = client.GetAllPagedAsync<ProjectDto>(Constants.API.Project.Get);
+            var taskTask = client.GetAllPagedAsync<TrackedTaskDto>(Constants.API.TrackedTask.Get);
             await Task.WhenAll(projTask, taskTask);
-            AllProjects = projTask.Result ?? new();
-            AllTasks = taskTask.Result ?? new();
+            AllProjects = projTask.Result;
+            AllTasks = taskTask.Result;
         }
         catch (Exception ex)
         {

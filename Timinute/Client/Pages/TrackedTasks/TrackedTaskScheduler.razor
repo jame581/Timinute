@@ -57,7 +57,6 @@
 @code {
     private DateTime WeekStart;
     private bool IsLoading = true;
-    private List<TrackedTaskDto> AllTasks = new();
     private List<TrackedTaskDto> WeekTasks = new();
 
     private string RangeLabel
@@ -81,45 +80,38 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            var list = await client.GetFromJsonAsync<List<TrackedTaskDto>>(Constants.API.TrackedTask.Get);
-            AllTasks = list ?? new();
-            FilterToWeek();
+            var startUtc = WeekStart.Date.ToUniversalTime();
+            var endUtc = WeekStart.Date.AddDays(7).ToUniversalTime();
+            var url = $"{Constants.API.TrackedTask.Api}/search" +
+                      $"?from={Uri.EscapeDataString(startUtc.ToString("o"))}" +
+                      $"&to={Uri.EscapeDataString(endUtc.ToString("o"))}";
+            WeekTasks = await client.GetAllPagedAsync<TrackedTaskDto>(url);
         }
         catch (Exception ex)
         {
             Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load", ex.Message, 4000);
-            AllTasks = new();
             WeekTasks = new();
         }
         IsLoading = false;
         StateHasChanged();
     }
 
-    private void FilterToWeek()
-    {
-        var start = WeekStart.Date;
-        var endExclusive = start.AddDays(7);
-        WeekTasks = AllTasks
-            .Where(t => t.StartDate.LocalDateTime.Date >= start && t.StartDate.LocalDateTime.Date < endExclusive)
-            .ToList();
-    }
-
-    private void PrevWeek()
+    private async Task PrevWeek()
     {
         WeekStart = WeekStart.AddDays(-7);
-        FilterToWeek();
+        await Reload();
     }
 
-    private void NextWeek()
+    private async Task NextWeek()
     {
         WeekStart = WeekStart.AddDays(7);
-        FilterToWeek();
+        await Reload();
     }
 
-    private void GoToday()
+    private async Task GoToday()
     {
         WeekStart = StartOfWeek(DateTime.Today);
-        FilterToWeek();
+        await Reload();
     }
 
     private async Task OnEmptyCellClicked(DateTime slot)

@@ -237,6 +237,66 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Create_Project_With_Provided_Color_Persists_Color_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateColorProvided");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            var dto = new CreateProjectDto { Name = "With color", Color = "#ABCDEF" };
+
+            var actionResult = await controller.CreateProject(dto);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+            var created = okResult!.Value as ProjectDto;
+            Assert.NotNull(created);
+            Assert.Equal("#ABCDEF", created!.Color);
+
+            // Confirm round-trip from DB.
+            var saved = await applicationDbContext.Projects.FirstOrDefaultAsync(p => p.ProjectId == created.ProjectId);
+            Assert.NotNull(saved);
+            Assert.Equal("#ABCDEF", saved!.Color);
+        }
+
+        [Fact]
+        public async Task Create_Project_Without_Color_Assigns_Palette_Default_Test()
+        {
+            // ApplicationUser1 has 3 active projects in seed (ProjectId1/4/5). The 4th project
+            // should pick palette index 3 (= "#EC4899").
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateColorPaletteDefault");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.CreateProject(new CreateProjectDto { Name = "First default", Color = null });
+
+            var okResult = actionResult.Result as OkObjectResult;
+            var created = okResult!.Value as ProjectDto;
+            Assert.NotNull(created);
+            Assert.False(string.IsNullOrWhiteSpace(created!.Color));
+
+            // Whatever palette index was picked, it must be one of the 5 palette colors.
+            var palette = new[] { "#6366F1", "#F59E0B", "#10B981", "#EC4899", "#94A3B8" };
+            Assert.Contains(created.Color, palette);
+
+            // Existing-count = 3 → palette[3 % 5] = "#EC4899".
+            Assert.Equal("#EC4899", created.Color);
+        }
+
+        [Fact]
+        public async Task Create_Project_With_Empty_Color_Falls_Back_To_Palette_Test()
+        {
+            // Whitespace-only Color should be treated as missing.
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateColorEmpty");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.CreateProject(new CreateProjectDto { Name = "Empty color", Color = "   " });
+
+            var okResult = actionResult.Result as OkObjectResult;
+            var created = okResult!.Value as ProjectDto;
+            Assert.NotNull(created);
+            Assert.False(string.IsNullOrWhiteSpace(created!.Color));
+        }
+
+        [Fact]
         public async Task Delete_Project_Another_User_Test()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "DeleteAuthTest");
