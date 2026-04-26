@@ -324,8 +324,8 @@
     gap: 6px;
     padding: 3px 10px;
     border-radius: 999px;
-    background: color-mix(in srgb, #6366F1 10%, transparent);
-    color: #6366F1;
+    background: color-mix(in srgb, var(--cat-indigo) 10%, transparent);
+    color: var(--cat-indigo);
     font-size: 12px;
     font-weight: 500;
 }
@@ -334,7 +334,7 @@
     width: 6px;
     height: 6px;
     border-radius: 999px;
-    background: #6366F1;
+    background: var(--cat-indigo);
 }
 
 .lhero__card-task {
@@ -539,12 +539,12 @@
 }
 
 .lfeature-card__cal-cell--indigo {
-    background: #6366F1;
+    background: var(--cat-indigo);
     opacity: 1;
 }
 
 .lfeature-card__cal-cell--emerald {
-    background: var(--success);
+    background: var(--cat-emerald);
     opacity: 1;
 }
 

@@ -67,12 +67,13 @@
             <div class="lfeature-card__visual">
                 <div class="lfeature-card__rows">
                     @{
+                        // Reference --cat-* tokens defined in aurora.css to keep the palette in one place.
                         var rows = new[]
                         {
-                            new { Color = "#6366F1", Width = "70%" },
-                            new { Color = "#F59E0B", Width = "50%" },
-                            new { Color = "#10B981", Width = "85%" },
-                            new { Color = "#EC4899", Width = "40%" },
+                            new { Color = "var(--cat-indigo)",  Width = "70%" },
+                            new { Color = "var(--cat-amber)",   Width = "50%" },
+                            new { Color = "var(--cat-emerald)", Width = "85%" },
+                            new { Color = "var(--cat-pink)",    Width = "40%" },
                         };
                     }
                     @foreach (var r in rows)
