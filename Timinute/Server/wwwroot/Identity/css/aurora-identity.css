@@ -1,6 +1,11 @@
 /* Aurora overlay for Identity Razor Pages — Login, Register, password flows.
    Loads after Bootstrap so its overrides win. Uses literal hex values because
-   these pages don't share aurora.css from the WASM client. */
+   these pages don't share aurora.css from the WASM client.
+
+   Form/button overrides are scoped to .aurora-id-shell (not .aurora-id-card)
+   so the cascade also picks up Manage pages, ConfirmEmail, ForgotPassword,
+   etc. — every Identity page renders inside .aurora-id-shell, but only
+   Login/Register currently wrap their content in .aurora-id-card. */
 
 :root {
     --bg: #F5F2EC;
@@ -65,9 +70,18 @@ html, body {
     color: var(--accent);
 }
 
-/* Page container — centered card */
+/* Page container — Login/Register get a centered card; other Identity pages
+   (Manage, password flows, etc.) get a top-aligned padded layout. The :has()
+   query gives us the conditional centering without two layout components. */
 .aurora-id-shell {
     min-height: calc(100vh - 240px);
+    padding: 40px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.aurora-id-shell:has(> .aurora-id-card) {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -121,13 +135,14 @@ html, body {
     color: var(--text);
 }
 
-/* --- Bootstrap form overrides --- */
+/* --- Bootstrap form overrides — shell-scoped so Manage/forgot-password/etc.
+       inherit the Aurora form look even though their bodies aren't card-wrapped. */
 
-.aurora-id-card .form-floating {
+.aurora-id-shell .form-floating {
     margin-bottom: 14px;
 }
 
-.aurora-id-card .form-control {
+.aurora-id-shell .form-control {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -138,41 +153,60 @@ html, body {
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.aurora-id-card .form-control:focus {
+.aurora-id-shell .form-control:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-so);
     outline: none;
 }
 
-.aurora-id-card .form-floating > label {
+.aurora-id-shell .form-floating > label {
     color: var(--text-mu);
     padding: 16px 14px;
 }
 
-.aurora-id-card .form-floating > .form-control:focus ~ label,
-.aurora-id-card .form-floating > .form-control:not(:placeholder-shown) ~ label {
+.aurora-id-shell .form-floating > .form-control:focus ~ label,
+.aurora-id-shell .form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: var(--accent-ink);
+    transform: scale(.78) translateY(-0.7rem) translateX(0.1rem);
+    background: transparent;
+}
+
+/* Chrome/Edge :-webkit-autofill: password managers fill the value via JS,
+   :not(:placeholder-shown) evaluates true correctly, but the autofill yellow
+   tint and white-on-white text fight the floating label. Force the label to
+   stay raised and neutralize the autofill background. */
+.aurora-id-shell .form-control:-webkit-autofill,
+.aurora-id-shell .form-control:-webkit-autofill:hover,
+.aurora-id-shell .form-control:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text);
+    -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: var(--text);
+}
+
+.aurora-id-shell .form-floating > .form-control:-webkit-autofill ~ label {
     color: var(--accent-ink);
     transform: scale(.78) translateY(-0.7rem) translateX(0.1rem);
     background: transparent;
 }
 
 /* Validation messages */
-.aurora-id-card .text-danger,
-.aurora-id-card .field-validation-error,
-.aurora-id-card .validation-summary-errors {
+.aurora-id-shell .text-danger,
+.aurora-id-shell .field-validation-error,
+.aurora-id-shell .validation-summary-errors {
     color: var(--danger);
     font-size: 12.5px;
     margin-top: 4px;
     display: block;
 }
 
-.aurora-id-card .validation-summary-errors ul {
+.aurora-id-shell .validation-summary-errors ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.aurora-id-card .validation-summary-errors:not(:empty) {
+.aurora-id-shell .validation-summary-errors:not(:empty) {
     background: color-mix(in srgb, #EF4444 8%, transparent);
     border: 1px solid color-mix(in srgb, #EF4444 30%, transparent);
     border-radius: 10px;
@@ -181,9 +215,9 @@ html, body {
 }
 
 /* Submit button — Aurora primary */
-.aurora-id-card .btn-primary,
-.aurora-id-card button[type="submit"].btn,
-.aurora-id-card .aurora-id-submit {
+.aurora-id-shell .btn-primary,
+.aurora-id-shell button[type="submit"].btn,
+.aurora-id-shell .aurora-id-submit {
     background: var(--accent);
     border: none;
     color: #fff;
@@ -196,21 +230,21 @@ html, body {
     transition: background .15s ease, transform .08s ease;
 }
 
-.aurora-id-card .btn-primary:hover,
-.aurora-id-card button[type="submit"].btn:hover,
-.aurora-id-card .aurora-id-submit:hover {
+.aurora-id-shell .btn-primary:hover,
+.aurora-id-shell button[type="submit"].btn:hover,
+.aurora-id-shell .aurora-id-submit:hover {
     background: var(--accent-ink);
     color: #fff;
 }
 
-.aurora-id-card .btn-primary:active,
-.aurora-id-card button[type="submit"].btn:active,
-.aurora-id-card .aurora-id-submit:active {
+.aurora-id-shell .btn-primary:active,
+.aurora-id-shell button[type="submit"].btn:active,
+.aurora-id-shell .aurora-id-submit:active {
     transform: scale(.98);
 }
 
 /* Remember-me checkbox row */
-.aurora-id-card .form-check {
+.aurora-id-shell .form-check {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -219,7 +253,7 @@ html, body {
     color: var(--text-mu);
 }
 
-.aurora-id-card .form-check-input {
+.aurora-id-shell .form-check-input {
     width: 16px;
     height: 16px;
     border: 1px solid var(--border);
@@ -228,7 +262,7 @@ html, body {
     margin: 0;
 }
 
-.aurora-id-card .checkbox label {
+.aurora-id-shell .checkbox label {
     display: inline-flex;
     align-items: center;
     gap: 8px;
