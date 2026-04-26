@@ -232,6 +232,14 @@ namespace Timinute.Server.Repository
             return await query.ToListAsync();
         }
 
+        public async Task<int> CountAll(Expression<Func<TEntity, bool>>? filter = null)
+        {
+            IQueryable<TEntity> query = dbSet.IgnoreQueryFilters();
+            if (filter != null)
+                query = query.Where(filter);
+            return await query.CountAsync();
+        }
+
         public async Task<int> PurgeExpired(DateTimeOffset olderThan)
         {
             // Build expression: e => e.DeletedAt != null && e.DeletedAt.Value < olderThan

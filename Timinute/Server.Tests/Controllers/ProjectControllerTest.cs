@@ -297,6 +297,56 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Create_Project_Round_Robin_Advances_Past_Soft_Deleted_Test()
+        {
+            // ApplicationUser1 has 3 active projects in seed (ProjectId1/4/5). The 4th
+            // pickup is palette[3] (#EC4899). Soft-delete it then create another —
+            // the index must advance to palette[4] (#94A3B8), not collide on
+            // palette[3] again because the active count dropped back to 3.
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "RoundRobinPastDelete");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            var firstResult = await controller.CreateProject(new CreateProjectDto { Name = "Fourth" });
+            var first = (firstResult.Result as OkObjectResult)!.Value as ProjectDto;
+            Assert.Equal("#EC4899", first!.Color);
+
+            await controller.DeleteProject(first.ProjectId);
+
+            var secondResult = await controller.CreateProject(new CreateProjectDto { Name = "Fifth" });
+            var second = (secondResult.Result as OkObjectResult)!.Value as ProjectDto;
+            Assert.Equal("#94A3B8", second!.Color);
+        }
+
+        [Fact]
+        public async Task Update_Project_Without_Color_Preserves_Saved_Color_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePreservesColor");
+            ProjectController controller = await CreateController(applicationDbContext);
+
+            // Set an initial color via update.
+            await controller.UpdateProject(new UpdateProjectDto
+            {
+                ProjectId = "ProjectId1",
+                Name = "Project 1",
+                Color = "#10B981"
+            });
+
+            // Now update only the name; Color omitted.
+            var actionResult = await controller.UpdateProject(new UpdateProjectDto
+            {
+                ProjectId = "ProjectId1",
+                Name = "Project 1 renamed",
+                Color = null
+            });
+
+            var okResult = actionResult.Result as OkObjectResult;
+            var updated = okResult!.Value as ProjectDto;
+            Assert.NotNull(updated);
+            Assert.Equal("Project 1 renamed", updated!.Name);
+            Assert.Equal("#10B981", updated.Color);
+        }
+
+        [Fact]
         public async Task Delete_Project_Another_User_Test()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "DeleteAuthTest");
