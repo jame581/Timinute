@@ -1,0 +1,36 @@
+@code {
+    [Parameter] public string Name { get; set; } = "";
+    [Parameter] public string Color { get; set; } = "#94A3B8";
+    [Parameter] public int Size { get; set; } = 40;
+
+    private string TileStyle =>
+        $"width: {Size}px; height: {Size}px; background: {Color}25; color: {Color}; font-size: {Size * 0.4:0}px;";
+
+    private string Initials
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Name)) return "?";
+            var parts = Name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return "?";
+            if (parts.Length == 1) return parts[0].Substring(0, System.Math.Min(2, parts[0].Length)).ToUpperInvariant();
+            return $"{parts[0][0]}{parts[1][0]}".ToUpperInvariant();
+        }
+    }
+}
+
+<div class="aurora-avatar" style="@TileStyle">
+    @Initials
+</div>
+
+<style>
+    .aurora-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+</style>

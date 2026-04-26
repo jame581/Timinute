@@ -1,0 +1,102 @@
+/* Aurora design tokens — light theme is the default. Dark tokens defined but no toggle in v1. */
+
+:root {
+    /* Surfaces */
+    --bg: #F5F2EC;
+    --surface: #FFFFFF;
+    --surface-2: #FAF7F0;
+
+    /* Sidebar */
+    --sidebar: #1B1A2E;
+    --sidebar-fg: #E5E3F0;
+    --sidebar-mu: #8E8CA8;
+
+    /* Text */
+    --text: #1A1A24;
+    --text-mu: #6B6878;
+    --text-dim: #9B97A8;
+
+    /* Borders */
+    --border: #E8E2D5;
+    --border-st: #D6CFBE;
+
+    /* Accent */
+    --accent: #5B5BF5;
+    --accent-so: #EEEDFF;
+    --accent-ink: #3838C7;
+
+    /* States */
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --chip: #F0EBDD;
+
+    /* Radii */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 12px;
+    --r-xl: 14px;
+    --r-2xl: 20px;
+    --r-pill: 999px;
+
+    /* Shadows */
+    --shadow-card: 0 1px 0 var(--border), 0 8px 24px -12px rgba(20, 18, 40, .08);
+    --shadow-hero-mark: 0 4px 14px rgba(91, 91, 245, .55);
+
+    /* Hero gradient */
+    --gradient-hero: linear-gradient(135deg, #5B5BF5, #8B6FFF 60%, #C77BFF);
+    --gradient-bar: linear-gradient(180deg, #5B5BF5, #8B6FFF);
+
+    /* Fonts */
+    --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+[data-theme="dark"] {
+    --bg: #0F0E1A;
+    --surface: #171627;
+    --surface-2: #1E1D31;
+    --sidebar: #0A0916;
+    --sidebar-fg: #E5E3F0;
+    --sidebar-mu: #8E8CA8;
+    --text: #EFEDF8;
+    --text-mu: #9C99B0;
+    --text-dim: #7A7894;
+    --border: #262438;
+    --border-st: #353149;
+    --accent: #7C7CFF;
+    --accent-so: #1F1E3D;
+    --accent-ink: #B5B5FF;
+    --danger: #F87171;
+}
+
+/* Aurora-scoped reset for the redesigned shell */
+.aurora-app {
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.aurora-app *,
+.aurora-app *::before,
+.aurora-app *::after {
+    box-sizing: border-box;
+}
+
+.aurora-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Pulse animation used by the live tracker dot */
+@keyframes aurora-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .4; }
+}
+
+.aurora-pulse {
+    animation: aurora-pulse 2s ease-in-out infinite;
+}

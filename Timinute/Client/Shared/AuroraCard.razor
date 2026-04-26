@@ -1,0 +1,24 @@
+@code {
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public bool NoPad { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
+
+<div class="aurora-card @(NoPad ? "aurora-card--nopad" : "") @Class" style="@Style">
+    @ChildContent
+</div>
+
+<style>
+    .aurora-card {
+        background: var(--surface);
+        border-radius: var(--r-2xl);
+        border: 1px solid var(--border);
+        padding: 24px;
+        box-shadow: var(--shadow-card);
+    }
+
+    .aurora-card--nopad {
+        padding: 0;
+    }
+</style>
