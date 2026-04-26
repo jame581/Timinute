@@ -1,0 +1,25 @@
+@code {
+    private const string GitHubUrl = "https://github.com/jame581/Timinute";
+}
+
+<nav class="lnav">
+    <div class="lnav__brand">
+        <div class="lnav__mark">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="13" r="7.5" />
+                <path d="M12 9v4l2.5 2" />
+            </svg>
+        </div>
+        <span class="lnav__wordmark">timinute<span class="lnav__wordmark-dot">.</span></span>
+    </div>
+
+    <div class="lnav__links">
+        <a class="lnav__link lnav__link--features" href="#features">Features</a>
+        <a class="lnav__link lnav__link--open" href="#open">Open source</a>
+        <a class="lnav__link" href="@GitHubUrl" target="_blank" rel="noopener">
+            <AuroraIcons Name="github" Size="15" /> GitHub
+        </a>
+        <a class="lnav__link lnav__link--login" href="authentication/login">Log in</a>
+        <a class="lnav__cta" href="authentication/register">Get started — free</a>
+    </div>
+</nav>

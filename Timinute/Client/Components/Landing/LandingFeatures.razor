@@ -1,0 +1,89 @@
+<section id="features" class="lfeatures">
+    <div class="lfeatures__head">
+        <div>
+            <div class="lfeatures__eyebrow">Everything you need</div>
+            <h2 class="lfeatures__h2">One place for every minute, every project, every report.</h2>
+        </div>
+        <p class="lfeatures__support">
+            Built on .NET 10 and Blazor WebAssembly. Identity by Duende IdentityServer. Deploys anywhere Docker runs.
+        </p>
+    </div>
+
+    <div class="lfeatures__grid">
+        @* Card 1 — Dashboard *@
+        <div class="lfeature-card">
+            <div class="lfeature-card__top">
+                <div class="lfeature-card__icon-tile"><AuroraIcons Name="dashboard" Size="22" /></div>
+                <span class="lfeature-card__chip">6 charts</span>
+            </div>
+            <div class="lfeature-card__title">Dashboard</div>
+            <p class="lfeature-card__copy">Reporting, totals and trend lines so you can see how much time you spend on what — at a glance.</p>
+            <div class="lfeature-card__visual">
+                <div class="lfeature-card__bars">
+                    @{
+                        var dashBars = new[] { 3, 5, 2, 7, 4, 6, 8, 5, 4, 9, 6, 7 };
+                    }
+                    @for (int i = 0; i < dashBars.Length; i++)
+                    {
+                        var heightPct = dashBars[i] * 9;
+                        var classes = "lfeature-card__bar" + (i == dashBars.Length - 1 ? " lfeature-card__bar--last" : "");
+                        <div class="@classes" style="height: @(heightPct)%;"></div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Card 2 — Calendar *@
+        <div class="lfeature-card">
+            <div class="lfeature-card__top">
+                <div class="lfeature-card__icon-tile"><AuroraIcons Name="calendar" Size="22" /></div>
+                <span class="lfeature-card__chip">3 views</span>
+            </div>
+            <div class="lfeature-card__title">Calendar</div>
+            <p class="lfeature-card__copy">Schedule work, drag to log, see your week, month, or day. Your time, visualised.</p>
+            <div class="lfeature-card__visual">
+                <div class="lfeature-card__cal">
+                    @for (int i = 0; i < 21; i++)
+                    {
+                        var indigo = i == 2 || i == 9 || i == 13 || i == 16;
+                        var emerald = i == 5 || i == 11;
+                        var classes = "lfeature-card__cal-cell"
+                            + (indigo ? " lfeature-card__cal-cell--indigo" : "")
+                            + (emerald ? " lfeature-card__cal-cell--emerald" : "");
+                        <div class="@classes"></div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Card 3 — Tracked tasks *@
+        <div class="lfeature-card">
+            <div class="lfeature-card__top">
+                <div class="lfeature-card__icon-tile"><AuroraIcons Name="list" Size="22" /></div>
+                <span class="lfeature-card__chip">CSV export</span>
+            </div>
+            <div class="lfeature-card__title">Tracked tasks</div>
+            <p class="lfeature-card__copy">Filter, review and edit every minute you've logged. Export to CSV when accounting calls.</p>
+            <div class="lfeature-card__visual">
+                <div class="lfeature-card__rows">
+                    @{
+                        var rows = new[]
+                        {
+                            new { Color = "#6366F1", Width = "70%" },
+                            new { Color = "#F59E0B", Width = "50%" },
+                            new { Color = "#10B981", Width = "85%" },
+                            new { Color = "#EC4899", Width = "40%" },
+                        };
+                    }
+                    @foreach (var r in rows)
+                    {
+                        <div class="lfeature-card__row">
+                            <span class="lfeature-card__row-led" style="background: @r.Color;"></span>
+                            <div class="lfeature-card__row-bar" style="width: @r.Width;"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
