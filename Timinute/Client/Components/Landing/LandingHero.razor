@@ -1,4 +1,5 @@
 @implements IDisposable
+@inject IJSRuntime JS
 
 <section class="lhero">
     <div>
@@ -84,14 +85,38 @@
 @code {
     private int seconds = 1827;
     private System.Timers.Timer? tickTimer;
+    private bool disposed;
 
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+
+        // Decorative timer; respect prefers-reduced-motion. Default to "on"
+        // if the JS check fails for any reason — the previous behavior.
+        bool reducedMotion = false;
+        try
+        {
+            reducedMotion = await JS.InvokeAsync<bool>(
+                "eval",
+                "window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches");
+        }
+        catch
+        {
+            reducedMotion = false;
+        }
+
+        if (reducedMotion || disposed) return;
+
         tickTimer = new System.Timers.Timer(1000) { AutoReset = true };
         tickTimer.Elapsed += async (_, _) =>
         {
+            if (disposed) return;
             seconds++;
-            await InvokeAsync(StateHasChanged);
+            try
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (ObjectDisposedException) { /* race with Dispose */ }
         };
         tickTimer.Start();
     }
@@ -111,6 +136,7 @@
 
     public void Dispose()
     {
+        disposed = true;
         if (tickTimer is not null)
         {
             tickTimer.Stop();

@@ -24,6 +24,9 @@
         /* Inline boot splash — Aurora-styled. Replaced by Blazor on mount.
            Uses literal hex/RGB values because aurora.css custom properties
            may not be parsed yet on first paint. */
+        /* These html/body resets persist after Blazor mounts — that's intentional.
+           They keep the Aurora screens flush to the viewport and the background
+           matches --bg in aurora.css. Don't strip them when refactoring the splash. */
         html, body {
             margin: 0;
             padding: 0;

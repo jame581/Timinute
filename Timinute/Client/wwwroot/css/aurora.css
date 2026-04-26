@@ -100,3 +100,10 @@
 .aurora-pulse {
     animation: aurora-pulse 2s ease-in-out infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .aurora-pulse {
+        animation: none;
+        opacity: 1;
+    }
+}
