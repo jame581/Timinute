@@ -5,21 +5,22 @@
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </head>
 
-<div class="aurora-app">
-    <NavMenu />
-
-    <main class="aurora-main">
-        <AuthorizeView>
-            <Authorized>
+<AuthorizeView>
+    <Authorized>
+        <div class="aurora-app">
+            <NavMenu />
+            <main class="aurora-main">
                 <Topbar />
-            </Authorized>
-        </AuthorizeView>
+                <article class="aurora-content">
+                    @Body
+                </article>
+            </main>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @Body
+    </NotAuthorized>
+</AuthorizeView>
 
-        <article class="aurora-content">
-            @Body
-        </article>
-    </main>
-
-    <RadzenDialog />
-    <RadzenNotification />
-</div>
+<RadzenDialog />
+<RadzenNotification />
