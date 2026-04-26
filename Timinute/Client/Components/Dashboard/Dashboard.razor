@@ -1,60 +1,305 @@
-﻿@attribute [Authorize]
+@attribute [Authorize]
+@using Timinute.Shared.Dtos.TrackedTask
+@using Timinute.Shared.Dtos.Dashboard
+@using Timinute.Shared.Dtos.Project
+@inject IHttpClientFactory ClientFactory
+@inject Timinute.Client.Services.ProjectColorService ColorService
 
-<h2 class="text-center">Dashboard</h2>
-
-<div class="row">
-    <div class="col-12 col-lg-6 mb-3">
-        <div class="card">
-            <h5 class="card-header">Amount of work time last month</h5>
-            <div class="card-body">
-                <h2 class="text-center">@AmountWorkTimeLastMonth</h2>
+<div class="aurora-dashboard">
+    <!-- Row 1: Hero stats -->
+    <div class="aurora-dashboard__hero-row">
+        <div class="aurora-hero-card">
+            <div class="aurora-hero-card__eyebrow">This week · so far</div>
+            <div class="aurora-hero-card__big">
+                <span>@WeekHoursWhole</span>
+                <span class="aurora-hero-card__unit">h</span>
+                <span class="aurora-hero-card__minutes">@WeekMinutes</span>
+                <span class="aurora-hero-card__unit">m</span>
+            </div>
+            <div class="aurora-hero-card__row">
+                @if (WeekDeltaPercent.HasValue)
+                {
+                    <span class="aurora-hero-card__chip">@(WeekDeltaPercent.Value >= 0 ? "+" : "")@WeekDeltaPercent.Value.ToString("0.#")% vs last week</span>
+                }
+                <span class="aurora-hero-card__sub">Goal @WeeklyGoal · @DaysLeft days left</span>
+            </div>
+            <div class="aurora-hero-card__progress">
+                <div class="aurora-hero-card__progress-fill" style="width: @ProgressPct.ToString("0", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
             </div>
         </div>
-    </div>
-    <div class="col-12 col-lg-6 mb-3">
-        <div class="card">
-            <h5 class="card-header">Top project last month</h5>
-            <div class="card-body">
-                <h2 class="text-center">@TopProjectLastMonth</h2>
+
+        <AuroraCard>
+            <div class="aurora-stat-card__label">Top project this month</div>
+            <div class="aurora-stat-card__row">
+                <span class="aurora-stat-card__dot" style="background: @TopProjectColor;"></span>
+                <span class="aurora-stat-card__name">@TopProjectName</span>
             </div>
-        </div>
+            <div class="aurora-stat-card__big">
+                @TopProjectHoursWhole<span class="aurora-stat-card__unit">h</span> @TopProjectMinutes<span class="aurora-stat-card__unit">m</span>
+            </div>
+            <div class="aurora-stat-card__sub">@TopProjectShare% of total tracked time</div>
+        </AuroraCard>
+
+        <AuroraCard>
+            <div class="aurora-stat-card__label">Last month total</div>
+            <div class="aurora-stat-card__big">
+                @LastMonthHoursWhole<span class="aurora-stat-card__unit">h</span> @LastMonthMinutes<span class="aurora-stat-card__unit">m</span>
+            </div>
+            @if (LastMonthDelta.HasValue)
+            {
+                var deltaClass = LastMonthDelta.Value >= 0 ? "is-positive" : "is-negative";
+                var arrow = LastMonthDelta.Value >= 0 ? "↑" : "↓";
+                <div class="aurora-stat-card__delta-row">
+                    <span class="aurora-stat-card__delta @deltaClass">@arrow @System.Math.Abs(LastMonthDelta.Value).ToString("0.#")%</span>
+                    <span class="aurora-stat-card__sub">vs the month before</span>
+                </div>
+            }
+        </AuroraCard>
     </div>
+
+    <!-- Row 2: Charts -->
+    <div class="aurora-dashboard__charts-row">
+        <AuroraCard>
+            <div class="aurora-chart-header">
+                <div>
+                    <div class="aurora-chart-header__title">Work time per month</div>
+                    <div class="aurora-chart-header__sub">Last 6 months</div>
+                </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <WeekTimeBarChart Data="@MonthlyData" />
+            </div>
+        </AuroraCard>
+
+        <AuroraCard>
+            <div class="aurora-chart-header">
+                <div>
+                    <div class="aurora-chart-header__title">Time per project</div>
+                    <div class="aurora-chart-header__sub">This month</div>
+                </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <ProjectDonut Slices="@DonutSlices" />
+            </div>
+        </AuroraCard>
+    </div>
+
+    <!-- Row 3: Recent activity -->
+    <AuroraCard NoPad="true">
+        <div class="aurora-activity__header">
+            <div>
+                <div class="aurora-chart-header__title">Recent activity</div>
+                <div class="aurora-chart-header__sub">Latest tracked sessions</div>
+            </div>
+            <a class="aurora-activity__view-all" href="trackedtasks">View all →</a>
+        </div>
+        @if (RecentTasks.Count == 0)
+        {
+            <div class="aurora-activity__empty">No tracked sessions yet.</div>
+        }
+        else
+        {
+            @foreach (var task in RecentTasks)
+            {
+                <div class="aurora-activity__row">
+                    <span class="aurora-activity__dot" style="background: @ColorFor(task);"></span>
+                    <div class="aurora-activity__meta">
+                        <div class="aurora-activity__name">@task.Name</div>
+                        <div class="aurora-activity__project">@(task.Project?.Name ?? "No project")</div>
+                    </div>
+                    <div class="aurora-activity__time">@FormatRelativeTime(task.StartDate)</div>
+                    <div class="aurora-activity__duration aurora-mono">@FormatDuration(task.Duration)</div>
+                    <button class="aurora-activity__more" title="More">
+                        <AuroraIcons Name="more" Size="16" />
+                    </button>
+                </div>
+            }
+        }
+    </AuroraCard>
 </div>
 
-<div class="row">
-    <div class="col-12 col-lg-6 mb-3">
-        <div class="card">
-            <h5 class="card-header">Amount of work time this month</h5>
-            <div class="card-body">
-                <h2 class="text-center">@AmountWorkTimeThisMonth</h2>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-lg-6 mb-3">
-        <div class="card">
-            <h5 class="card-header">Top project this month</h5>
-            <div class="card-body">
-                <h2 class="text-center">@TopProjectThisMonth</h2>
-            </div>
-        </div>
-    </div>
-</div>
+@code {
+    private const int WeeklyGoalHours = 32;
+    private string WeeklyGoal => $"{WeeklyGoalHours}h";
 
-<div class="row">
-    <div class="col-12 col-lg-6 mb-3">
-        <div class="card">
-            <h5 class="card-header">Amount of work time per months</h5>
-            <div class="card-body">
-                <ProjectColumnChart />
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-lg-6 mb-3">
-        <div class="card">
-            <h5 class="card-header">Amount of work time per projects</h5>
-            <div class="card-body">
-                <DoughnutChart />
-            </div>
-        </div>
-    </div>
-</div>
+    private List<TrackedTaskDto> AllUserTasks = new();
+    private List<TrackedTaskDto> RecentTasks = new();
+    private List<WeekTimeBarChart.MonthlyHours> MonthlyData = new();
+    private List<ProjectDonut.ProjectSlice> DonutSlices = new();
+
+    private int WeekHoursWhole;
+    private int WeekMinutes;
+    private double? WeekDeltaPercent;
+    private int DaysLeft;
+    private double ProgressPct;
+
+    private string TopProjectName = "—";
+    private string TopProjectColor = "#94A3B8";
+    private int TopProjectHoursWhole;
+    private int TopProjectMinutes;
+    private int TopProjectShare;
+
+    private int LastMonthHoursWhole;
+    private int LastMonthMinutes;
+    private double? LastMonthDelta;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient(Timinute.Client.Helpers.Constants.API.ClientName);
+
+        try
+        {
+            var tasks = await client.GetFromJsonAsync<List<TrackedTaskDto>>(Timinute.Client.Helpers.Constants.API.TrackedTask.Get);
+            AllUserTasks = tasks ?? new();
+        }
+        catch
+        {
+            AllUserTasks = new();
+        }
+
+        ComputeWeekStats();
+        ComputeMonthlyChart();
+        ComputeDonut();
+        ComputeTopProject();
+        ComputeLastMonth();
+        RecentTasks = AllUserTasks
+            .OrderByDescending(t => t.StartDate)
+            .Take(5)
+            .ToList();
+    }
+
+    private void ComputeWeekStats()
+    {
+        var now = DateTimeOffset.Now;
+        var startOfWeek = StartOfWeek(now.Date);
+        var startOfWeekOffset = new DateTimeOffset(startOfWeek, now.Offset);
+        var startOfPrevWeek = startOfWeekOffset.AddDays(-7);
+
+        var thisWeekHours = AllUserTasks
+            .Where(t => t.StartDate >= startOfWeekOffset && t.StartDate <= now)
+            .Sum(t => t.Duration.TotalHours);
+
+        var lastWeekHours = AllUserTasks
+            .Where(t => t.StartDate >= startOfPrevWeek && t.StartDate < startOfWeekOffset)
+            .Sum(t => t.Duration.TotalHours);
+
+        WeekHoursWhole = (int)System.Math.Floor(thisWeekHours);
+        WeekMinutes = (int)System.Math.Round((thisWeekHours - WeekHoursWhole) * 60);
+
+        if (lastWeekHours > 0)
+        {
+            WeekDeltaPercent = ((thisWeekHours - lastWeekHours) / lastWeekHours) * 100;
+        }
+
+        DaysLeft = System.Math.Max(0, 7 - ((int)(now - startOfWeekOffset).TotalDays + 1));
+        ProgressPct = System.Math.Clamp((thisWeekHours / WeeklyGoalHours) * 100, 0, 100);
+    }
+
+    private void ComputeMonthlyChart()
+    {
+        var now = DateTimeOffset.Now;
+        var data = new List<WeekTimeBarChart.MonthlyHours>();
+        for (int i = 5; i >= 0; i--)
+        {
+            var month = now.AddMonths(-i);
+            var startOfMonth = new DateTimeOffset(month.Year, month.Month, 1, 0, 0, 0, month.Offset);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
+
+            var hours = AllUserTasks
+                .Where(t => t.StartDate >= startOfMonth && t.StartDate < startOfNextMonth)
+                .Sum(t => t.Duration.TotalHours);
+
+            data.Add(new WeekTimeBarChart.MonthlyHours(month.ToString("MMM", System.Globalization.CultureInfo.InvariantCulture), hours));
+        }
+        MonthlyData = data;
+    }
+
+    private void ComputeDonut()
+    {
+        var now = DateTimeOffset.Now;
+        var startOfMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        var byProject = AllUserTasks
+            .Where(t => t.StartDate >= startOfMonth && t.StartDate < startOfNextMonth)
+            .GroupBy(t => t.ProjectId ?? "_none")
+            .Select(g => new ProjectDonut.ProjectSlice(
+                g.First().Project?.Name ?? "No project",
+                ColorService.GetColor(g.First().Project),
+                g.Sum(t => t.Duration.TotalHours)))
+            .Where(s => s.Hours > 0)
+            .OrderByDescending(s => s.Hours)
+            .ToList();
+
+        DonutSlices = byProject;
+    }
+
+    private void ComputeTopProject()
+    {
+        if (DonutSlices.Count == 0)
+        {
+            TopProjectName = "No data yet";
+            TopProjectColor = "#94A3B8";
+            TopProjectHoursWhole = 0;
+            TopProjectMinutes = 0;
+            TopProjectShare = 0;
+            return;
+        }
+
+        var top = DonutSlices.First();
+        var total = DonutSlices.Sum(s => s.Hours);
+        TopProjectName = top.Name;
+        TopProjectColor = top.Color;
+        TopProjectHoursWhole = (int)System.Math.Floor(top.Hours);
+        TopProjectMinutes = (int)System.Math.Round((top.Hours - TopProjectHoursWhole) * 60);
+        TopProjectShare = total > 0 ? (int)System.Math.Round((top.Hours / total) * 100) : 0;
+    }
+
+    private void ComputeLastMonth()
+    {
+        var now = DateTimeOffset.Now;
+        var startOfThisMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset);
+        var startOfLastMonth = startOfThisMonth.AddMonths(-1);
+        var startOfTwoBack = startOfThisMonth.AddMonths(-2);
+
+        var lastMonthHours = AllUserTasks
+            .Where(t => t.StartDate >= startOfLastMonth && t.StartDate < startOfThisMonth)
+            .Sum(t => t.Duration.TotalHours);
+
+        var twoBackHours = AllUserTasks
+            .Where(t => t.StartDate >= startOfTwoBack && t.StartDate < startOfLastMonth)
+            .Sum(t => t.Duration.TotalHours);
+
+        LastMonthHoursWhole = (int)System.Math.Floor(lastMonthHours);
+        LastMonthMinutes = (int)System.Math.Round((lastMonthHours - LastMonthHoursWhole) * 60);
+
+        if (twoBackHours > 0)
+        {
+            LastMonthDelta = ((lastMonthHours - twoBackHours) / twoBackHours) * 100;
+        }
+    }
+
+    private string ColorFor(TrackedTaskDto t) => ColorService.GetColor(t.Project);
+
+    private static DateTime StartOfWeek(DateTime date)
+    {
+        // ISO week — Monday as start
+        int diff = (7 + (int)date.DayOfWeek - (int)DayOfWeek.Monday) % 7;
+        return date.AddDays(-1 * diff).Date;
+    }
+
+    private static string FormatDuration(TimeSpan d)
+    {
+        var hours = (int)d.TotalHours;
+        return hours > 0 ? $"{hours}h {d.Minutes:00}m" : $"{d.Minutes}m";
+    }
+
+    private static string FormatRelativeTime(DateTimeOffset dt)
+    {
+        var now = DateTimeOffset.Now;
+        if (dt.Date == now.Date) return $"Today · {dt:HH:mm}";
+        if (dt.Date == now.Date.AddDays(-1)) return $"Yesterday · {dt:HH:mm}";
+        if ((now - dt).TotalDays < 7) return $"{dt:dddd} · {dt:HH:mm}";
+        return dt.ToString("MMM d · HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+    }
+}
