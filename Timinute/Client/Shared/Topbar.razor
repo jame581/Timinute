@@ -75,8 +75,10 @@
     private void Resolve()
     {
         var current = Navigation.ToBaseRelativePath(Navigation.Uri);
-        var hashIdx = current.IndexOf('?');
-        if (hashIdx >= 0) current = current.Substring(0, hashIdx);
+        var queryIdx = current.IndexOf('?');
+        if (queryIdx >= 0) current = current.Substring(0, queryIdx);
+        var fragIdx = current.IndexOf('#');
+        if (fragIdx >= 0) current = current.Substring(0, fragIdx);
         current = current.TrimEnd('/');
 
         // Try exact match first, then prefix match

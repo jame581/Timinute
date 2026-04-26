@@ -28,7 +28,10 @@ namespace Timinute.Server
             CreateMap<CreateProjectDto, Project>();
 
             CreateMap<Project, UpdateProjectDto>();
-            CreateMap<UpdateProjectDto, Project>();
+            CreateMap<UpdateProjectDto, Project>()
+                // Don't blank out a saved Color when an update arrives without one.
+                // A future "edit name only" flow shouldn't wipe the color picker choice.
+                .ForMember(d => d.Color, o => o.Condition(src => !string.IsNullOrWhiteSpace(src.Color)));
 
             // Application User model
             CreateMap<ApplicationUser, ApplicationUserDto>();

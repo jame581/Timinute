@@ -47,6 +47,14 @@
     --gradient-hero: linear-gradient(135deg, #5B5BF5, #8B6FFF 60%, #C77BFF);
     --gradient-bar: linear-gradient(180deg, #5B5BF5, #8B6FFF);
 
+    /* Project category palette (also lives literally in ProjectController.ProjectPalette
+       and ProjectColorService.Palette — keep these in sync if either changes). */
+    --cat-indigo:  #6366F1;
+    --cat-amber:   #F59E0B;
+    --cat-emerald: #10B981;
+    --cat-pink:    #EC4899;
+    --cat-slate:   #94A3B8;
+
     /* Fonts */
     --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -68,6 +76,7 @@
     --accent-so: #1F1E3D;
     --accent-ink: #B5B5FF;
     --danger: #F87171;
+    /* Category palette stays the same in dark — same hues, the surface darkens around them. */
 }
 
 /* Aurora-scoped reset for the redesigned shell */

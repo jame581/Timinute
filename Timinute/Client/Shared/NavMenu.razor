@@ -134,9 +134,11 @@
     private bool IsActive(string href, NavLinkMatch match)
     {
         var current = Navigation.ToBaseRelativePath(Navigation.Uri);
-        // Strip query string + fragment
-        var hashIdx = current.IndexOf('?');
-        if (hashIdx >= 0) current = current.Substring(0, hashIdx);
+        // Strip query string and fragment.
+        var queryIdx = current.IndexOf('?');
+        if (queryIdx >= 0) current = current.Substring(0, queryIdx);
+        var fragIdx = current.IndexOf('#');
+        if (fragIdx >= 0) current = current.Substring(0, fragIdx);
         current = current.TrimEnd('/');
         var target = href.TrimEnd('/');
 

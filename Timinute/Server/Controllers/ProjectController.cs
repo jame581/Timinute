@@ -143,7 +143,9 @@ namespace Timinute.Server.Controllers
 
             if (string.IsNullOrWhiteSpace(newProject.Color))
             {
-                var existingCount = (await projectRepository.Get(p => p.UserId == userId)).Count();
+                // Count *all* the user's projects including soft-deleted, so the round-robin
+                // index keeps advancing past deletions and we don't collide on the palette.
+                var existingCount = await projectRepository.CountAll(p => p.UserId == userId);
                 newProject.Color = ProjectPalette[existingCount % ProjectPalette.Length];
             }
 

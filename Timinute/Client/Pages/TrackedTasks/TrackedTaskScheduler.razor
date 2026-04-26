@@ -128,11 +128,15 @@
         if (result is TrackedTask data)
         {
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
+            // Server enforces Duration > 0 via [MinDuration]; clamp to 1s if the form
+            // somehow returned a zero/negative span (out-of-order start/end, missing end).
+            var rawDuration = data.EndDate.HasValue ? (data.EndDate - data.StartDate).Value : TimeSpan.Zero;
+            var safeDuration = rawDuration <= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : rawDuration;
             var dto = new CreateTrackedTaskDto
             {
                 Name = data.Name,
                 StartDate = data.StartDate,
-                Duration = data.EndDate.HasValue ? (data.EndDate - data.StartDate).Value : TimeSpan.Zero,
+                Duration = safeDuration,
                 ProjectId = data.ProjectId,
             };
             try
