@@ -83,12 +83,33 @@
         try
         {
             deletedProjects = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.Project.Trash) ?? new();
-            deletedTasks = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.TrackedTask.Trash) ?? new();
         }
-        catch
+        catch (Exception ex)
         {
             deletedProjects = new();
+            Notifier.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Could not load deleted projects",
+                Detail = ex.Message,
+                Duration = 6000
+            });
+        }
+
+        try
+        {
+            deletedTasks = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.TrackedTask.Trash) ?? new();
+        }
+        catch (Exception ex)
+        {
             deletedTasks = new();
+            Notifier.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Could not load deleted tasks",
+                Detail = ex.Message,
+                Duration = 6000
+            });
         }
     }
 
