@@ -1,5 +1,5 @@
-﻿<div class="row">
-    <EditForm class="row g-3" Model="@NewProject" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+<div class="row">
+    <EditForm class="row g-3 align-items-end" Model="@NewProject" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
         <DataAnnotationsValidator />
 
         <div class="col-auto">
@@ -7,7 +7,30 @@
         </div>
 
         <div class="col-auto">
-            <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewProject.Name" placeholder="Enter project name..." />
+            <InputText type="text" class="form-control" DisplayName="Project Name" id="name" @bind-Value="NewProject.Name" placeholder="Enter project name..." />
+        </div>
+
+        <div class="col-auto">
+            <label class="col-form-label">Color:</label>
+        </div>
+
+        <div class="col-auto d-flex" style="gap: 8px;">
+            @foreach (var swatch in Palette)
+            {
+                var isSelected = string.Equals(NewProject.Color, swatch, System.StringComparison.OrdinalIgnoreCase);
+                <button type="button"
+                        class="aurora-color-swatch @(isSelected ? "is-selected" : "")"
+                        style="background-color: @swatch;"
+                        title="@swatch"
+                        @onclick="() => SelectColor(swatch)">
+                    @if (isSelected)
+                    {
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12l5 5L20 6"></path>
+                        </svg>
+                    }
+                </button>
+            }
         </div>
 
         <div class="col-auto">
@@ -20,3 +43,27 @@
 
     </EditForm>
 </div>
+
+<style>
+    .aurora-color-swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform .08s ease;
+    }
+
+    .aurora-color-swatch:hover {
+        transform: scale(1.05);
+    }
+
+    .aurora-color-swatch.is-selected {
+        outline: 2px solid #1A1A24;
+        outline-offset: 2px;
+    }
+</style>

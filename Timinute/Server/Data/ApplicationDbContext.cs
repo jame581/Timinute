@@ -95,11 +95,13 @@ namespace Timinute.Server.Data
                 new ApplicationRole{ Id = roleAdminId, ConcurrencyStamp = "e0c194a8-0001-0001-0001-000000000002", Name = Constants.Roles.Admin, NormalizedName = Constants.Roles.Admin.ToUpper(), Description = "Admin role with highest rights."}
             };
 
+            var seedCreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
             var applicationUsers = new List<ApplicationUser>()
             {
-                new ApplicationUser { Id = userId1, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000001", SecurityStamp = "s0c194a8-0001-0001-0001-000000000001", Email = "test1@email.com", FirstName = "Jan", LastName = "Testovic", EmailConfirmed = true, UserName = "test1@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg=="},
-                new ApplicationUser { Id = userId2, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000002", SecurityStamp = "s0c194a8-0001-0001-0001-000000000002", Email = "test2@email.com", FirstName = "Ivana", LastName = "Maricenkova", EmailConfirmed = true, UserName = "test2@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg=="},
-                new ApplicationUser { Id = userId3, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000003", SecurityStamp = "s0c194a8-0001-0001-0001-000000000003", Email = "test3@email.com", FirstName = "Marek", LastName = "Klukac", EmailConfirmed = true, UserName = "test3@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg=="},
+                new ApplicationUser { Id = userId1, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000001", SecurityStamp = "s0c194a8-0001-0001-0001-000000000001", Email = "test1@email.com", FirstName = "Jan", LastName = "Testovic", EmailConfirmed = true, UserName = "test1@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt },
+                new ApplicationUser { Id = userId2, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000002", SecurityStamp = "s0c194a8-0001-0001-0001-000000000002", Email = "test2@email.com", FirstName = "Ivana", LastName = "Maricenkova", EmailConfirmed = true, UserName = "test2@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt },
+                new ApplicationUser { Id = userId3, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000003", SecurityStamp = "s0c194a8-0001-0001-0001-000000000003", Email = "test3@email.com", FirstName = "Marek", LastName = "Klukac", EmailConfirmed = true, UserName = "test3@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt },
             };
 
             builder.Entity<ApplicationRole>().HasData(roles);

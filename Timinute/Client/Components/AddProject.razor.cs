@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Radzen;
 using System.Net.Http.Json;
@@ -15,6 +15,11 @@ namespace Timinute.Client.Components
 
         private Project NewProject { get; set; } = new();
 
+        private static readonly string[] Palette =
+        {
+            "#6366F1", "#F59E0B", "#10B981", "#EC4899", "#94A3B8"
+        };
+
         #region Dependency Injection
 
         [Inject]
@@ -25,19 +30,32 @@ namespace Timinute.Client.Components
 
         #endregion
 
+        private void SelectColor(string color)
+        {
+            NewProject.Color = color;
+        }
+
         private async Task HandleValidSubmit()
         {
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
-            ProjectDto createProjectDto = new()
+            var createProjectDto = new CreateProjectDto
             {
-                Name = NewProject.Name
+                Name = NewProject.Name,
+                Color = NewProject.Color
             };
 
             try
             {
                 var responseMessage = await client.PostAsJsonAsync(Constants.API.Project.Create, createProjectDto);
                 responseMessage.EnsureSuccessStatusCode();
+
+                var created = await responseMessage.Content.ReadFromJsonAsync<ProjectDto>();
+                if (created != null)
+                {
+                    NewProject.ProjectId = created.ProjectId;
+                    NewProject.Color = created.Color;
+                }
 
                 await OnAddProject.InvokeAsync(NewProject);
 
