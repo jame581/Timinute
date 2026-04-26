@@ -5,45 +5,70 @@
 @inject Radzen.DialogService DialogService
 @using System.Net.Http.Json
 @using Radzen
-@using Radzen.Blazor
 @using Timinute.Client.Helpers
 @using Timinute.Shared.Dtos.Trash
 
-<h1>Trash</h1>
+<PageTitle>Trash</PageTitle>
 
-<p>Items here are permanently deleted after 30 days.</p>
+<div class="aurora-trash-page">
+    <div class="aurora-trash-info">
+        Items here are permanently deleted after 30 days.
+    </div>
 
-<h3>Deleted Projects</h3>
-<RadzenDataGrid Data="@deletedProjects" TItem="TrashItemDto" EmptyText="No deleted projects.">
-    <Columns>
-        <RadzenDataGridColumn TItem="TrashItemDto" Property="Name" Title="Name" />
-        <RadzenDataGridColumn TItem="TrashItemDto" Property="DeletedAt" Title="Deleted on" FormatString="{0:g}" />
-        <RadzenDataGridColumn TItem="TrashItemDto" Property="DaysRemaining" Title="Days remaining" />
-        <RadzenDataGridColumn TItem="TrashItemDto" Title="Actions" Sortable="false" Filterable="false">
-            <Template Context="item">
-                <RadzenButton Text="Restore" Size="ButtonSize.Small" Class="m-1" Click="@(async () => await RestoreProject(item.Id))" />
-                <RadzenButton Text="Delete Permanently" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Class="m-1"
-                              Click="@(async () => await PurgeProject(item))" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+    <div class="aurora-trash-section">
+        <div class="aurora-trash-section__title">Deleted Projects</div>
+        <AuroraCard NoPad="true">
+            @if (deletedProjects.Count == 0)
+            {
+                <div class="aurora-trash-empty">No deleted projects.</div>
+            }
+            else
+            {
+                @foreach (var item in deletedProjects)
+                {
+                    <div class="aurora-trash-row">
+                        <div class="aurora-trash-row__name">@item.Name</div>
+                        <div class="aurora-trash-row__date aurora-mono">@item.DeletedAt.LocalDateTime.ToString("MMM d, HH:mm")</div>
+                        <div class="aurora-trash-row__remaining">
+                            <span class="aurora-trash-pill @(item.DaysRemaining <= 7 ? "is-warn" : "")">@item.DaysRemaining day@(item.DaysRemaining == 1 ? "" : "s") left</span>
+                        </div>
+                        <div class="aurora-trash-row__actions">
+                            <AuroraButton Variant="ghost" OnClick="@(async () => await RestoreProject(item.Id))">Restore</AuroraButton>
+                            <AuroraButton Variant="ghost" Class="aurora-trash-row__danger" OnClick="@(async () => await PurgeProject(item))">Delete permanently</AuroraButton>
+                        </div>
+                    </div>
+                }
+            }
+        </AuroraCard>
+    </div>
 
-<h3 style="margin-top: 2rem;">Deleted Tasks</h3>
-<RadzenDataGrid Data="@deletedTasks" TItem="TrashItemDto" EmptyText="No deleted tasks.">
-    <Columns>
-        <RadzenDataGridColumn TItem="TrashItemDto" Property="Name" Title="Name" />
-        <RadzenDataGridColumn TItem="TrashItemDto" Property="DeletedAt" Title="Deleted on" FormatString="{0:g}" />
-        <RadzenDataGridColumn TItem="TrashItemDto" Property="DaysRemaining" Title="Days remaining" />
-        <RadzenDataGridColumn TItem="TrashItemDto" Title="Actions" Sortable="false" Filterable="false">
-            <Template Context="item">
-                <RadzenButton Text="Restore" Size="ButtonSize.Small" Class="m-1" Click="@(async () => await RestoreTask(item.Id))" />
-                <RadzenButton Text="Delete Permanently" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Class="m-1"
-                              Click="@(async () => await PurgeTask(item))" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+    <div class="aurora-trash-section">
+        <div class="aurora-trash-section__title">Deleted Tasks</div>
+        <AuroraCard NoPad="true">
+            @if (deletedTasks.Count == 0)
+            {
+                <div class="aurora-trash-empty">No deleted tasks.</div>
+            }
+            else
+            {
+                @foreach (var item in deletedTasks)
+                {
+                    <div class="aurora-trash-row">
+                        <div class="aurora-trash-row__name">@item.Name</div>
+                        <div class="aurora-trash-row__date aurora-mono">@item.DeletedAt.LocalDateTime.ToString("MMM d, HH:mm")</div>
+                        <div class="aurora-trash-row__remaining">
+                            <span class="aurora-trash-pill @(item.DaysRemaining <= 7 ? "is-warn" : "")">@item.DaysRemaining day@(item.DaysRemaining == 1 ? "" : "s") left</span>
+                        </div>
+                        <div class="aurora-trash-row__actions">
+                            <AuroraButton Variant="ghost" OnClick="@(async () => await RestoreTask(item.Id))">Restore</AuroraButton>
+                            <AuroraButton Variant="ghost" Class="aurora-trash-row__danger" OnClick="@(async () => await PurgeTask(item))">Delete permanently</AuroraButton>
+                        </div>
+                    </div>
+                }
+            }
+        </AuroraCard>
+    </div>
+</div>
 
 @code {
     private List<TrashItemDto> deletedProjects = new();
@@ -55,8 +80,16 @@
 
     private async Task Refresh()
     {
-        deletedProjects = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.Project.Trash) ?? new();
-        deletedTasks = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.TrackedTask.Trash) ?? new();
+        try
+        {
+            deletedProjects = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.Project.Trash) ?? new();
+            deletedTasks = await Http.GetFromJsonAsync<List<TrashItemDto>>(Constants.API.TrackedTask.Trash) ?? new();
+        }
+        catch
+        {
+            deletedProjects = new();
+            deletedTasks = new();
+        }
     }
 
     private async Task RestoreProject(string id)
