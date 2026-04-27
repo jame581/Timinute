@@ -1,0 +1,176 @@
+@using Timinute.Shared.Dtos.TrackedTask
+@implements IDisposable
+@inject Timinute.Client.Services.ProjectColorService ColorService
+
+@code {
+    [Parameter] public DateTime WeekStart { get; set; }
+    [Parameter] public IList<TrackedTaskDto> Tasks { get; set; } = new List<TrackedTaskDto>();
+    [Parameter] public EventCallback<DateTime> OnEmptyClick { get; set; }
+    [Parameter] public EventCallback<TrackedTaskDto> OnEventClick { get; set; }
+
+    private System.Timers.Timer? nowTimer;
+    private DateTime SelectedDay;
+
+    private const int RowHeight = 52;
+    private const int FirstHour = 8;
+    private const int LastHour = 18;
+    private const int Slots = LastHour - FirstHour + 1;
+
+    private DateTime[] DayDates =>
+        Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).ToArray();
+
+    protected override void OnInitialized()
+    {
+        nowTimer = new System.Timers.Timer(60_000) { AutoReset = true };
+        nowTimer.Elapsed += async (_, _) => await InvokeAsync(StateHasChanged);
+        nowTimer.Start();
+    }
+
+    protected override void OnParametersSet()
+    {
+        // If the host hands us a new week, default the selection to today when in range,
+        // otherwise the first day of that week.
+        if (SelectedDay == default || SelectedDay < WeekStart || SelectedDay >= WeekStart.AddDays(7))
+        {
+            SelectedDay = (DateTime.Today >= WeekStart && DateTime.Today < WeekStart.AddDays(7))
+                ? DateTime.Today
+                : WeekStart;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (nowTimer is not null)
+        {
+            nowTimer.Stop();
+            nowTimer.Dispose();
+            nowTimer = null;
+        }
+    }
+
+    private List<TrackedTaskDto> SelectedDayTasks =>
+        Tasks.Where(t => t.StartDate.LocalDateTime.Date == SelectedDay.Date)
+             .OrderBy(t => t.StartDate)
+             .ToList();
+
+    private double SelectedDayHours =>
+        SelectedDayTasks.Sum(t => t.Duration.TotalHours);
+
+    private bool SelectedIsToday => SelectedDay.Date == DateTime.Today;
+
+    private double NowOffsetPx
+    {
+        get
+        {
+            var now = DateTime.Now;
+            var hourOffset = (now.Hour - FirstHour) + (now.Minute / 60.0);
+            return System.Math.Clamp(hourOffset * RowHeight, 0, Slots * RowHeight);
+        }
+    }
+
+    private (double topPx, double heightPx) PositionFor(TrackedTaskDto t)
+    {
+        var start = t.StartDate.LocalDateTime;
+        var end = (t.EndDate ?? t.StartDate + t.Duration).LocalDateTime;
+
+        var startHour = (start.Hour - FirstHour) + (start.Minute / 60.0);
+        var hours = (end - start).TotalHours;
+
+        var topClamped = System.Math.Max(0, startHour * RowHeight);
+        var endClamped = System.Math.Min(Slots * RowHeight, (startHour + hours) * RowHeight);
+        var height = System.Math.Max(28, endClamped - topClamped);
+
+        return (topClamped, height);
+    }
+
+    private string FormatRange(TrackedTaskDto t)
+    {
+        var end = (t.EndDate ?? t.StartDate + t.Duration).LocalDateTime;
+        return $"{t.StartDate.LocalDateTime:HH:mm} → {end:HH:mm}";
+    }
+
+    private string SelectedDayLabel
+    {
+        get
+        {
+            if (SelectedDay.Date == DateTime.Today) return $"Today, {SelectedDay:MMM d}";
+            if (SelectedDay.Date == DateTime.Today.AddDays(-1)) return $"Yesterday, {SelectedDay:MMM d}";
+            if (SelectedDay.Date == DateTime.Today.AddDays(1)) return $"Tomorrow, {SelectedDay:MMM d}";
+            return SelectedDay.ToString("dddd, MMM d", System.Globalization.CultureInfo.InvariantCulture);
+        }
+    }
+}
+
+<div class="dcal">
+    <!-- Week strip -->
+    <div class="dcal__strip">
+        @foreach (var d in DayDates)
+        {
+            var isSelected = d.Date == SelectedDay.Date;
+            <button type="button"
+                    class="dcal__strip-day @(isSelected ? "is-selected" : "")"
+                    @onclick="() => SelectedDay = d.Date">
+                <span class="dcal__strip-eyebrow">@d.ToString("ddd", System.Globalization.CultureInfo.InvariantCulture).ToUpperInvariant()</span>
+                <span class="dcal__strip-num">@d.Day</span>
+            </button>
+        }
+    </div>
+
+    <!-- Day header -->
+    <div class="dcal__header">
+        <div class="dcal__header-meta">
+            <div class="dcal__header-label">@SelectedDayLabel</div>
+            <div class="dcal__header-sub">@SelectedDayTasks.Count task@(SelectedDayTasks.Count == 1 ? "" : "s") · @SelectedDayHours.ToString("0.#")h</div>
+        </div>
+        <div class="dcal__segmented">
+            <button class="dcal__segmented-btn is-active" type="button">Day</button>
+            <button class="dcal__segmented-btn" type="button" disabled title="Coming soon">Week</button>
+            <button class="dcal__segmented-btn" type="button" disabled title="Coming soon">Month</button>
+        </div>
+    </div>
+
+    <!-- Day grid -->
+    <div class="dcal__grid" style="height: @(Slots * RowHeight)px;">
+        <!-- Hours column -->
+        <div class="dcal__hours">
+            @for (int i = 0; i < Slots; i++)
+            {
+                var hour = FirstHour + i;
+                <div class="dcal__hour" style="height: @(RowHeight)px;">@($"{hour}:00")</div>
+            }
+        </div>
+
+        <!-- Events column -->
+        <div class="dcal__events">
+            @for (int i = 0; i < Slots; i++)
+            {
+                var hour = FirstHour + i;
+                <div class="dcal__cell" style="height: @(RowHeight)px;"
+                     @onclick="() => OnEmptyClick.InvokeAsync(SelectedDay.Date.AddHours(hour))"></div>
+            }
+
+            @if (SelectedIsToday)
+            {
+                <div class="dcal__now-line" style="top: @(NowOffsetPx.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))px;">
+                    <div class="dcal__now-dot"></div>
+                </div>
+            }
+
+            @foreach (var t in SelectedDayTasks)
+            {
+                var (top, height) = PositionFor(t);
+                var color = ColorService.GetColor(t.Project);
+                var style = $"top: {top.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}px; " +
+                            $"height: {height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}px; " +
+                            $"background: color-mix(in srgb, {color} 13%, transparent); " +
+                            $"border-left: 3px solid {color};";
+                <div class="dcal__event" style="@style"
+                     @onclick="() => OnEventClick.InvokeAsync(t)"
+                     @onclick:stopPropagation="true">
+                    <div class="dcal__event-title">@t.Name</div>
+                    <div class="dcal__event-range aurora-mono">@FormatRange(t)</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,204 @@
+.dcal {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-family: var(--font-sans);
+    color: var(--text);
+}
+
+/* Week strip */
+.dcal__strip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 8px;
+    box-shadow: var(--shadow-card);
+}
+
+.dcal__strip-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dcal__strip-day:hover {
+    background: var(--surface-2);
+}
+
+.dcal__strip-day.is-selected {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.dcal__strip-day.is-selected .dcal__strip-eyebrow,
+.dcal__strip-day.is-selected .dcal__strip-num {
+    color: #fff;
+}
+
+.dcal__strip-eyebrow {
+    font: 500 10px var(--font-sans);
+    color: var(--text-mu);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.dcal__strip-num {
+    font: 600 17px var(--font-sans);
+    color: var(--text);
+    line-height: 1;
+}
+
+/* Day header */
+.dcal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 4px;
+}
+
+.dcal__header-label {
+    font: 500 14px var(--font-sans);
+    color: var(--text);
+}
+
+.dcal__header-sub {
+    font: 400 12px var(--font-sans);
+    color: var(--text-mu);
+    margin-top: 2px;
+}
+
+.dcal__segmented {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+}
+
+.dcal__segmented-btn {
+    background: transparent;
+    border: none;
+    padding: 5px 10px;
+    font: 500 12px var(--font-sans);
+    color: var(--text-mu);
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.dcal__segmented-btn:hover:not(:disabled):not(.is-active) {
+    color: var(--text);
+}
+
+.dcal__segmented-btn:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+}
+
+.dcal__segmented-btn.is-active {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* Day grid */
+.dcal__grid {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.dcal__hours {
+    border-right: 1px solid var(--border);
+}
+
+.dcal__hour {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 4px 8px 0 0;
+    font: 400 10px var(--font-mono);
+    color: var(--text-mu);
+    box-sizing: border-box;
+}
+
+.dcal__events {
+    position: relative;
+}
+
+.dcal__cell {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.dcal__cell:hover {
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.dcal__now-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--danger);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.dcal__now-dot {
+    position: absolute;
+    left: -5px;
+    top: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--danger);
+}
+
+.dcal__event {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 3;
+    overflow: hidden;
+    transition: filter .15s ease;
+}
+
+.dcal__event:hover {
+    filter: brightness(.97);
+}
+
+.dcal__event-title {
+    font: 500 11.5px var(--font-sans);
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dcal__event-range {
+    font-size: 10px;
+    color: var(--text-mu);
+    margin-top: 2px;
+}
