@@ -1,5 +1,7 @@
 # UTC Normalization: DateTime → DateTimeOffset Implementation Plan
 
+> **Status:** ✅ Shipped — merged via PR #28 on 2026-04-01. All `TrackedTask` date columns and DTO properties use `DateTimeOffset`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Migrate all date/time handling from `DateTime` to `DateTimeOffset` to eliminate timezone ambiguity.

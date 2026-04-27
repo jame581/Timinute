@@ -1,5 +1,7 @@
 # Advanced Filtering Implementation Plan
 
+> **Status:** ✅ Shipped — merged via PR #30 on 2026-04-01. `[HttpGet("search")]` endpoints exist on both `TrackedTaskController` and `ProjectController` with date-range, project, name, and task-count filters.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add search/filter endpoints for tracked tasks and projects with date range, project, name search, and task count filters.

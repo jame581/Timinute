@@ -1,5 +1,7 @@
 # P0: Data Validation & Authorization Fixes — Implementation Plan
 
+> **Status:** ✅ Shipped — merged via PR #26 on 2026-04-01. `MinDurationAttribute` lives at `Timinute/Shared/Validators/MinDurationAttribute.cs`; ownership checks and DTO Data Annotations are in place across both controllers.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fix authorization gaps on GET endpoints and add input validation to all create/update DTOs.

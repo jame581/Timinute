@@ -1,5 +1,7 @@
 # Timinute Modernization Plan
 
+> **Status:** ✅ Shipped — merged via PR #25 on 2026-04-01. Phase 1 (.NET 10 upgrade + Duende IdentityServer migration) is in `develop`. Phases 2 (UI redesign) and beyond evolved into the Aurora redesign tracked under separate specs in `docs/superpowers/specs/2026-04-26-*` and `2026-04-27-*`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Upgrade Timinute from .NET 8 to .NET 10, update all packages, verify functionality, expand test coverage, redesign UI, and plan new features.

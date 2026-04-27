@@ -1,5 +1,7 @@
 # Data Export Implementation Plan
 
+> **Status:** ✅ Shipped — merged via PR #27 on 2026-04-01. `Timinute/Server/Controllers/ExportController.cs` exposes CSV + Excel endpoints for tasks, project summaries, and monthly analytics.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add CSV and Excel export endpoints for tracked tasks, project summaries, and monthly analytics.
