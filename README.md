@@ -18,6 +18,29 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 - **Mobile responsive** — bottom glass tab bar with FAB, slide-up overflow sheet, full reflow at ≤768px.
 - **Accessibility** — `prefers-reduced-motion` honored, `aria-current` on active nav, focus-visible outlines, modal sheet semantics.
 
+## Screenshots
+
+### Landing
+![Landing page](screenshots/landing_page_screenshot.jpeg)
+
+### Login
+![Login page](screenshots/login_page_screenshot.jpeg)
+
+### Dashboard
+![Dashboard](screenshots/dashboard_page_screenshot.jpeg)
+
+### Time tracker
+![Time tracker](screenshots/timetracker_page_screenshot.jpeg)
+
+### Tracked tasks
+![Tracked tasks](screenshots/trackedtask_page_screenshot.jpeg)
+
+### Calendar
+![Calendar](screenshots/calendar_page_screenshot.jpeg)
+
+### Projects
+![Projects](screenshots/project_page_screenshot.jpeg)
+
 ## Tech stack
 
 .NET 10 · Blazor WebAssembly (hosted) · EF Core 10 · SQL Server · Duende IdentityServer · Radzen.Blazor (dialogs/notifications only — design system is custom Aurora) · xUnit + Moq + EF InMemory.
