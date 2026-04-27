@@ -91,18 +91,28 @@
     {
         if (!firstRender) return;
 
-        // Decorative timer; respect prefers-reduced-motion. Default to "on"
-        // if the JS check fails for any reason — the previous behavior.
+        // Decorative timer; respect prefers-reduced-motion. CSP-friendly module
+        // import instead of eval(). Default to "off" (no timer) if the import
+        // fails for any reason — same conservative path as before.
         bool reducedMotion = false;
+        IJSObjectReference? module = null;
         try
         {
-            reducedMotion = await JS.InvokeAsync<bool>(
-                "eval",
-                "window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches");
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/viewport.js");
+            reducedMotion = await module.InvokeAsync<bool>("prefersReducedMotion");
         }
         catch
         {
             reducedMotion = false;
+        }
+        finally
+        {
+            if (module is not null)
+            {
+                try { await module.DisposeAsync(); }
+                catch (Microsoft.JSInterop.JSDisconnectedException) { }
+                catch (Microsoft.JSInterop.JSException) { }
+            }
         }
 
         if (reducedMotion || disposed) return;

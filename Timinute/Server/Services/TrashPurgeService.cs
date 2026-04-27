@@ -18,8 +18,11 @@ namespace Timinute.Server.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var intervalHours = configuration.GetValue<int>("TrashRetention:PurgeIntervalHours", 24);
-            var timer = new PeriodicTimer(TimeSpan.FromHours(intervalHours));
+            // PeriodicTimer requires a strictly positive period — clamp to ≥ 1 hour
+            // so a misconfigured 0/negative TrashRetention:PurgeIntervalHours doesn't
+            // crash the hosted service on startup.
+            var intervalHours = Math.Max(1, configuration.GetValue<int>("TrashRetention:PurgeIntervalHours", 24));
+            using var timer = new PeriodicTimer(TimeSpan.FromHours(intervalHours));
 
             await RunOnce(stoppingToken);
 

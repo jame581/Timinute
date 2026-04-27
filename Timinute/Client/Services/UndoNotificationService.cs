@@ -5,10 +5,12 @@ namespace Timinute.Client.Services
     public class UndoNotificationService
     {
         private readonly NotificationService notificationService;
+        private readonly ILogger<UndoNotificationService> logger;
 
-        public UndoNotificationService(NotificationService notificationService)
+        public UndoNotificationService(NotificationService notificationService, ILogger<UndoNotificationService> logger)
         {
             this.notificationService = notificationService;
+            this.logger = logger;
         }
 
         public void ShowUndo(string entityLabel, string entityName, Func<Task> onUndo)
@@ -33,11 +35,15 @@ namespace Timinute.Client.Services
                     }
                     catch (Exception ex)
                     {
+                        // Don't surface raw exception messages — they can leak internal
+                        // details (URLs, server-side error strings). Log the actual
+                        // exception for diagnostics, show a friendly summary to the user.
+                        logger.LogError(ex, "Undo restore failed for {EntityLabel} '{EntityName}'", entityLabel, entityName);
                         notificationService.Notify(new NotificationMessage
                         {
                             Severity = NotificationSeverity.Error,
                             Summary = "Restore failed",
-                            Detail = ex.Message,
+                            Detail = $"The {entityLabel.ToLowerInvariant()} could not be restored. Please try again.",
                             Duration = 5000
                         });
                     }

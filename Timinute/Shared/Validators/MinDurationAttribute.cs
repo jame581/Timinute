@@ -10,6 +10,13 @@ namespace Timinute.Shared.Validators
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
+            // Treat null as valid here — let [Required] be the single source of "missing
+            // value" errors. Otherwise a null nullable duration surfaces both messages.
+            if (value is null)
+            {
+                return ValidationResult.Success;
+            }
+
             if (value is not TimeSpan duration)
             {
                 return new ValidationResult("A valid duration is required.");

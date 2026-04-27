@@ -189,7 +189,7 @@ namespace Timinute.Server.Controllers
             projectToDelete.DeletedAt = deletedAt;
             await projectRepository.Update(projectToDelete);
 
-            logger.LogInformation($"Project with Id {projectToDelete.ProjectId} soft-deleted along with {activeChildTasks.Count} tasks.");
+            logger.LogInformation("Project with Id {ProjectId} soft-deleted along with {TaskCount} tasks.", projectToDelete.ProjectId, activeChildTasks.Count);
             return NoContent();
         }
 
@@ -222,7 +222,7 @@ namespace Timinute.Server.Controllers
 
             await projectRepository.Restore(id);
 
-            logger.LogInformation($"Project with Id {id} restored along with {siblingTasks.Count} tasks.");
+            logger.LogInformation("Project with Id {ProjectId} restored along with {TaskCount} tasks.", id, siblingTasks.Count);
             return NoContent();
         }
 
@@ -272,7 +272,7 @@ namespace Timinute.Server.Controllers
 
             await projectRepository.Delete(id);
 
-            logger.LogInformation($"Project with Id {id} was purged.");
+            logger.LogInformation("Project with Id {ProjectId} was purged.", id);
             return NoContent();
         }
 

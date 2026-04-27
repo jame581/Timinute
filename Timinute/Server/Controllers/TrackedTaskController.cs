@@ -170,7 +170,7 @@ namespace Timinute.Server.Controllers
 
             await taskRepository.SoftDelete(id);
 
-            logger.LogInformation($"Tracked task with Id {id} was soft-deleted.");
+            logger.LogInformation("Tracked task with Id {TaskId} was soft-deleted.", id);
             return NoContent();
 
         }
@@ -194,7 +194,7 @@ namespace Timinute.Server.Controllers
 
             await taskRepository.Restore(id);
 
-            logger.LogInformation($"Tracked task with Id {id} was restored.");
+            logger.LogInformation("Tracked task with Id {TaskId} was restored.", id);
             return NoContent();
         }
 
@@ -244,7 +244,7 @@ namespace Timinute.Server.Controllers
 
             await taskRepository.Delete(id);
 
-            logger.LogInformation($"Tracked task with Id {id} was purged.");
+            logger.LogInformation("Tracked task with Id {TaskId} was purged.", id);
             return NoContent();
         }
 

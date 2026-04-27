@@ -31,3 +31,10 @@ export function unregister() {
     }
     dotnetRef = null;
 }
+
+// One-shot check used by components that gate decorative animations
+// behind the user's reduced-motion preference. CSP-friendly alternative
+// to JS.InvokeAsync<bool>("eval", ...).
+export function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
