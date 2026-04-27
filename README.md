@@ -78,6 +78,40 @@ Seeded test users (passwords are intentionally trivial — local dev only):
 | test2@email.com | Basic |
 | test3@email.com | Basic |
 
+## Production deployment
+
+The defaults in `appsettings.json` are tuned for local development on `https://localhost:7047`. For any non-local deployment you'll want to override at least these three:
+
+**1. IdentityServer authority** — JWT issuer + OIDC discovery endpoint. If left at the localhost default, tokens issued by your deployed instance will be rejected at validation. Override via env var:
+
+```bash
+IdentityServer__Authority=https://timinute.example.com
+```
+
+…or in `appsettings.Production.json`:
+
+```json
+{
+  "IdentityServer": { "Authority": "https://timinute.example.com" }
+}
+```
+
+**2. Connection string** — `appsettings.json` ships with the local Docker SA password so `dotnet run` works out of the box. Override for production:
+
+```bash
+ConnectionStrings__DefaultConnection="Server=...;Database=Timinute;User Id=...;Password=...;TrustServerCertificate=True;Encrypt=True"
+```
+
+**3. Persistent `/keys` directory** — Duende IdentityServer uses automatic key management in production and writes rotating signing keys to `/keys`. On ephemeral hosts (Docker without a volume mount, App Service slot swaps, scaled-out replicas) this directory disappears or differs per instance, which invalidates JWTs after restart and breaks load balancing. Mount a persistent volume at the container's `/keys` (or override the path via `IdentityServer:KeyManagement:KeyPath` if your hosting prefers a different location).
+
+For Docker:
+
+```bash
+docker run -v timinute-keys:/keys ...
+```
+
+> **v2.0 migration note:** the migration from IdentityServer4 to Duende dropped the IS4-era `DeviceCodes` / `Keys` / `PersistedGrants` tables. If you're upgrading a database that contained any IS4 grant data, that data is lost — log all users out and have them re-authenticate post-deploy.
+
 ## Project layout
 
 ```

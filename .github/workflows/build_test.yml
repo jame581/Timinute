@@ -1,0 +1,29 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Timinute.sln
+
+      - name: Build
+        run: dotnet build Timinute.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Timinute.sln --configuration Release --no-build --verbosity normal
