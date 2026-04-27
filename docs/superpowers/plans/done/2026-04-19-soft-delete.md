@@ -1,5 +1,7 @@
 # Soft Delete Implementation Plan
 
+> **Status:** ✅ Shipped — merged into `develop` via `feature/soft-delete` on 2026-04-20 (merge commit `271ffd7`). `DeletedAt` column + EF global query filter, repository methods, cascade on Project delete, Trash page with undo toast, and `TrashPurgeService` background hard-purger are all live.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make `DELETE` on Project and TrackedTask recoverable for 30 days via a `DeletedAt` timestamp + EF global query filter, with cascade on Project delete, a Trash page + undo toast in the Blazor client, and a background service that hard-purges expired rows.

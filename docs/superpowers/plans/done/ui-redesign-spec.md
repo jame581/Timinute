@@ -1,5 +1,12 @@
 # Timinute UI Redesign Specification
 
+> **Status:** ⚠️ Superseded — this early scoping doc was replaced by the Aurora redesign specs and is preserved here for historical context only. The actual implemented design is documented across:
+> - `docs/superpowers/specs/2026-04-26-aurora-redesign-design.md` — phase 1 (in-app shell + 5 screens + Profile + Trash)
+> - `docs/superpowers/specs/2026-04-26-aurora-landing-design.md` — phase 2 (landing page)
+> - `docs/superpowers/specs/2026-04-27-aurora-mobile-design.md` — mobile responsive treatment
+>
+> Aurora shipped via PRs #31 / #32 / #33 / #34 / #35 between 2026-04-26 and 2026-04-27.
+
 ## Current State Summary
 
 - Blazor WASM with Radzen 10.x + Bootstrap 5
