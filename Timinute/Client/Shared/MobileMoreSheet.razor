@@ -1,1 +1,74 @@
-@* Stub — full implementation lands in step 5. Keeps MainLayout's reference compilable. *@
+@implements IDisposable
+@inject Timinute.Client.Services.MobileSheetService Sheet
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
+
+@if (Sheet.IsOpen)
+{
+    <div class="mms__backdrop" @onclick="Close"></div>
+    <aside class="mms" role="dialog" aria-label="More navigation">
+        <div class="mms__handle" aria-hidden="true"></div>
+
+        @foreach (var item in Items)
+        {
+            <button type="button" class="mms__row" @onclick="@(() => Go(item.Href))">
+                <span class="mms__icon">
+                    <AuroraIcons Name="@item.Icon" Size="20" />
+                </span>
+                <span class="mms__label">@item.Label</span>
+                <span class="mms__chevron" aria-hidden="true">
+                    <AuroraIcons Name="arrowR" Size="16" />
+                </span>
+            </button>
+        }
+
+        <button type="button" class="mms__row mms__row--danger" @onclick="LogOut">
+            <span class="mms__icon">
+                <AuroraIcons Name="arrowR" Size="20" />
+            </span>
+            <span class="mms__label">Log out</span>
+            <span class="mms__chevron" aria-hidden="true"></span>
+        </button>
+    </aside>
+}
+
+@code {
+    private record SheetItem(string Label, string Href, string Icon);
+
+    private static readonly SheetItem[] Items =
+    {
+        new("Profile",  "profile",   "user"),
+        new("Calendar", "scheduler", "calendar"),
+        new("Trash",    "trash",     "trash"),
+    };
+
+    protected override void OnInitialized()
+    {
+        Sheet.OnChange += OnChange;
+    }
+
+    private void OnChange()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Close() => Sheet.Hide();
+
+    private void Go(string href)
+    {
+        Sheet.Hide();
+        Navigation.NavigateTo(href);
+    }
+
+    private async Task LogOut()
+    {
+        Sheet.Hide();
+        await SignOutManager.SetSignOutState();
+        Navigation.NavigateTo("authentication/logout");
+    }
+
+    public void Dispose()
+    {
+        Sheet.OnChange -= OnChange;
+    }
+}
