@@ -92,8 +92,33 @@ Status reviewed 2026-04-27.
 
 ---
 
+## v2.0.1 patch list
+
+Small follow-ups carried out of PR-review threads on the Aurora redesign + the v2.0 rollup (PRs #31–#37). Each is small enough to batch into a single patch release; bigger items moved into P1 below.
+
+| Item | Source | Notes |
+|------|--------|-------|
+| Drop `maximum-scale=1.0, user-scalable=no` from `index.html` viewport meta | PR #37 release review M-5 | WCAG 1.4.4 (Resize text) regression. Predates the rollup but is now visible. One-line fix. |
+| Remove `CLAUDE.md` from repo | PR #37 release review M-4 | User preference (per `feedback_git_workflow.md`) was not to commit it. `git rm` + add to `.gitignore`. |
+| README copy: split "Search + filter + export" bullet between two endpoints | PR #37 release review M-7 | Currently conflates `TrackedTask/search` (date range / project / name / task-count) with `Project/search` (name / min-task-count). Two-line edit. |
+| `AddProject.razor.cs`: consume `ProjectColorService.GetPalette()` instead of duplicating the 5-color array | PR #37 Copilot review | Centralization win — the palette already lives in `aurora.css` (`--cat-*`), `ProjectColorService.Palette`, and `ProjectController.ProjectPalette`. AddProject is the fourth source. Inject the service, drop the field. |
+| `BaseRepository.GetDeleted` / `PurgeExpired`: guard against non-`ISoftDeletable` `TEntity` | PR #37 Copilot review | Currently the reflection-built expression would throw an obscure runtime error if `IRepository<T>` is ever resolved for a non-soft-deletable type. No current caller reaches this (only `Project` and `TrackedTask` flow through), but a `typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity))` check at the top with a descriptive `InvalidOperationException` is cheap future-proofing. |
+| Migration note for UTC preservation on `DateTime → DateTimeOffset` | PR #37 release review M-1 | `MigrateDateTimeToDateTimeOffset` relies on SQL Server's implicit conversion of `datetime2` → `datetimeoffset`, which interprets values as server-local + offset 00:00. Add a comment in the migration file (and a release-notes line) clarifying that pre-v2.0 timestamps are preserved as-stored, not normalized. |
+| Real GitHub star count on the landing | Aurora deferred + #37 M-6 | Hardcoded `1.2k` in `LandingHero.razor`. Replace with a fetch from the GitHub API + localStorage cache, fallback to "1.2k" on error. ~1 hour. |
+
+## P1 follow-ups raised by reviews (added since the v2.0 ship)
+
+These are new entries (or refinements of existing ones) that came out of v2.0-rollup reviews and warrant their own roadmap line, separate from the patch list above.
+
+| Feature | Description | Complexity | Source |
+|---------|-------------|------------|--------|
+| `StartDate` DTO contract: `DateTimeOffset?` → `DateTimeOffset` | `[Required]` on a nullable struct generates ambiguous OpenAPI / client-generator output. Either drop `[Required]` and document partial-update semantics, or make the field non-nullable and rely on the controller-level `EndDate > StartDate` check for presence. Affects `CreateTrackedTaskDto` and `UpdateTrackedTaskDto`. Breaking change for any external consumer of the API. | S | PR #37 Copilot review |
+| `UserController.GetMe` server-side aggregation | Currently pulls all of a user's tasks + projects into memory to compute totals/counts. Add `CountAsync(filter)` + `SumAsync(filter, selector)` to `IRepository<T>` (or expose `IQueryable`) and use them. Scales to users with thousands of tasks. | M | PR #37 Copilot review |
+| Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. | — | PR #37 release review M-3 (process, not code) |
+
 ## How this doc is maintained
 
 - New features start as a spec in `docs/superpowers/specs/`, optionally with an implementation plan in `docs/superpowers/plans/`.
 - When a plan lands, move it to `docs/superpowers/plans/done/` and prepend a `Status:` block at the top with the merging PR + date.
-- Update this roadmap (P1/P2 tables + Tech-debt) in the same PR that completes a feature, so the file always reflects what's currently in `develop`.
+- Update this roadmap (P1/P2 tables + Tech-debt + v2.0.1 patch list) in the same PR that completes a feature, so the file always reflects what's currently in `develop`.
+- When the v2.0.1 patch list is shipped, delete the section.
