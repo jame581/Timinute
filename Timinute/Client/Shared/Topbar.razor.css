@@ -103,3 +103,49 @@
 .aurora-quick-add:active {
     transform: scale(.97);
 }
+
+/* Mobile-only avatar trigger that opens MobileMoreSheet. Rendered only
+   when IsMobile is true (markup gates this with @if). */
+.aurora-topbar__avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), #9D7CFF);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font: 600 13px var(--font-sans);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+    -webkit-tap-highlight-color: transparent;
+    transition: filter .15s ease, transform .08s ease;
+}
+
+.aurora-topbar__avatar:hover {
+    filter: brightness(1.05);
+}
+
+.aurora-topbar__avatar:active {
+    transform: scale(.95);
+}
+
+@media (max-width: 768px) {
+    .aurora-topbar {
+        padding: 6px 20px 14px;
+        gap: 12px;
+    }
+
+    .aurora-topbar__title {
+        font-size: 22px;
+        letter-spacing: -0.6px;
+    }
+
+    .aurora-topbar__subtitle {
+        font-size: 12.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

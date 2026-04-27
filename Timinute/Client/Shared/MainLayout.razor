@@ -11,12 +11,20 @@
     <AuthorizeView>
         <Authorized>
             <div class="aurora-app @(Viewport.IsMobile ? "is-mobile" : "")">
-                <NavMenu />
+                @if (!Viewport.IsMobile)
+                {
+                    <NavMenu />
+                }
                 <main class="aurora-main">
                     <Topbar />
                     <article class="aurora-content">
                         @Body
                     </article>
+                    @if (Viewport.IsMobile)
+                    {
+                        <MobileTabBar />
+                        <MobileMoreSheet />
+                    }
                 </main>
             </div>
         </Authorized>

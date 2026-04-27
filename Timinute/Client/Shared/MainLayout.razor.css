@@ -11,8 +11,20 @@
     flex-direction: column;
     overflow: auto;
     min-width: 0;
+    position: relative;
 }
 
 .aurora-content {
     flex: 1;
+}
+
+/* Mobile shell — sidebar is removed entirely (gated in markup), tab bar
+   sits absolutely at the bottom of .aurora-main, content gets a tail
+   padding so the last list row doesn't hide under the bar. */
+.aurora-app.is-mobile {
+    height: 100dvh;
+}
+
+.aurora-app.is-mobile .aurora-content {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
 }
