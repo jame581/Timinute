@@ -17,184 +17,10 @@ namespace Timinute.Server.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.2")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
-
-            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.DeviceFlowCodes", b =>
-                {
-                    b.Property<string>("UserCode")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("ClientId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .HasMaxLength(50000)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("DeviceCode")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("Expiration")
-                        .IsRequired()
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SessionId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("SubjectId")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("UserCode");
-
-                    b.HasIndex("DeviceCode")
-                        .IsUnique();
-
-                    b.HasIndex("Expiration");
-
-                    b.ToTable("DeviceCodes", (string)null);
-                });
-
-            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.Key", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Algorithm")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("DataProtected")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsX509Certificate")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Use")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Use");
-
-                    b.ToTable("Keys");
-                });
-
-            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.PersistedGrant", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("ClientId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("ConsumedTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .HasMaxLength(50000)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("Expiration")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SessionId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("SubjectId")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Key");
-
-                    b.HasIndex("ConsumedTime");
-
-                    b.HasIndex("Expiration");
-
-                    b.HasIndex("SubjectId", "ClientId", "Type");
-
-                    b.HasIndex("SubjectId", "SessionId", "Type");
-
-                    b.ToTable("PersistedGrants", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
-
-                    b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityRole");
-                });
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
@@ -202,7 +28,7 @@ namespace Timinute.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -227,7 +53,7 @@ namespace Timinute.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -302,6 +128,55 @@ namespace Timinute.Server.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Timinute.Server.Models.ApplicationRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "b0a2e199-0a21-4158-8586-b1c2e2a1d64c",
+                            ConcurrencyStamp = "e0c194a8-0001-0001-0001-000000000001",
+                            Description = "Basic role with lowest rights.",
+                            Name = "Basic",
+                            NormalizedName = "BASIC"
+                        },
+                        new
+                        {
+                            Id = "f3c1a2d7-4e5b-4f8a-9c6d-1a2b3c4d5e6f",
+                            ConcurrencyStamp = "e0c194a8-0001-0001-0001-000000000002",
+                            Description = "Admin role with highest rights.",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        });
+                });
+
             modelBuilder.Entity("Timinute.Server.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -313,6 +188,9 @@ namespace Timinute.Server.Data.Migrations
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -382,9 +260,10 @@ namespace Timinute.Server.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "e1c0d524-4972-474b-a1da-961cb2aa7afb",
+                            Id = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "f49b7918-1bab-4614-91a1-5509197fa95a",
+                            ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000001",
+                            CreatedAt = new DateTimeOffset(new DateTime(2022, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Email = "test1@email.com",
                             EmailConfirmed = true,
                             FirstName = "Jan",
@@ -392,15 +271,16 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "e9d28d12-0bbc-46e3-98bb-ae00bef5c8ba",
+                            SecurityStamp = "s0c194a8-0001-0001-0001-000000000001",
                             TwoFactorEnabled = false,
                             UserName = "test1@email.com"
                         },
                         new
                         {
-                            Id = "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e",
+                            Id = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "a5da4111-f765-4077-a5b4-3adcf3d7ab03",
+                            ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000002",
+                            CreatedAt = new DateTimeOffset(new DateTime(2022, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Email = "test2@email.com",
                             EmailConfirmed = true,
                             FirstName = "Ivana",
@@ -408,15 +288,16 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "a33513ed-b15f-43ed-8b87-e33286e5b124",
+                            SecurityStamp = "s0c194a8-0001-0001-0001-000000000002",
                             TwoFactorEnabled = false,
                             UserName = "test2@email.com"
                         },
                         new
                         {
-                            Id = "d7053da8-48ca-4efc-8787-cb1fd4df609e",
+                            Id = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "77e9e9b4-3841-4200-805a-e81afd7c84d8",
+                            ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000003",
+                            CreatedAt = new DateTimeOffset(new DateTime(2022, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Email = "test3@email.com",
                             EmailConfirmed = true,
                             FirstName = "Marek",
@@ -424,7 +305,7 @@ namespace Timinute.Server.Data.Migrations
                             LockoutEnabled = false,
                             PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "336e0a2e-5af6-495b-ad1f-fcf11dde9805",
+                            SecurityStamp = "s0c194a8-0001-0001-0001-000000000003",
                             TwoFactorEnabled = false,
                             UserName = "test3@email.com"
                         });
@@ -436,6 +317,13 @@ namespace Timinute.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Color")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -445,6 +333,8 @@ namespace Timinute.Server.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ProjectId");
+
+                    b.HasIndex("DeletedAt");
 
                     b.HasIndex("UserId");
 
@@ -457,11 +347,14 @@ namespace Timinute.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<TimeSpan>("Duration")
                         .HasColumnType("time");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("EndDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -470,14 +363,16 @@ namespace Timinute.Server.Data.Migrations
                     b.Property<string>("ProjectId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("StartDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("TaskId");
+
+                    b.HasIndex("DeletedAt");
 
                     b.HasIndex("ProjectId");
 
@@ -488,101 +383,72 @@ namespace Timinute.Server.Data.Migrations
                     b.HasData(
                         new
                         {
-                            TaskId = "bf5baa4b-d036-4adf-9ff7-c31cb90d983f",
+                            TaskId = "d4e5f6a7-b8c9-4d5e-8f7a-2b3c4d5e6f7a",
                             Duration = new TimeSpan(0, 2, 0, 0, 0),
-                            EndDate = new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project A",
-                            StartDate = new DateTime(2022, 1, 1, 9, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "e1c0d524-4972-474b-a1da-961cb2aa7afb"
+                            StartDate = new DateTimeOffset(new DateTime(2022, 1, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d"
                         },
                         new
                         {
-                            TaskId = "8c671d20-4496-41ec-90b1-5fc3e120c7a7",
+                            TaskId = "e5f6a7b8-c9d0-4e5f-8a7b-3c4d5e6f7a8b",
                             Duration = new TimeSpan(0, 3, 0, 0, 0),
-                            EndDate = new DateTime(2022, 2, 2, 13, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 2, 2, 13, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project B",
-                            StartDate = new DateTime(2022, 2, 2, 10, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "e1c0d524-4972-474b-a1da-961cb2aa7afb"
+                            StartDate = new DateTimeOffset(new DateTime(2022, 2, 2, 10, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d"
                         },
                         new
                         {
-                            TaskId = "da2f0f30-eefe-4862-b64a-7e2e9d7864d0",
+                            TaskId = "f6a7b8c9-d0e1-4f5a-8b7c-4d5e6f7a8b9c",
                             Duration = new TimeSpan(0, 4, 0, 0, 0),
-                            EndDate = new DateTime(2022, 1, 1, 15, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 1, 1, 15, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project C",
-                            StartDate = new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "e1c0d524-4972-474b-a1da-961cb2aa7afb"
+                            StartDate = new DateTimeOffset(new DateTime(2022, 1, 1, 11, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d"
                         },
                         new
                         {
-                            TaskId = "fc9de1d0-b03f-470b-8a8f-475c499879c4",
+                            TaskId = "a7b8c9d0-e1f2-4a5b-8c7d-5e6f7a8b9c0d",
                             Duration = new TimeSpan(0, 5, 0, 0, 0),
-                            EndDate = new DateTime(2022, 2, 2, 17, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 2, 2, 17, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project D",
-                            StartDate = new DateTime(2022, 2, 2, 12, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e"
+                            StartDate = new DateTimeOffset(new DateTime(2022, 2, 2, 12, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e"
                         },
                         new
                         {
-                            TaskId = "67ca51ee-3cc4-4dae-a65f-b136fcbbf228",
+                            TaskId = "b8c9d0e1-f2a3-4b5c-8d7e-6f7a8b9c0d1e",
                             Duration = new TimeSpan(0, 6, 0, 0, 0),
-                            EndDate = new DateTime(2022, 1, 1, 19, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 1, 1, 19, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project E",
-                            StartDate = new DateTime(2022, 1, 1, 13, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "7c88f8e3-8109-4fd7-a4ab-7d0586ec114e"
+                            StartDate = new DateTimeOffset(new DateTime(2022, 1, 1, 13, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e"
                         },
                         new
                         {
-                            TaskId = "87fdea30-c669-4dc3-b9a1-0c33179ca40e",
+                            TaskId = "c9d0e1f2-a3b4-4c5d-8e7f-7a8b9c0d1e2f",
                             Duration = new TimeSpan(0, 7, 0, 0, 0),
-                            EndDate = new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project F",
-                            StartDate = new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "d7053da8-48ca-4efc-8787-cb1fd4df609e"
+                            StartDate = new DateTimeOffset(new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f"
                         },
                         new
                         {
-                            TaskId = "75e5ad7e-2280-43c0-9a0e-61c5730f8ad1",
+                            TaskId = "d0e1f2a3-b4c5-4d5e-8f7a-8b9c0d1e2f3a",
                             Duration = new TimeSpan(0, 7, 0, 0, 0),
-                            EndDate = new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified),
+                            EndDate = new DateTimeOffset(new DateTime(2022, 2, 2, 21, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "Project G",
-                            StartDate = new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = "d7053da8-48ca-4efc-8787-cb1fd4df609e"
-                        });
-                });
-
-            modelBuilder.Entity("Timinute.Server.Models.ApplicationRole", b =>
-                {
-                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityRole");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasDiscriminator().HasValue("ApplicationRole");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "d1db9338-44b6-415a-be29-1493394b939e",
-                            ConcurrencyStamp = "63e8faf0-4100-4ce3-ad3b-73d758f5dc31",
-                            Name = "Basic",
-                            NormalizedName = "BASIC",
-                            Description = "Basic role with lowest rights."
-                        },
-                        new
-                        {
-                            Id = "1dc1392a-cd10-47f4-a25e-768ec5a2fd21",
-                            ConcurrencyStamp = "6b8356a1-68b2-4da4-8234-af799c8aebec",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN",
-                            Description = "Admin role with highest rights."
+                            StartDate = new DateTimeOffset(new DateTime(2022, 2, 2, 14, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UserId = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f"
                         });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("Timinute.Server.Models.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -609,7 +475,7 @@ namespace Timinute.Server.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("Timinute.Server.Models.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)

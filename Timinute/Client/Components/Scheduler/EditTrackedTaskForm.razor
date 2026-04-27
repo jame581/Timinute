@@ -5,6 +5,7 @@
 @inject DialogService DialogService
 @inject IHttpClientFactory ClientFactory
 @inject NotificationService NotificationService
+@inject Timinute.Client.Services.UndoNotificationService UndoNotifier
 
 <RadzenTemplateForm TItem="TrackedTask" Data="@model" Submit=@OnSubmit>
     <div class="row" style="margin-bottom: 16px">
@@ -89,7 +90,14 @@
             var responseMessage = await client.DeleteAsync($"{Constants.API.TrackedTask.Delete}/{model.TaskId}");
 
             responseMessage.EnsureSuccessStatusCode();
-            NotificationService.Notify(NotificationSeverity.Success, "Deleted", $"Tracked task '{model.Name}' was deleted!", 5000);
+
+            var taskId = model.TaskId;
+            var taskName = model.Name;
+            UndoNotifier.ShowUndo("Task", taskName, async () =>
+            {
+                await client.PostAsync(Constants.API.TrackedTask.Restore(taskId), null);
+            });
+
             DialogService.Close();
         }
         catch (Exception ex)

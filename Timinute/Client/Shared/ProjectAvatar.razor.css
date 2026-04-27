@@ -1,0 +1,9 @@
+.aurora-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    flex-shrink: 0;
+}

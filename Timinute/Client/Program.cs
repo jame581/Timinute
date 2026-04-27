@@ -20,7 +20,17 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<Timinute.Client.Services.UndoNotificationService>();
+builder.Services.AddScoped<Timinute.Client.Services.ProjectColorService>();
+builder.Services.AddScoped<Timinute.Client.Services.ViewportService>();
+builder.Services.AddScoped<Timinute.Client.Services.MobileSheetService>();
 
-builder.Services.AddApiAuthorization();
+builder.Services.AddOidcAuthentication(options =>
+{
+    options.ProviderOptions.Authority = builder.HostEnvironment.BaseAddress.TrimEnd('/');
+    options.ProviderOptions.ClientId = "Timinute.Client";
+    options.ProviderOptions.ResponseType = "code";
+    options.ProviderOptions.DefaultScopes.Add("Timinute.ServerAPI");
+});
 
 await builder.Build().RunAsync();

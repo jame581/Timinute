@@ -1,0 +1,364 @@
+.aurora-tracker-page {
+    padding: 20px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: var(--font-sans);
+    color: var(--text);
+}
+
+.aurora-tracker-card {
+    background: radial-gradient(120% 100% at 80% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 50%), var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2xl);
+    padding: 36px;
+    box-shadow: var(--shadow-card);
+}
+
+.aurora-tracker-card__top {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.aurora-tracker-card__left {
+    flex: 1;
+    min-width: 0;
+}
+
+.aurora-tracker-card__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 500 13px var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-mu);
+}
+
+.aurora-tracker-card__status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--r-pill);
+    background: var(--success);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 25%, transparent);
+}
+
+.aurora-timer {
+    display: inline-flex;
+    align-items: baseline;
+    margin-top: 12px;
+    font: 600 88px var(--font-mono);
+    letter-spacing: -3px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.aurora-timer__hm {
+    color: var(--text);
+}
+
+.aurora-timer__sep {
+    color: var(--text-dim);
+}
+
+.aurora-timer__ss {
+    color: var(--text);
+}
+
+.aurora-timer__ss.is-running {
+    color: var(--accent);
+}
+
+.aurora-tracker-card__meta {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-tracker-card__no-project {
+    font-weight: 500;
+    color: var(--text-dim);
+}
+
+.aurora-tracker-card__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.aurora-tracker-card__reset {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-mu);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, color .15s;
+}
+
+.aurora-tracker-card__reset:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.aurora-tracker-card__reset:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.aurora-tracker-card__big-btn {
+    width: 86px;
+    height: 86px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .08s ease, background .15s ease, box-shadow .25s ease;
+}
+
+.aurora-tracker-card__big-btn:active {
+    transform: scale(.95);
+}
+
+.aurora-tracker-card__big-btn.is-stopped {
+    background: var(--accent);
+    box-shadow: 0 12px 32px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.aurora-tracker-card__big-btn.is-running {
+    background: var(--danger);
+    box-shadow: 0 12px 32px -8px color-mix(in srgb, var(--danger) 60%, transparent);
+}
+
+.aurora-tracker-card__inputs {
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.aurora-tracker-tile {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.aurora-tracker-tile__label {
+    font: 500 11px var(--font-sans);
+    color: var(--text-mu);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.aurora-tracker-tile__input,
+.aurora-tracker-tile__select {
+    border: none;
+    background: transparent;
+    outline: none;
+    font: 500 14px var(--font-sans);
+    color: var(--text);
+    padding: 0;
+    width: 100%;
+}
+
+.aurora-tracker-tile__input::placeholder {
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+.aurora-tracker-tile__select:disabled,
+.aurora-tracker-tile__input:disabled {
+    color: var(--text-mu);
+    cursor: not-allowed;
+}
+
+.aurora-tracker-tile__tags {
+    display: flex;
+    gap: 6px;
+}
+
+.aurora-tag-chip {
+    background: var(--chip);
+    color: var(--text-mu);
+    border-radius: var(--r-pill);
+    padding: 2px 10px;
+    font: 500 12px var(--font-sans);
+}
+
+/* Today's sessions */
+.aurora-today__header {
+    padding: 20px 24px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.aurora-today__title {
+    font: 500 15px var(--font-sans);
+    color: var(--text);
+}
+
+.aurora-today__sub {
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+    margin-top: 2px;
+}
+
+.aurora-today__goal {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-today__empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-mu);
+}
+
+.aurora-today__row {
+    display: grid;
+    grid-template-columns: 14px 1fr 200px 100px 80px;
+    gap: 14px;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+}
+
+.aurora-today__row:first-of-type {
+    border-top: none;
+}
+
+.aurora-today__color-bar {
+    width: 4px;
+    height: 28px;
+    border-radius: 2px;
+}
+
+.aurora-today__name {
+    font: 500 14px var(--font-sans);
+    color: var(--text);
+}
+
+.aurora-today__project {
+    font: 400 12px var(--font-sans);
+    color: var(--text-mu);
+    margin-top: 2px;
+}
+
+.aurora-today__range {
+    color: var(--text-mu);
+    font-size: 13px;
+}
+
+.aurora-today__duration {
+    text-align: right;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+@media (max-width: 1100px) {
+    .aurora-tracker-card__inputs {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .aurora-tracker-card__top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .aurora-timer {
+        font-size: 64px;
+    }
+
+    .aurora-tracker-card__inputs {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile: timer is centered, action row centers around the play/pause
+   button (reset · play/pause · edit), and project/tags/manual-entry stack
+   below the task name. */
+@media (max-width: 768px) {
+    .aurora-tracker-page {
+        padding: 12px 16px 16px;
+        gap: 14px;
+    }
+
+    .aurora-tracker-card {
+        padding: 24px 18px;
+    }
+
+    .aurora-tracker-card__top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+    }
+
+    .aurora-tracker-card__left {
+        width: 100%;
+    }
+
+    .aurora-tracker-card__label {
+        justify-content: center;
+    }
+
+    .aurora-timer {
+        font-size: 60px;
+        letter-spacing: -2.5px;
+    }
+
+    .aurora-tracker-card__meta {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .aurora-tracker-card__right {
+        gap: 18px;
+        justify-content: center;
+    }
+
+    .aurora-tracker-card__inputs {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .aurora-tracker-tile--name {
+        grid-column: 1 / -1;
+    }
+
+    .aurora-today__row {
+        grid-template-columns: 4px 1fr auto;
+        row-gap: 4px;
+    }
+
+    .aurora-today__range,
+    .aurora-today__actions {
+        display: none;
+    }
+}

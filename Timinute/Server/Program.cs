@@ -1,9 +1,9 @@
-using AutoMapper;
-using Microsoft.AspNetCore.Authentication;
+using Duende.IdentityServer.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Timinute.Server;
@@ -12,6 +12,7 @@ using Timinute.Server.Data;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
+using Timinute.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +26,30 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // Identity configuration
 IdentitySetup();
 
-builder.Services.AddAuthentication()
-    .AddIdentityServerJwt();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = "ApplicationDefinedPolicy";
+        options.DefaultChallengeScheme = "ApplicationDefinedPolicy";
+    })
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+        options.Audience = "Timinute.ServerAPI";
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters.NameClaimType = "name";
+        options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
+    })
+    .AddPolicyScheme("ApplicationDefinedPolicy", "ApplicationDefinedPolicy", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            string? authorization = context.Request.Headers.Authorization;
+            if (!string.IsNullOrWhiteSpace(authorization) && authorization.TrimStart().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return JwtBearerDefaults.AuthenticationScheme;
+
+            return IdentityConstants.ApplicationScheme;
+        };
+    });
 
 builder.Logging.AddConsole();
 
@@ -73,7 +96,7 @@ builder.Services.AddControllers(options =>
 DependecyInjection();
 
 // Auto Mapper Configurations
-AutoMapperConfiguration();
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
 // Swagger Configuration
 SwaggerSetup();
@@ -151,17 +174,65 @@ void IdentitySetup()
     {
         options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
         options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
-        options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+        options.ClaimsIdentity.RoleClaimType = Constants.Claims.Role;
     });
 
-    builder.Services.AddIdentityServer()
-        .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+    var configuredUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+    var authorityUri = new Uri(configuredUrl);
+    var baseUrl = authorityUri.GetLeftPart(UriPartial.Authority);
+
+    var identityServerBuilder = builder.Services.AddIdentityServer(options =>
+    {
+        options.IssuerUri = baseUrl;
+    })
+        .AddAspNetIdentity<ApplicationUser>()
+        .AddInMemoryIdentityResources(new List<IdentityResource>
         {
-            options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Fullname);
-            options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.LastLogin);
-            options.IdentityResources["openid"].UserClaims.Add(Constants.Claims.Role);
+            new IdentityResources.OpenId
+            {
+                UserClaims = { "sub", Constants.Claims.Fullname, Constants.Claims.LastLogin, Constants.Claims.Role }
+            },
+            new IdentityResources.Profile(),
         })
-        .AddJwtBearerClientAuthentication();
+        .AddInMemoryApiScopes(new List<ApiScope>
+        {
+            new ApiScope("Timinute.ServerAPI", "Timinute Server API")
+        })
+        .AddInMemoryApiResources(new List<ApiResource>
+        {
+            new ApiResource("Timinute.ServerAPI", "Timinute Server API")
+            {
+                Scopes = { "Timinute.ServerAPI" }
+            }
+        })
+        .AddInMemoryClients(new List<Client>
+        {
+            new Client
+            {
+                ClientId = "Timinute.Client",
+                AllowedGrantTypes = GrantTypes.Code,
+                RequirePkce = true,
+                RequireClientSecret = false,
+                AllowedCorsOrigins = { baseUrl },
+                AllowedScopes = { "openid", "profile", "Timinute.ServerAPI" },
+                RedirectUris = { $"{baseUrl}/authentication/login-callback" },
+                PostLogoutRedirectUris = { $"{baseUrl}/authentication/logout-callback" },
+            }
+        });
+
+    if (builder.Environment.IsDevelopment())
+    {
+        identityServerBuilder.AddDeveloperSigningCredential();
+    }
+    else
+    {
+        // Duende IdentityServer enables automatic key management by default.
+        // Keys are generated, rotated, and persisted to the /keys directory.
+        identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.KeyManagementOptions>(options =>
+        {
+            options.Enabled = true;
+        });
+    }
 }
 
 void DependecyInjection()
@@ -169,17 +240,10 @@ void DependecyInjection()
     // DI
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
     builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
+    builder.Services.AddSingleton<IExportService, ExportService>();
+    builder.Services.AddHostedService<TrashPurgeService>();
 }
 
-void AutoMapperConfiguration()
-{
-    var mappingConfig = new MapperConfiguration(mc =>
-    {
-        mc.AddProfile(new MappingProfile());
-    });
-
-    builder.Services.AddSingleton(mappingConfig.CreateMapper());
-}
 
 void SwaggerSetup()
 {

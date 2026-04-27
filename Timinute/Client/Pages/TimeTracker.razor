@@ -1,14 +1,397 @@
-﻿@page "/timetracker"
+@page "/timetracker"
 @attribute [Authorize]
-@using Timinute.Client.Components.TrackedTasks
+@using Blazored.SessionStorage
+@using Timinute.Client.Helpers
+@using Timinute.Client.Models
+@using Timinute.Shared.Dtos.Project
+@using Timinute.Shared.Dtos.TrackedTask
+@implements IDisposable
 
-<PageTitle>Time Tracker</PageTitle>
+@inject IHttpClientFactory ClientFactory
+@inject ISessionStorageService SessionStorage
+@inject Radzen.NotificationService Notifier
+@inject Timinute.Client.Services.ProjectColorService ColorService
 
-<div class="container">
-    <h3 class="p-3 text-center">Time Tracker</h3>
-    <div class="d-flex justify-content-center">
-        <TrackTaskTime OnAddTrackedTask="@HandleTrackedTaskAdded" />
+<PageTitle>Time tracker</PageTitle>
+
+<div class="aurora-tracker-page">
+    <!-- Live tracker card -->
+    <div class="aurora-tracker-card">
+        <div class="aurora-tracker-card__top">
+            <div class="aurora-tracker-card__left">
+                <div class="aurora-tracker-card__label">
+                    @if (Running)
+                    {
+                        <span class="aurora-tracker-card__status-dot aurora-pulse"></span>
+                        <span>Currently tracking</span>
+                    }
+                    else
+                    {
+                        <span>Stopped</span>
+                    }
+                </div>
+
+                <div class="aurora-timer aurora-mono">
+                    <span class="aurora-timer__hm">@FormatHM(Elapsed)</span><span class="aurora-timer__sep">:</span><span class="aurora-timer__ss @(Running ? "is-running" : "")">@Elapsed.Seconds.ToString("00")</span>
+                </div>
+
+                <div class="aurora-tracker-card__meta">
+                    @if (!string.IsNullOrEmpty(SelectedProjectId) && SelectedProject != null)
+                    {
+                        <ProjectPill Name="@SelectedProject.Name" Color="@ColorService.GetColor(SelectedProject)" />
+                    }
+                    else
+                    {
+                        <span class="aurora-tracker-card__no-project">No project</span>
+                    }
+                    <span class="aurora-tracker-card__started">@StartedLabel</span>
+                </div>
+            </div>
+
+            <div class="aurora-tracker-card__right">
+                <button class="aurora-tracker-card__reset" type="button" title="Reset" @onclick="ResetTracker" disabled="@Running">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 3-6.7" />
+                        <path d="M3 4v5h5" />
+                    </svg>
+                </button>
+                <button class="aurora-tracker-card__big-btn @(Running ? "is-running" : "is-stopped")" type="button" @onclick="ToggleTracker">
+                    @if (Running)
+                    {
+                        <AuroraIcons Name="pause" Size="32" />
+                    }
+                    else
+                    {
+                        <AuroraIcons Name="play" Size="32" />
+                    }
+                </button>
+            </div>
+        </div>
+
+        <div class="aurora-tracker-card__inputs">
+            <div class="aurora-tracker-tile aurora-tracker-tile--name">
+                <label class="aurora-tracker-tile__label">What are you working on</label>
+                <input type="text" class="aurora-tracker-tile__input"
+                       placeholder="Task name…"
+                       @bind="TaskName"
+                       @bind:event="oninput"
+                       disabled="@Running" />
+            </div>
+
+            <div class="aurora-tracker-tile">
+                <label class="aurora-tracker-tile__label">Project</label>
+                <select class="aurora-tracker-tile__select" @bind="SelectedProjectId" disabled="@Running">
+                    <option value="">No project</option>
+                    @foreach (var p in Projects)
+                    {
+                        <option value="@p.ProjectId">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="aurora-tracker-tile">
+                <label class="aurora-tracker-tile__label">Tags</label>
+                <div class="aurora-tracker-tile__tags">
+                    <span class="aurora-tag-chip">focus</span>
+                    <span class="aurora-tag-chip">backend</span>
+                </div>
+            </div>
+
+            <AuroraButton Variant="ghost" OnClick="OpenManualEntry">
+                <AuroraIcons Name="plus" Size="14" />
+                <span>Manual entry</span>
+            </AuroraButton>
+        </div>
     </div>
 
-    <TrackedTaskTable @ref="trackedTaskTableComponent" />
+    <!-- Today's sessions -->
+    <AuroraCard NoPad="true">
+        <div class="aurora-today__header">
+            <div>
+                <div class="aurora-today__title">Today · @DateTime.Now.ToString("dddd MMMM d", System.Globalization.CultureInfo.InvariantCulture)</div>
+                <div class="aurora-today__sub">@FormatTotalDuration(TodayTotal) tracked across @TodayTasks.Count session@(TodayTasks.Count == 1 ? "" : "s")</div>
+            </div>
+            <div class="aurora-today__goal">
+                <AuroraIcons Name="clock" Size="14" />
+                <span>Goal 6h 30m · @TodayGoalPercent%</span>
+            </div>
+        </div>
+        @if (TodayTasks.Count == 0)
+        {
+            <div class="aurora-today__empty">No sessions today yet — hit play to start.</div>
+        }
+        else
+        {
+            @foreach (var t in TodayTasks)
+            {
+                <div class="aurora-today__row">
+                    <span class="aurora-today__color-bar" style="background: @ColorService.GetColor(t.Project);"></span>
+                    <div class="aurora-today__meta">
+                        <div class="aurora-today__name">@t.Name</div>
+                        <div class="aurora-today__project">@(t.Project?.Name ?? "No project")</div>
+                    </div>
+                    <div class="aurora-today__range aurora-mono">@FormatRange(t)</div>
+                    <div class="aurora-today__duration aurora-mono">@FormatTotalDuration(t.Duration)</div>
+                    <div class="aurora-today__actions"></div>
+                </div>
+            }
+        }
+    </AuroraCard>
 </div>
+
+@code {
+    private bool Running;
+    private string TaskName = "";
+    private string SelectedProjectId = "";
+    private DateTimeOffset? StartedAt;
+    private TimeSpan Elapsed;
+    private string CurrentTaskId = "";
+
+    private List<ProjectDto> Projects = new();
+    private List<TrackedTaskDto> TodayTasks = new();
+
+    private System.Timers.Timer? tickTimer;
+
+    private ProjectDto? SelectedProject =>
+        string.IsNullOrEmpty(SelectedProjectId) ? null : Projects.FirstOrDefault(p => p.ProjectId == SelectedProjectId);
+
+    private string StartedLabel
+    {
+        get
+        {
+            if (!StartedAt.HasValue) return "Ready when you are";
+            var s = StartedAt.Value;
+            var rel = s.Date == DateTime.Today ? "Today" : s.ToString("MMM d");
+            return $"Started {s:HH:mm} · {rel}";
+        }
+    }
+
+    private TimeSpan TodayTotal => TodayTasks.Aggregate(TimeSpan.Zero, (a, t) => a + t.Duration);
+    private int TodayGoalPercent =>
+        (int)System.Math.Clamp((TodayTotal.TotalHours / 6.5) * 100, 0, 999);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+        await LoadTodayTasks();
+        await ResumeIfPersisted();
+    }
+
+    private async Task LoadProjects()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            Projects = await client.GetAllPagedAsync<ProjectDto>(Constants.API.Project.Get);
+        }
+        catch { Projects = new(); }
+    }
+
+    private async Task LoadTodayTasks()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            var today = DateTime.Today;
+            var fromUtc = today.ToUniversalTime();
+            var toUtc = today.AddDays(1).ToUniversalTime();
+            var url = $"{Constants.API.TrackedTask.Api}/search" +
+                      $"?from={Uri.EscapeDataString(fromUtc.ToString("o"))}" +
+                      $"&to={Uri.EscapeDataString(toUtc.ToString("o"))}";
+            var list = await client.GetAllPagedAsync<TrackedTaskDto>(url);
+            TodayTasks = list
+                .Where(t => t.StartDate.LocalDateTime.Date == today)
+                .OrderByDescending(t => t.StartDate)
+                .ToList();
+        }
+        catch { TodayTasks = new(); }
+    }
+
+    private async Task ResumeIfPersisted()
+    {
+        var saved = await SessionStorage.GetItemAsync<TrackedTask>("trackedTask");
+        if (saved == null) return;
+        Running = true;
+        CurrentTaskId = saved.TaskId;
+        TaskName = saved.Name;
+        SelectedProjectId = saved.ProjectId ?? "";
+        StartedAt = saved.StartDate;
+        Elapsed = DateTime.Now - saved.StartDate;
+        StartTickTimer();
+    }
+
+    private async Task ToggleTracker()
+    {
+        if (Running)
+        {
+            await StopTracker();
+        }
+        else
+        {
+            await StartTracker();
+        }
+    }
+
+    private async Task StartTracker()
+    {
+        if (string.IsNullOrWhiteSpace(TaskName))
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Validation error", "Task name is required.", 3000);
+            return;
+        }
+
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        var startedAt = DateTime.Now;
+        var dto = new CreateTrackedTaskDto
+        {
+            Name = TaskName,
+            StartDate = startedAt,
+            // Backend requires Duration > 0; placeholder updated on stop.
+            Duration = TimeSpan.FromSeconds(1),
+            ProjectId = string.IsNullOrEmpty(SelectedProjectId) ? null : SelectedProjectId,
+        };
+
+        try
+        {
+            var resp = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, dto);
+            resp.EnsureSuccessStatusCode();
+            var created = await resp.Content.ReadFromJsonAsync<TrackedTaskDto>();
+
+            if (created != null)
+            {
+                CurrentTaskId = created.TaskId;
+                StartedAt = startedAt;
+                Elapsed = TimeSpan.Zero;
+                Running = true;
+
+                var saved = new TrackedTask
+                {
+                    TaskId = CurrentTaskId,
+                    Name = TaskName,
+                    StartDate = startedAt,
+                    Duration = TimeSpan.Zero,
+                    ProjectId = dto.ProjectId
+                };
+                await SessionStorage.SetItemAsync("trackedTask", saved);
+                StartTickTimer();
+                Notifier.Notify(Radzen.NotificationSeverity.Success, "Tracking", "Tracker started", 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not start", ex.Message, 4000);
+        }
+    }
+
+    private async Task StopTracker()
+    {
+        StopTickTimer();
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+
+        var startedAt = StartedAt ?? DateTimeOffset.Now;
+        // Server rejects EndDate <= StartDate; ensure a minimum 1-second span.
+        var effective = Elapsed < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1) : Elapsed;
+        var endedAt = startedAt.LocalDateTime + effective;
+
+        var dto = new UpdateTrackedTaskDto
+        {
+            TaskId = CurrentTaskId,
+            Name = TaskName,
+            ProjectId = string.IsNullOrEmpty(SelectedProjectId) ? null : SelectedProjectId,
+            StartDate = startedAt.LocalDateTime,
+            EndDate = endedAt
+        };
+
+        try
+        {
+            var resp = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, dto);
+            resp.EnsureSuccessStatusCode();
+            Notifier.Notify(Radzen.NotificationSeverity.Success, "Tracking", "Tracker stopped", 2000);
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not stop", ex.Message, 4000);
+        }
+        finally
+        {
+            // Clear session storage unconditionally — UI is being reset, leaving it would
+            // resurrect a phantom session on next page load.
+            await SessionStorage.RemoveItemAsync("trackedTask");
+        }
+
+        Running = false;
+        CurrentTaskId = "";
+        TaskName = "";
+        SelectedProjectId = "";
+        StartedAt = null;
+        Elapsed = TimeSpan.Zero;
+        await LoadTodayTasks();
+    }
+
+    private void ResetTracker()
+    {
+        if (Running) return;
+        TaskName = "";
+        SelectedProjectId = "";
+        Elapsed = TimeSpan.Zero;
+    }
+
+    private void StartTickTimer()
+    {
+        StopTickTimer();
+        tickTimer = new System.Timers.Timer(1000);
+        tickTimer.Elapsed += OnTick;
+        tickTimer.AutoReset = true;
+        tickTimer.Start();
+    }
+
+    private void StopTickTimer()
+    {
+        if (tickTimer != null)
+        {
+            tickTimer.Elapsed -= OnTick;
+            tickTimer.Stop();
+            tickTimer.Dispose();
+            tickTimer = null;
+        }
+    }
+
+    private async void OnTick(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        if (Running && StartedAt.HasValue)
+        {
+            Elapsed = DateTime.Now - StartedAt.Value;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OpenManualEntry()
+    {
+        // Placeholder — Quick add in topbar already opens the manual entry modal.
+        await Task.CompletedTask;
+        Notifier.Notify(Radzen.NotificationSeverity.Info, "Manual entry", "Use Quick add in the top bar to log a manual entry.", 3000);
+    }
+
+    private static string FormatHM(TimeSpan d)
+    {
+        var hours = (int)d.TotalHours;
+        return $"{hours:00}:{d.Minutes:00}";
+    }
+
+    private static string FormatTotalDuration(TimeSpan d)
+    {
+        var hours = (int)d.TotalHours;
+        return $"{hours}h {d.Minutes:00}m";
+    }
+
+    private static string FormatRange(TrackedTaskDto t)
+    {
+        var end = t.EndDate ?? t.StartDate + t.Duration;
+        return $"{t.StartDate.LocalDateTime:HH:mm} → {end.LocalDateTime:HH:mm}";
+    }
+
+    public void Dispose()
+    {
+        StopTickTimer();
+    }
+}

@@ -1,42 +1,141 @@
 # Timinute
+
 [![Build & Test](https://github.com/jame581/Timinute/actions/workflows/build_test.yml/badge.svg)](https://github.com/jame581/Timinute/actions/workflows/build_test.yml)
 
-The free time tracker and time tracking software. Timinute is a time tracker and timesheet app that lets you track work hours across projects.
-The application serves as a demonstration of the possibilities of the new Blazor technology. Allows you to track time and task. Identity server is used to manage users.
+The free, open-source time tracker that respects your minutes. Track work hours across projects, see exactly where your time goes, and get clear weekly overviews — all in a self-hostable Blazor WebAssembly app.
 
-### Prerequisites
+Originally a demo of modern Blazor; now fully redesigned around the **Aurora** visual system (v2.0) with a tokenized design system, hand-built SVG charts, a custom calendar, and full mobile-responsive treatment.
 
-Software what you need is:
+## Highlights
 
-* [Visual Studio 2022 (Version 17 or better)](https://visualstudio.microsoft.com/)
-* [.NET 8.0 SDK (v8.0.0 or better)](https://dotnet.microsoft.com/download/dotnet)
-* [Docker Desktop (Is used for SQL Database)](https://www.docker.com/get-started) 
+- **Time tracker** with a real-time stopwatch, session-storage persistence across reload, and undo on delete.
+- **Calendar** — desktop week view with a current-time line, mobile day view with a 7-day strip selector. Click an empty cell to add, click an event to edit.
+- **Projects** with user-picked colors, monthly stats, and per-project sparklines.
+- **Dashboard** — gradient hero stat card, top-project + last-month tiles, hand-built SVG bar chart and donut, recent activity list.
+- **Trash** — 30-day soft-delete recovery for projects and tasks, cascade-restore on Project, background hard-purge service.
+- **Search + filter + export** — date range, project, name, task-count filters; CSV and Excel exports.
+- **Identity** — Duende IdentityServer for auth (JWT for the API, cookie for Identity UI), Basic/Admin roles, lockout, registration via Razor Pages.
+- **Mobile responsive** — bottom glass tab bar with FAB, slide-up overflow sheet, full reflow at ≤768px.
+- **Accessibility** — `prefers-reduced-motion` honored, `aria-current` on active nav, focus-visible outlines, modal sheet semantics.
 
-That's it :)
+## Screenshots
+
+### Landing
+![Landing page](screenshots/landing_page_screenshot.jpeg)
+
+### Login
+![Login page](screenshots/login_page_screenshot.jpeg)
+
+### Dashboard
+![Dashboard](screenshots/dashboard_page_screenshot.jpeg)
+
+### Time tracker
+![Time tracker](screenshots/timetracker_page_screenshot.jpeg)
+
+### Tracked tasks
+![Tracked tasks](screenshots/trackedtask_page_screenshot.jpeg)
+
+### Calendar
+![Calendar](screenshots/calendar_page_screenshot.jpeg)
+
+### Projects
+![Projects](screenshots/project_page_screenshot.jpeg)
+
+## Tech stack
+
+.NET 10 · Blazor WebAssembly (hosted) · EF Core 10 · SQL Server · Duende IdentityServer · Radzen.Blazor (dialogs/notifications only — design system is custom Aurora) · xUnit + Moq + EF InMemory.
+
+## Prerequisites
+
+- [Visual Studio 2022 (17.x or newer)](https://visualstudio.microsoft.com/) or another .NET 10 IDE
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet)
+- [Docker Desktop](https://www.docker.com/get-started) — used for the local SQL Server 2025 container
 
 ## Getting Started
 
-First step install prerequisites software, then clone repository, setup SQL database, build solution, then run database migrations and finally run solution.
+```powershell
+# 1. clone
+git clone https://github.com/jame581/Timinute.git
+cd Timinute
 
-* Clone repository
-* Go to folder `Scripts`
-  * run script `SetupDockerSql.ps1`
-  * run script `MigrateDatabase.ps1`
-* Build & run solution
+# 2. start a local SQL Server 2025 container on port 44555
+.\scripts\SetupDockerSql.ps1
+
+# 3. apply EF Core migrations
+.\scripts\MigrateDatabase.ps1
+
+# 4. run the app (server hosts the WASM client)
+dotnet run --project Timinute/Server/Timinute.Server.csproj
+```
+
+Default URLs: <https://localhost:7047> / <http://localhost:5047>. Swagger lives at `/swagger`.
+
+Seeded test users (passwords are intentionally trivial — local dev only):
+
+| Email | Role |
+|---|---|
+| test1@email.com | Basic |
+| test2@email.com | Basic |
+| test3@email.com | Basic |
+
+## Production deployment
+
+The defaults in `appsettings.json` are tuned for local development on `https://localhost:7047`. For any non-local deployment you'll want to override at least these three:
+
+**1. IdentityServer authority** — JWT issuer + OIDC discovery endpoint. If left at the localhost default, tokens issued by your deployed instance will be rejected at validation. Override via env var:
+
+```bash
+IdentityServer__Authority=https://timinute.example.com
+```
+
+…or in `appsettings.Production.json`:
+
+```json
+{
+  "IdentityServer": { "Authority": "https://timinute.example.com" }
+}
+```
+
+**2. Connection string** — `appsettings.json` ships with the local Docker SA password so `dotnet run` works out of the box. Override for production:
+
+```bash
+ConnectionStrings__DefaultConnection="Server=...;Database=Timinute;User Id=...;Password=...;TrustServerCertificate=True;Encrypt=True"
+```
+
+**3. Persistent `/keys` directory** — Duende IdentityServer uses automatic key management in production and writes rotating signing keys to `/keys`. On ephemeral hosts (Docker without a volume mount, App Service slot swaps, scaled-out replicas) this directory disappears or differs per instance, which invalidates JWTs after restart and breaks load balancing. Mount a persistent volume at the container's `/keys` (or override the path via `IdentityServer:KeyManagement:KeyPath` if your hosting prefers a different location).
+
+For Docker:
+
+```bash
+docker run -v timinute-keys:/keys ...
+```
+
+> **v2.0 migration note:** the migration from IdentityServer4 to Duende dropped the IS4-era `DeviceCodes` / `Keys` / `PersistedGrants` tables. If you're upgrading a database that contained any IS4 grant data, that data is lost — log all users out and have them re-authenticate post-deploy.
+
+## Project layout
+
+```
+Timinute/
+  Server/         ASP.NET Core Web API + Identity + IdentityServer
+  Client/         Blazor WebAssembly SPA (Aurora design system)
+  Shared/         DTOs shared between client and server
+  Server.Tests/   xUnit + Moq + EF InMemory
+docs/superpowers/
+  specs/          Per-feature design specs
+  plans/          Active plans
+  plans/done/     Shipped plans, kept for history
+```
+
+## Roadmap
+
+See [`docs/superpowers/plans/feature-roadmap.md`](docs/superpowers/plans/feature-roadmap.md) for the current feature set, P1/P2 backlog, and tech-debt list. Active design specs live alongside in `docs/superpowers/specs/`.
 
 ## Author
 
-* **Jan Mesarč** - *Creator* - [jame581](https://jame581.azurewebsites.net/)
+**Jan Mesarč** — *Creator* — [jame581](https://github.com/jame581)
 
-Do you like this project and want me support? Great! I really appreciate it and makes me very happy if you buy [Buy Me A Coffee](https://www.buymeacoffee.com/jame581).
+If Timinute is useful to you, [Buy Me A Coffee](https://www.buymeacoffee.com/jame581) ☕.
 
-## Video
+## License
 
-https://user-images.githubusercontent.com/21112138/217609228-ac3dfdb4-3f97-4771-aff1-ee98917f5547.mp4
-
-## Screenshots
-![Dashboard](https://user-images.githubusercontent.com/21112138/154512704-0680fe51-8dfa-4012-9d4b-bada6592c3fa.png)
-![TrackedTasks](https://user-images.githubusercontent.com/21112138/154512705-d13dcf63-f5ca-49b3-8897-9001f37c4cde.png)
-![Calendar](https://user-images.githubusercontent.com/21112138/154512708-2544afc4-0065-47ab-ac72-25f34bd46a63.png)
-
-
+MIT — see [LICENSE](LICENSE).

@@ -1,0 +1,84 @@
+@code {
+    public record ProjectSlice(string Name, string Color, double Hours);
+
+    [Parameter] public IList<ProjectSlice> Slices { get; set; } = new List<ProjectSlice>();
+
+    private double Total => Slices.Sum(s => s.Hours);
+
+    private record SliceArc(string Name, string Color, double Hours, string PathD);
+
+    private IList<SliceArc> ComputeArcs()
+    {
+        var arcs = new List<SliceArc>();
+        if (Total <= 0) return arcs;
+
+        const double cx = 80;
+        const double cy = 80;
+        const double rOuter = 70;
+        const double rInner = 46;
+
+        double startAngle = -System.Math.PI / 2;
+
+        foreach (var s in Slices)
+        {
+            if (s.Hours <= 0) continue;
+            var sweep = (s.Hours / Total) * System.Math.PI * 2;
+            var endAngle = startAngle + sweep;
+
+            var x1 = cx + rOuter * System.Math.Cos(startAngle);
+            var y1 = cy + rOuter * System.Math.Sin(startAngle);
+            var x2 = cx + rOuter * System.Math.Cos(endAngle);
+            var y2 = cy + rOuter * System.Math.Sin(endAngle);
+
+            var x3 = cx + rInner * System.Math.Cos(endAngle);
+            var y3 = cy + rInner * System.Math.Sin(endAngle);
+            var x4 = cx + rInner * System.Math.Cos(startAngle);
+            var y4 = cy + rInner * System.Math.Sin(startAngle);
+
+            var largeArc = sweep > System.Math.PI ? 1 : 0;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var d = $"M {x1.ToString("0.##", inv)} {y1.ToString("0.##", inv)} " +
+                    $"A {rOuter} {rOuter} 0 {largeArc} 1 {x2.ToString("0.##", inv)} {y2.ToString("0.##", inv)} " +
+                    $"L {x3.ToString("0.##", inv)} {y3.ToString("0.##", inv)} " +
+                    $"A {rInner} {rInner} 0 {largeArc} 0 {x4.ToString("0.##", inv)} {y4.ToString("0.##", inv)} Z";
+
+            arcs.Add(new SliceArc(s.Name, s.Color, s.Hours, d));
+            startAngle = endAngle;
+        }
+
+        return arcs;
+    }
+}
+
+<div class="aurora-donut">
+    <div class="aurora-donut__chart">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+            @if (Total <= 0)
+            {
+                <circle cx="80" cy="80" r="58" fill="none" stroke="var(--border)" stroke-width="24"></circle>
+            }
+            else
+            {
+                @foreach (var arc in ComputeArcs())
+                {
+                    <path d="@arc.PathD" fill="@arc.Color"></path>
+                }
+            }
+        </svg>
+        <div class="aurora-donut__center">
+            <div class="aurora-donut__center-label">Total</div>
+            <div class="aurora-donut__center-value">@($"{Total:0.#}h")</div>
+        </div>
+    </div>
+    <ul class="aurora-donut__legend">
+        @foreach (var s in Slices.OrderByDescending(s => s.Hours))
+        {
+            <li class="aurora-donut__legend-item">
+                <span class="aurora-donut__legend-dot" style="background: @s.Color;"></span>
+                <span class="aurora-donut__legend-name">@s.Name</span>
+                <span class="aurora-donut__legend-value">@($"{s.Hours:0.#}h")</span>
+            </li>
+        }
+    </ul>
+</div>
+

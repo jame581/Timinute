@@ -1,7 +1,5 @@
-﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
-
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 h1:focus {
@@ -9,17 +7,7 @@ h1:focus {
 }
 
 a, .btn-link {
-    color: #0077cc;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.content {
-    padding-top: 1.1rem;
+    color: var(--accent, #5B5BF5);
 }
 
 .valid.modified:not([type=checkbox]) {
@@ -62,11 +50,3 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
-
-.nav-category-header {
-    background: 0 0;
-    border: 0;
-    border-radius: .25rem;
-    color: grey;
-    padding: .5rem 1rem;
-}

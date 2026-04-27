@@ -42,6 +42,9 @@ namespace Timinute.Client.Components.TrackedTasks
         [Inject]
         private NotificationService notificationService { get; set; } = null!;
 
+        [Inject]
+        private DialogService DialogService { get; set; } = null!;
+
         #endregion
 
         protected override async Task OnInitializedAsync()
@@ -73,6 +76,8 @@ namespace Timinute.Client.Components.TrackedTasks
                 notificationService.Notify(NotificationSeverity.Success, "Success", "Tracked task saved", 3000);
 
                 NewTrackedTask = new() { StartDate = DateTime.Now };
+
+                DialogService.Close(true);
             }
             catch (Exception ex)
             {

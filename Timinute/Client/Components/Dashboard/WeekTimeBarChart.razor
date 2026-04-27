@@ -1,0 +1,46 @@
+@code {
+    public record MonthlyHours(string Label, double Hours);
+
+    [Parameter] public IList<MonthlyHours> Data { get; set; } = new List<MonthlyHours>();
+
+    private double Max => Data.Count == 0 ? 1 : System.Math.Max(1, Data.Max(d => d.Hours));
+    private const int PlotHeight = 200;
+    private const int BarMaxWidth = 38;
+    private const int Padding = 8;
+}
+
+<div class="aurora-bar-chart">
+    <div class="aurora-bar-chart__plot" style="height: @(PlotHeight)px;">
+        <div class="aurora-bar-chart__gridlines">
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="aurora-bar-chart__gridline" style="bottom: @((i * 25))%;"></div>
+            }
+        </div>
+        <div class="aurora-bar-chart__bars">
+            @for (int i = 0; i < Data.Count; i++)
+            {
+                var d = Data[i];
+                var heightPct = (d.Hours / Max) * 100;
+                var isLast = i == Data.Count - 1;
+                <div class="aurora-bar-chart__col">
+                    @if (isLast)
+                    {
+                        <div class="aurora-bar-chart__tooltip">@($"{d.Hours:0.#}h")</div>
+                    }
+                    <div class="aurora-bar-chart__bar @(isLast ? "is-last" : "")"
+                         style="height: @(heightPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%; max-width: @(BarMaxWidth)px;"></div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="aurora-bar-chart__labels">
+        @for (int i = 0; i < Data.Count; i++)
+        {
+            var d = Data[i];
+            var isLast = i == Data.Count - 1;
+            <div class="aurora-bar-chart__label @(isLast ? "is-last" : "")">@d.Label</div>
+        }
+    </div>
+</div>
+

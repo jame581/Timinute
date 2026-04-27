@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
@@ -13,6 +16,7 @@ using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.TrackedTask;
+using Timinute.Shared.Dtos.Trash;
 using Xunit;
 
 namespace Timinute.Server.Tests.Controllers
@@ -27,8 +31,9 @@ namespace Timinute.Server.Tests.Controllers
         private const string _databaseName = "TrackedTaskController_Test_DB";
         public TrackedTaskControllerTest()
         {
-            var myProfile = new MappingProfile();
-            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(myProfile));
+            var configExpression = new MapperConfigurationExpression();
+            configExpression.AddProfile<MappingProfile>();
+            var configuration = new MapperConfiguration(configExpression, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
             _mapper = new Mapper(configuration);
 
             _loggerMock = new Mock<ILogger<TrackedTaskController>>();
@@ -192,7 +197,7 @@ namespace Timinute.Server.Tests.Controllers
 
             TrackedTaskController controller = await CreateController(applicationDbContext);
 
-            DateTime startDate = DateTime.Now;
+            DateTimeOffset startDate = DateTimeOffset.UtcNow;
 
             // create category with the same ID but updated data
             var trackedTaskToUpdate = new UpdateTrackedTaskDto
@@ -216,7 +221,7 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.Equal(trackedTaskToUpdate.TaskId, updatedTrackedTask!.TaskId);
             Assert.Equal(trackedTaskToUpdate.Name, updatedTrackedTask.Name);
-            Assert.Equal(trackedTaskToUpdate.StartDate, updatedTrackedTask.StartDate.ToLocalTime());
+            Assert.Equal(trackedTaskToUpdate.StartDate!.Value.UtcDateTime, updatedTrackedTask.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -224,7 +229,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             TrackedTaskController controller = await CreateController();
 
-            DateTime startDate = DateTime.Now;
+            DateTimeOffset startDate = DateTimeOffset.UtcNow;
 
             // create category with the same ID but updated data
             var trackedTaskToUpdate = new UpdateTrackedTaskDto
@@ -251,7 +256,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             TrackedTaskController controller = await CreateController();
 
-            DateTime startDate = DateTime.Now;
+            DateTimeOffset startDate = DateTimeOffset.UtcNow;
 
             // create category with the same ID but updated data
             var trackedTaskToCreate = new CreateTrackedTaskDto
@@ -274,8 +279,251 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(newlyCreatedTrackedTask);
 
             Assert.Equal(trackedTaskToCreate.Name, newlyCreatedTrackedTask!.Name);
-            Assert.Equal(trackedTaskToCreate.StartDate, newlyCreatedTrackedTask!.StartDate.ToLocalTime());
+            Assert.Equal(trackedTaskToCreate.StartDate!.Value.UtcDateTime, newlyCreatedTrackedTask!.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
             Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_Another_User_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "ApplicationUser2");
+
+            var trackedTaskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1",  // belongs to ApplicationUser1
+                Name = "Hacked Name",
+                StartDate = DateTimeOffset.UtcNow,
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Get_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "GetAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "ApplicationUser10");
+
+            var actionResult = await controller.GetTrackedTask("TrackedTaskId1");
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_EndDate_Before_StartDate_Returns_BadRequest_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "EndDateTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            var taskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1",
+                Name = "Updated Task",
+                StartDate = new DateTimeOffset(2021, 10, 1, 10, 0, 0, TimeSpan.Zero),
+                EndDate = new DateTimeOffset(2021, 10, 1, 8, 0, 0, TimeSpan.Zero),
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(taskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<BadRequestObjectResult>(actionResult.Result);
+
+            var badRequestResult = actionResult.Result as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+            Assert.Equal("End date must be strictly after start date.", badRequestResult!.Value);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_DateRange()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+            var from = new DateTimeOffset(2021, 10, 1, 0, 0, 0, TimeSpan.Zero);
+            var to = new DateTimeOffset(2021, 10, 31, 0, 0, 0, TimeSpan.Zero);
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, from, to, null, null);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Equal(4, tasks!.Count());
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_ProjectId()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, "ProjectId1", null);
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Equal(3, tasks!.Count());
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_Name()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, "Task 1");
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Single(tasks!);
+            Assert.Equal("TrackedTaskId1", tasks!.First().TaskId);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_Combined_Filters()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+            var from = new DateTimeOffset(2021, 10, 1, 0, 0, 0, TimeSpan.Zero);
+            var to = new DateTimeOffset(2021, 10, 31, 0, 0, 0, TimeSpan.Zero);
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, from, to, "ProjectId1", "Task");
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Equal(3, tasks!.Count());
+        }
+
+        [Fact]
+        public async Task Search_Tasks_Another_User_Empty()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchAuthTest");
+            TrackedTaskController controller = await CreateController(applicationDbContext, "NonExistentUser");
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, null);
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Empty(tasks!);
+        }
+
+        [Fact]
+        public async Task Delete_TrackedTask_Soft_Deletes_Row_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SoftDeleteTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var stillInDb = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(stillInDb);
+            Assert.NotNull(stillInDb!.DeletedAt);
+
+            var hidden = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.Null(hidden);
+        }
+
+        [Fact]
+        public async Task Restore_TrackedTask_Returns_Task_To_Default_Query_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "RestoreTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            var actionResult = await controller.RestoreTrackedTask("TrackedTaskId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var restored = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(restored);
+            Assert.Null(restored!.DeletedAt);
+        }
+
+        [Fact]
+        public async Task Restore_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "RestoreTaskAuth");
+            TrackedTaskController owner = await CreateController(applicationDbContext);
+            await owner.DeleteTrackedTask("TrackedTaskId1");
+
+            TrackedTaskController other = await CreateController(applicationDbContext, "ApplicationUser10");
+            var actionResult = await other.RestoreTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NotFoundObjectResult>(actionResult);
+        }
+
+        [Fact]
+        public async Task GetTrash_TrackedTasks_Returns_Only_Deleted_Owned_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "TrashTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteTrackedTask("TrackedTaskId1");
+            await controller.DeleteTrackedTask("TrackedTaskId2");
+
+            var actionResult = await controller.GetTrashTrackedTasks();
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+            var items = okResult!.Value as IEnumerable<TrashItemDto>;
+            Assert.NotNull(items);
+            var list = items!.ToList();
+            Assert.Equal(2, list.Count);
+            Assert.All(list, i => Assert.InRange(i.DaysRemaining, 29, 30));
+        }
+
+        [Fact]
+        public async Task Purge_TrackedTask_Hard_Removes_Row_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "PurgeTask");
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+
+            await controller.DeleteTrackedTask("TrackedTaskId1");
+
+            var actionResult = await controller.PurgeTrackedTask("TrackedTaskId1");
+            Assert.IsType<NoContentResult>(actionResult);
+
+            var row = await applicationDbContext.TrackedTasks.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.Null(row);
+        }
+
+        [Fact]
+        public async Task Purge_TrackedTask_Another_User_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "PurgeTaskAuth");
+            TrackedTaskController owner = await CreateController(applicationDbContext);
+            await owner.DeleteTrackedTask("TrackedTaskId1");
+
+            TrackedTaskController other = await CreateController(applicationDbContext, "ApplicationUser10");
+            var actionResult = await other.PurgeTrackedTask("TrackedTaskId1");
+
+            Assert.IsType<NotFoundObjectResult>(actionResult);
         }
 
         protected override async Task<TrackedTaskController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
@@ -288,12 +536,16 @@ namespace Timinute.Server.Tests.Controllers
             var repositoryFactory = new RepositoryFactory(applicationDbContext);
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {
-                                        new Claim("sub", "ApplicationUser1"),
+                                        new Claim("sub", userId),
                                         new Claim(ClaimTypes.Name, "test1@email.com")
                                         }
             ));
 
-            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
+                .Build();
+
+            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration)
             {
                 ControllerContext = new ControllerContext
                 {

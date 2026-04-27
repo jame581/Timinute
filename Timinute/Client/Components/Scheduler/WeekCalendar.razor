@@ -1,0 +1,155 @@
+@using Timinute.Shared.Dtos.TrackedTask
+@implements IDisposable
+@inject Timinute.Client.Services.ProjectColorService ColorService
+
+@code {
+    [Parameter] public DateTime WeekStart { get; set; }
+    [Parameter] public IList<TrackedTaskDto> Tasks { get; set; } = new List<TrackedTaskDto>();
+    [Parameter] public EventCallback<DateTime> OnEmptyClick { get; set; }
+    [Parameter] public EventCallback<TrackedTaskDto> OnEventClick { get; set; }
+
+    private System.Timers.Timer? nowTimer;
+
+    protected override void OnInitialized()
+    {
+        // Tick every minute to advance the today's-current-time line.
+        nowTimer = new System.Timers.Timer(60_000) { AutoReset = true };
+        nowTimer.Elapsed += async (_, _) => await InvokeAsync(StateHasChanged);
+        nowTimer.Start();
+    }
+
+    public void Dispose()
+    {
+        if (nowTimer is not null)
+        {
+            nowTimer.Stop();
+            nowTimer.Dispose();
+            nowTimer = null;
+        }
+    }
+
+    private const int RowHeight = 56;
+    private const int FirstHour = 8;
+    private const int LastHour = 18; // exclusive of "19:00 row" — we render 8:00 → 18:00 = 11 slots
+    private const int Slots = LastHour - FirstHour + 1; // 11
+
+    private DateTime[] DayDates =>
+        Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).ToArray();
+
+    private bool TodayInWeek =>
+        DateTime.Today >= WeekStart.Date && DateTime.Today < WeekStart.Date.AddDays(7);
+
+    private double NowOffsetPx
+    {
+        get
+        {
+            var now = DateTime.Now;
+            var hourOffset = (now.Hour - FirstHour) + (now.Minute / 60.0);
+            return System.Math.Clamp(hourOffset * RowHeight, 0, Slots * RowHeight);
+        }
+    }
+
+    private (double topPx, double heightPx) PositionFor(TrackedTaskDto t)
+    {
+        var start = t.StartDate.LocalDateTime;
+        var end = (t.EndDate ?? t.StartDate + t.Duration).LocalDateTime;
+
+        var startHour = (start.Hour - FirstHour) + (start.Minute / 60.0);
+        var hours = (end - start).TotalHours;
+
+        var topClamped = System.Math.Max(0, startHour * RowHeight);
+        var endClamped = System.Math.Min(Slots * RowHeight, (startHour + hours) * RowHeight);
+        var height = System.Math.Max(20, endClamped - topClamped);
+
+        return (topClamped, height);
+    }
+}
+
+<div class="aurora-cal">
+    <!-- Header row -->
+    <div class="aurora-cal__header">
+        <div class="aurora-cal__hour-cell"></div>
+        @foreach (var d in DayDates)
+        {
+            var isToday = d.Date == DateTime.Today;
+            <div class="aurora-cal__day-header @(isToday ? "is-today" : "")">
+                <div class="aurora-cal__day-eyebrow">@d.ToString("ddd", System.Globalization.CultureInfo.InvariantCulture).ToUpperInvariant()</div>
+                @if (isToday)
+                {
+                    <div class="aurora-cal__day-pill">@d.Day</div>
+                }
+                else
+                {
+                    <div class="aurora-cal__day-num">@d.Day</div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Body grid -->
+    <div class="aurora-cal__body" style="height: @(Slots * RowHeight)px;">
+        <!-- Hours column -->
+        <div class="aurora-cal__hours">
+            @for (int i = 0; i < Slots; i++)
+            {
+                var hour = FirstHour + i;
+                <div class="aurora-cal__hour" style="height: @(RowHeight)px;">
+                    <span>@($"{hour}:00")</span>
+                </div>
+            }
+        </div>
+
+        @for (int dayIdx = 0; dayIdx < 7; dayIdx++)
+        {
+            var d = DayDates[dayIdx];
+            var dayDate = d.Date;
+            var isToday = dayDate == DateTime.Today;
+            var dayTasks = Tasks
+                .Where(t => t.StartDate.LocalDateTime.Date == dayDate)
+                .ToList();
+
+            <div class="aurora-cal__day-col @(isToday ? "is-today" : "")">
+                @* Hour gridlines *@
+                @for (int i = 0; i < Slots; i++)
+                {
+                    <div class="aurora-cal__cell" style="height: @(RowHeight)px;"
+                         @onclick="() => OnEmptyClick.InvokeAsync(dayDate.AddHours(FirstHour + i))"></div>
+                }
+
+                @* Today's current-time line *@
+                @if (isToday)
+                {
+                    <div class="aurora-cal__now-line" style="top: @(NowOffsetPx.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))px;">
+                        <div class="aurora-cal__now-dot"></div>
+                    </div>
+                }
+
+                @* Events *@
+                @foreach (var t in dayTasks)
+                {
+                    var (top, height) = PositionFor(t);
+                    var color = ColorService.GetColor(t.Project);
+                    var style = $"top: {top.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}px; " +
+                                $"height: {height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}px; " +
+                                $"background: color-mix(in srgb, {color} 12%, transparent); " +
+                                $"border-left: 3px solid {color};";
+                    <div class="aurora-cal__event" style="@style"
+                         @onclick="() => OnEventClick.InvokeAsync(t)"
+                         @onclick:stopPropagation="true">
+                        <div class="aurora-cal__event-title">@t.Name</div>
+                        <div class="aurora-cal__event-duration aurora-mono">@FormatDuration(t.Duration)</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private static string FormatDuration(TimeSpan d)
+    {
+        var hours = (int)d.TotalHours;
+        return hours > 0 ? $"{hours}h {d.Minutes:00}m" : $"{d.Minutes}m";
+    }
+}
+

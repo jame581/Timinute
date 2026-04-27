@@ -1,0 +1,15 @@
+@code {
+    [Parameter] public string Name { get; set; } = "";
+    [Parameter] public string Color { get; set; } = "#94A3B8";
+
+    private string PillStyle =>
+        $"background: color-mix(in srgb, {Color} 10%, transparent); color: {Color};";
+
+    private string DotStyle =>
+        $"background: {Color};";
+}
+
+<span class="aurora-pill" style="@PillStyle">
+    <span class="aurora-pill__dot" style="@DotStyle"></span>
+    <span class="aurora-pill__name">@Name</span>
+</span>

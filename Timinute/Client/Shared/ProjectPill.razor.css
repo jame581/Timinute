@@ -1,0 +1,25 @@
+.aurora-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.aurora-pill__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--r-pill);
+    flex-shrink: 0;
+}
+
+.aurora-pill__name {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -20,9 +20,6 @@ async function onInstall(event) {
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
         .map(asset => new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' }));
 
-    // Also cache authentication configuration
-    assetsRequests.push(new Request('_configuration/Timinute.Client'));
-
     await caches.open(cacheName).then(cache => cache.addAll(assetsRequests));
 }
 

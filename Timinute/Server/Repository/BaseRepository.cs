@@ -2,6 +2,7 @@
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Timinute.Server.Data;
+using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 
 namespace Timinute.Server.Repository
@@ -30,7 +31,12 @@ namespace Timinute.Server.Repository
 
         public async Task Delete(object id)
         {
-            TEntity? entityToDelete = await dbSet.FindAsync(id);
+            var keyProperty = context.Model.FindEntityType(typeof(TEntity))!
+                .FindPrimaryKey()!.Properties[0].Name;
+
+            TEntity? entityToDelete = await dbSet.IgnoreQueryFilters()
+                .Where($"{keyProperty} == @0", id)
+                .FirstOrDefaultAsync();
 
             if (entityToDelete != null)
                 await Delete(entityToDelete);
@@ -144,7 +150,10 @@ namespace Timinute.Server.Repository
 
         public async Task<TEntity?> GetById(object id)
         {
-            return await dbSet.FindAsync(id);
+            var entity = await dbSet.FindAsync(id);
+            if (entity is ISoftDeletable sd && sd.DeletedAt != null)
+                return null;
+            return entity;
         }
 
         public async Task<IEnumerable<TEntity>> GetWithRawSql(string query, params object[] parameters)
@@ -162,6 +171,96 @@ namespace Timinute.Server.Repository
         {
             dbSet.Update(entityToUpdate);
             await context.SaveChangesAsync();
+            context.Entry(entityToUpdate).State = EntityState.Detached;
+        }
+
+        public async Task SoftDelete(object id)
+        {
+            var entity = await dbSet.FindAsync(id);
+            if (entity is ISoftDeletable softDeletable)
+            {
+                softDeletable.DeletedAt = DateTimeOffset.UtcNow;
+                dbSet.Update(entity);
+                await context.SaveChangesAsync();
+                context.Entry(entity).State = EntityState.Detached;
+            }
+            else if (entity != null)
+            {
+                throw new InvalidOperationException(
+                    $"Entity of type {typeof(TEntity).Name} does not implement ISoftDeletable.");
+            }
+        }
+
+        public async Task Restore(object id)
+        {
+            var keyProperty = context.Model.FindEntityType(typeof(TEntity))!
+                .FindPrimaryKey()!.Properties[0].Name;
+
+            var entity = await dbSet.IgnoreQueryFilters()
+                .Where($"{keyProperty} == @0", id)
+                .FirstOrDefaultAsync();
+
+            if (entity is ISoftDeletable softDeletable)
+            {
+                softDeletable.DeletedAt = null;
+                dbSet.Update(entity);
+                await context.SaveChangesAsync();
+                context.Entry(entity).State = EntityState.Detached;
+            }
+            else if (entity != null)
+            {
+                throw new InvalidOperationException(
+                    $"Entity of type {typeof(TEntity).Name} does not implement ISoftDeletable.");
+            }
+        }
+
+        public async Task<IEnumerable<TEntity>> GetDeleted(Expression<Func<TEntity, bool>>? filter = null)
+        {
+            // Build expression: e => e.DeletedAt != null (only for ISoftDeletable entities)
+            var param = Expression.Parameter(typeof(TEntity), "e");
+            var prop = Expression.Property(param, nameof(ISoftDeletable.DeletedAt));
+            var isNotNull = Expression.NotEqual(prop, Expression.Constant(null, typeof(DateTimeOffset?)));
+            var isDeletedExpr = Expression.Lambda<Func<TEntity, bool>>(isNotNull, param);
+
+            IQueryable<TEntity> query = dbSet.IgnoreQueryFilters().Where(isDeletedExpr);
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            return await query.ToListAsync();
+        }
+
+        public async Task<int> CountAll(Expression<Func<TEntity, bool>>? filter = null)
+        {
+            IQueryable<TEntity> query = dbSet.IgnoreQueryFilters();
+            if (filter != null)
+                query = query.Where(filter);
+            return await query.CountAsync();
+        }
+
+        public async Task<int> PurgeExpired(DateTimeOffset olderThan)
+        {
+            // Build expression: e => e.DeletedAt != null && e.DeletedAt.Value < olderThan
+            var param = Expression.Parameter(typeof(TEntity), "e");
+            var prop = Expression.Property(param, nameof(ISoftDeletable.DeletedAt));       // DateTimeOffset?
+            var propValue = Expression.Property(prop, nameof(Nullable<DateTimeOffset>.Value)); // DateTimeOffset
+            var isNotNull = Expression.NotEqual(prop, Expression.Constant(null, typeof(DateTimeOffset?)));
+            var olderThanValue = Expression.Constant(olderThan, typeof(DateTimeOffset));
+            var isOlderThan = Expression.LessThan(propValue, olderThanValue);
+            var combined = Expression.AndAlso(isNotNull, isOlderThan);
+            var predicate = Expression.Lambda<Func<TEntity, bool>>(combined, param);
+
+            // Use AsTracking() to ensure identity map is consulted, avoiding duplicate-tracking conflicts
+            var toDelete = await dbSet.IgnoreQueryFilters().AsTracking().Where(predicate).ToListAsync();
+
+            if (toDelete.Count == 0)
+                return 0;
+
+            dbSet.RemoveRange(toDelete);
+            await context.SaveChangesAsync();
+            return toDelete.Count;
         }
     }
 }

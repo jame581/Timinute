@@ -1,0 +1,24 @@
+@code {
+    private const string GitHubUrl = "https://github.com/jame581/Timinute";
+    private const string CoffeeUrl = "https://www.buymeacoffee.com/jame581";
+    private const string LicenseUrl = "https://github.com/jame581/Timinute/blob/master/LICENSE";
+    private const string AuthorUrl = "https://github.com/jame581";
+    private int Year => System.DateTime.UtcNow.Year;
+}
+
+<footer class="lfooter">
+    <div class="lfooter__brand">
+        <div class="lfooter__mark">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="13" r="7.5" />
+                <path d="M12 9v4l2.5 2" />
+            </svg>
+        </div>
+        <span>© @Year Timinute · Built by <a class="lfooter__author" href="@AuthorUrl" target="_blank" rel="noopener">Jan Mesarč</a></span>
+    </div>
+    <div class="lfooter__links">
+        <a class="lfooter__link" href="@GitHubUrl" target="_blank" rel="noopener">GitHub</a>
+        <a class="lfooter__link" href="@CoffeeUrl" target="_blank" rel="noopener">Buy me a coffee</a>
+        <a class="lfooter__link" href="@LicenseUrl" target="_blank" rel="noopener">License (MIT)</a>
+    </div>
+</footer>

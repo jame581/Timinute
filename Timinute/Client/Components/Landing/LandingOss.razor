@@ -1,0 +1,42 @@
+@code {
+    private const string GitHubUrl = "https://github.com/jame581/Timinute";
+    private const string DocsUrl = "https://github.com/jame581/Timinute#readme";
+}
+
+<section id="open" class="loss">
+    <div class="loss__card">
+        <div class="loss__glow"></div>
+        <div class="loss__grid">
+            <div>
+                <div class="loss__eyebrow">MIT licensed</div>
+                <h2 class="loss__h2">Open source.<br />Free forever. Yours to fork.</h2>
+                <p class="loss__copy">
+                    Timinute is built openly on GitHub as a demonstration of modern Blazor. Run it in the cloud, self-host on your homelab, or fork it and make it yours.
+                </p>
+                <div class="loss__buttons">
+                    <a class="loss__btn-primary" href="@GitHubUrl" target="_blank" rel="noopener">
+                        <AuroraIcons Name="github" Size="15" /> View on GitHub
+                    </a>
+                    <a class="loss__btn-ghost" href="@DocsUrl" target="_blank" rel="noopener">
+                        Read docs <AuroraIcons Name="arrowR" Size="14" />
+                    </a>
+                </div>
+            </div>
+
+            <div class="loss__terminal">
+                <div class="loss__terminal-bar">
+                    <span class="loss__terminal-light loss__terminal-light--red"></span>
+                    <span class="loss__terminal-light loss__terminal-light--yellow"></span>
+                    <span class="loss__terminal-light loss__terminal-light--green"></span>
+                    <span class="loss__terminal-path">~/timinute</span>
+                </div>
+                <pre class="loss__terminal-pre">$ git clone github.com/jame581/Timinute
+$ cd scripts
+$ ./SetupDockerSql.ps1
+$ ./MigrateDatabase.ps1
+$ dotnet run --project Timinute/Server
+<span class="loss__terminal-success">✓ Listening on http://localhost:5001</span></pre>
+            </div>
+        </div>
+    </div>
+</section>

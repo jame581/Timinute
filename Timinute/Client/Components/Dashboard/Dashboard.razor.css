@@ -1,0 +1,343 @@
+.aurora-dashboard {
+    padding: 20px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: var(--font-sans);
+    color: var(--text);
+}
+
+.aurora-dashboard__hero-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 16px;
+}
+
+.aurora-dashboard__charts-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 16px;
+}
+
+/* Hero card */
+.aurora-hero-card {
+    border-radius: var(--r-2xl);
+    padding: 28px;
+    background: var(--gradient-hero);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.aurora-hero-card__eyebrow {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: .85;
+    text-transform: lowercase;
+    letter-spacing: 0.2px;
+}
+
+.aurora-hero-card__big {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font: 600 56px var(--font-sans);
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+.aurora-hero-card__minutes {
+    margin-left: 12px;
+}
+
+.aurora-hero-card__unit {
+    font-size: 28px;
+    opacity: .8;
+    margin-left: 2px;
+}
+
+.aurora-hero-card__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+
+.aurora-hero-card__chip {
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    border-radius: var(--r-pill);
+    padding: 4px 10px;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.aurora-hero-card__sub {
+    opacity: .8;
+}
+
+.aurora-hero-card__progress {
+    margin-top: auto;
+    background: rgba(255, 255, 255, .18);
+    border-radius: var(--r-pill);
+    height: 8px;
+    overflow: hidden;
+}
+
+.aurora-hero-card__progress-fill {
+    height: 100%;
+    background: #fff;
+    border-radius: var(--r-pill);
+    transition: width .4s ease;
+}
+
+/* Stat cards */
+.aurora-stat-card__label {
+    font: 500 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-stat-card__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.aurora-stat-card__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--r-pill);
+    flex-shrink: 0;
+}
+
+.aurora-stat-card__name {
+    font: 500 14px var(--font-sans);
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.aurora-stat-card__big {
+    margin-top: 16px;
+    font: 600 36px var(--font-sans);
+    letter-spacing: -1.4px;
+    line-height: 1;
+    color: var(--text);
+}
+
+.aurora-stat-card__unit {
+    font-size: 22px;
+    color: var(--text-mu);
+    margin: 0 4px 0 2px;
+}
+
+.aurora-stat-card__sub {
+    margin-top: 12px;
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-stat-card__delta-row {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.aurora-stat-card__delta {
+    border-radius: var(--r-pill);
+    padding: 3px 10px;
+    font: 500 12px var(--font-sans);
+}
+
+.aurora-stat-card__delta.is-positive {
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+    color: var(--success);
+}
+
+.aurora-stat-card__delta.is-negative {
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+    color: var(--danger);
+}
+
+/* Chart card header */
+.aurora-chart-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.aurora-chart-header__title {
+    font: 500 15px var(--font-sans);
+    color: var(--text);
+}
+
+.aurora-chart-header__sub {
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+    margin-top: 2px;
+}
+
+/* Recent activity */
+.aurora-activity__header {
+    padding: 20px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.aurora-activity__view-all {
+    font: 500 13px var(--font-sans);
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.aurora-activity__view-all:hover {
+    text-decoration: underline;
+}
+
+.aurora-activity__empty {
+    padding: 24px;
+    color: var(--text-mu);
+    font-size: 14px;
+    text-align: center;
+}
+
+.aurora-activity__row {
+    display: grid;
+    grid-template-columns: 20px 1fr 140px 90px 30px;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+}
+
+.aurora-activity__row:first-of-type {
+    border-top: none;
+}
+
+.aurora-activity__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--r-pill);
+}
+
+.aurora-activity__name {
+    font: 500 14px var(--font-sans);
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.aurora-activity__project {
+    font: 400 12px var(--font-sans);
+    color: var(--text-mu);
+    margin-top: 2px;
+}
+
+.aurora-activity__time {
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-activity__duration {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: right;
+}
+
+.aurora-activity__more {
+    background: transparent;
+    border: none;
+    color: var(--text-mu);
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aurora-activity__more:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+@media (max-width: 1100px) {
+    .aurora-dashboard__hero-row {
+        grid-template-columns: 1fr;
+    }
+    .aurora-dashboard__charts-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile reflow: tighter padding, hero number shrinks, stat cards 2-up,
+   chart card heights reduce. Recent activity row drops the desktop-only
+   columns into a stacked layout. */
+@media (max-width: 768px) {
+    .aurora-dashboard {
+        padding: 12px 16px 16px;
+        gap: 14px;
+    }
+
+    .aurora-dashboard__hero-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .aurora-hero-card {
+        grid-column: 1 / -1;
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .aurora-hero-card__big {
+        font-size: 46px;
+        letter-spacing: -2px;
+    }
+
+    .aurora-hero-card__unit {
+        font-size: 22px;
+    }
+
+    .aurora-stat-card__big {
+        font-size: 26px;
+        letter-spacing: -1px;
+    }
+
+    .aurora-stat-card__unit {
+        font-size: 16px;
+    }
+
+    .aurora-activity__row {
+        grid-template-columns: 14px 1fr 80px;
+        row-gap: 4px;
+        padding: 12px 14px;
+    }
+
+    .aurora-activity__time,
+    .aurora-activity__more {
+        display: none;
+    }
+
+    .aurora-activity__duration {
+        font-size: 13px;
+    }
+
+    .aurora-chart-header__title {
+        font-size: 14px;
+    }
+
+    .aurora-chart-header__sub {
+        font-size: 12.5px;
+    }
+}

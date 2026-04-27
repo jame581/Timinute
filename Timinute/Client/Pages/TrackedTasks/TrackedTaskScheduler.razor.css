@@ -1,0 +1,60 @@
+.aurora-sched-page {
+    padding: 20px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    font-family: var(--font-sans);
+    color: var(--text);
+}
+
+.aurora-sched-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.aurora-sched-toolbar__range {
+    font: 500 18px var(--font-sans);
+    letter-spacing: -0.3px;
+    color: var(--text);
+    margin-left: 8px;
+}
+
+.aurora-sched-segmented {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 4px;
+}
+
+.aurora-sched-segmented__btn {
+    background: transparent;
+    border: none;
+    padding: 6px 14px;
+    font: 500 13px var(--font-sans);
+    color: var(--text-mu);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.aurora-sched-segmented__btn:hover:not(:disabled):not(.is-active) {
+    color: var(--text);
+}
+
+.aurora-sched-segmented__btn:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+}
+
+.aurora-sched-segmented__btn.is-active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.aurora-sched-loading {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-mu);
+}

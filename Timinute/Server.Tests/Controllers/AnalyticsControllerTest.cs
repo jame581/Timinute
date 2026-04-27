@@ -25,8 +25,9 @@ namespace Timinute.Server.Tests.Controllers
 
         public AnalyticsControllerTest()
         {
-            var myProfile = new MappingProfile();
-            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(myProfile));
+            var configExpression = new MapperConfigurationExpression();
+            configExpression.AddProfile<MappingProfile>();
+            var configuration = new MapperConfiguration(configExpression, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
             _mapper = new Mapper(configuration);
 
             _loggerMock = new Mock<ILogger<AnalyticsController>>();
@@ -37,7 +38,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime lastMonth = DateTime.Now.AddMonths(-1);
+            DateTimeOffset lastMonth = DateTimeOffset.UtcNow.AddMonths(-1);
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = lastMonth.Year, Month = lastMonth.Month });
 
@@ -64,7 +65,7 @@ namespace Timinute.Server.Tests.Controllers
         {
             AnalyticsController controller = await CreateController();
 
-            DateTime thisMonth = DateTime.Now;
+            DateTimeOffset thisMonth = DateTimeOffset.UtcNow;
 
             var actionResult = await controller.GetAmountWorkTimeByMonth(new AmountWorkTimeByMonthDto { Year = thisMonth.Year, Month = thisMonth.Month });
 
@@ -87,6 +88,38 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Get_Work_Time_Per_Months_Test()
+        {
+            AnalyticsController controller = await CreateController();
+
+            var actionResult = await controller.GetWorkTimePerMonths();
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var okResult = actionResult.Result as OkObjectResult;
+
+            Assert.NotNull(okResult);
+            Assert.IsAssignableFrom<List<WorkTimePerMonthDto>>(okResult!.Value);
+            var workTimePerMonths = okResult.Value as List<WorkTimePerMonthDto>;
+
+            Assert.NotNull(workTimePerMonths);
+            Assert.Equal(2, workTimePerMonths!.Count);
+
+            var thisMonth = DateTimeOffset.UtcNow;
+            var lastMonth = thisMonth.AddMonths(-1);
+            var thisMonthLabel = new DateTimeOffset(thisMonth.Year, thisMonth.Month, 1, 0, 0, 0, TimeSpan.Zero).ToString("yyyy MMM");
+            var lastMonthLabel = new DateTimeOffset(lastMonth.Year, lastMonth.Month, 1, 0, 0, 0, TimeSpan.Zero).ToString("yyyy MMM");
+
+            Assert.Contains(workTimePerMonths, w =>
+                w.Time == thisMonthLabel &&
+                w.WorkTimeInSeconds == TimeSpan.FromHours(10).TotalSeconds);
+
+            Assert.Contains(workTimePerMonths, w =>
+                w.Time == lastMonthLabel &&
+                w.WorkTimeInSeconds == TimeSpan.FromHours(28).TotalSeconds);
+        }
+
+        [Fact]
         public async Task Get_Work_Time_Per_Months()
         {
             AnalyticsController controller = await CreateController();
@@ -103,8 +136,8 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.NotNull(projectDataItemsPerMonthDtos);
 
-            var today = DateTime.Today.ToUniversalTime();
-            var month = new DateTime(today.Year, today.Month, 1).ToUniversalTime();
+            var today = DateTimeOffset.UtcNow;
+            var month = new DateTimeOffset(today.Year, today.Month, 1, 0, 0, 0, TimeSpan.Zero);
             var first = month.AddMonths(-1);
 
             Assert.Equal(2, projectDataItemsPerMonthDtos!.Count);
@@ -154,11 +187,11 @@ namespace Timinute.Server.Tests.Controllers
                     Assert.Equal(TimeSpan.FromHours(10), item.Time);
                 }, item =>
                 {
-                    Assert.Equal("None", item.ProjectId);
+                    Assert.Equal("ProjectId1002", item.ProjectId);
                     Assert.Equal(TimeSpan.FromHours(7), item.Time);
                 }, item =>
                 {
-                    Assert.Equal("ProjectId1002", item.ProjectId);
+                    Assert.Equal("None", item.ProjectId);
                     Assert.Equal(TimeSpan.FromHours(7), item.Time);
                 }, item =>
                 {
