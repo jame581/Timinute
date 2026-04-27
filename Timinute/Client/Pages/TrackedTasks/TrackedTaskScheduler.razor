@@ -28,33 +28,46 @@
 
         <div style="flex: 1;"></div>
 
-        <div class="aurora-sched-segmented">
-            <button class="aurora-sched-segmented__btn" disabled title="Coming soon">Day</button>
-            <button class="aurora-sched-segmented__btn is-active">Week</button>
-            <button class="aurora-sched-segmented__btn" disabled title="Coming soon">Month</button>
-        </div>
+        @if (!IsMobile)
+        {
+            <div class="aurora-sched-segmented">
+                <button class="aurora-sched-segmented__btn" disabled title="Coming soon">Day</button>
+                <button class="aurora-sched-segmented__btn is-active">Week</button>
+                <button class="aurora-sched-segmented__btn" disabled title="Coming soon">Month</button>
+            </div>
 
-        <AuroraButton Variant="primary" OnClick="OpenAdd">
-            <AuroraIcons Name="plus" Size="16" />
-            <span>Add task</span>
-        </AuroraButton>
+            <AuroraButton Variant="primary" OnClick="OpenAdd">
+                <AuroraIcons Name="plus" Size="16" />
+                <span>Add task</span>
+            </AuroraButton>
+        }
     </div>
 
-    <AuroraCard NoPad="true">
-        @if (IsLoading)
-        {
+    @if (IsLoading)
+    {
+        <AuroraCard NoPad="true">
             <div class="aurora-sched-loading">Loading…</div>
-        }
-        else
-        {
+        </AuroraCard>
+    }
+    else if (IsMobile)
+    {
+        <DayCalendar WeekStart="@WeekStart" Tasks="@WeekTasks"
+                     OnEmptyClick="@OnEmptyCellClicked"
+                     OnEventClick="@OnEventClicked" />
+    }
+    else
+    {
+        <AuroraCard NoPad="true">
             <WeekCalendar WeekStart="@WeekStart" Tasks="@WeekTasks"
                           OnEmptyClick="@OnEmptyCellClicked"
                           OnEventClick="@OnEventClicked" />
-        }
-    </AuroraCard>
+        </AuroraCard>
+    }
 </div>
 
 @code {
+    [CascadingParameter(Name = "IsMobile")] public bool IsMobile { get; set; }
+
     private DateTime WeekStart;
     private bool IsLoading = true;
     private List<TrackedTaskDto> WeekTasks = new();

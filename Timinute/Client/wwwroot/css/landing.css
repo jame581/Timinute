@@ -800,7 +800,9 @@
     }
 }
 
-@media (max-width: 640px) {
+/* Mobile (matches aurora-mobile-landing.jsx). Stacks fully, drops nav
+   anchors, shrinks hero typography, full-width CTAs. */
+@media (max-width: 768px) {
     .aurora-landing__container,
     .lnav,
     .lhero,
@@ -811,21 +813,144 @@
         padding-right: 20px;
     }
 
-    .lnav__links {
-        gap: 14px;
-    }
-
+    /* Top nav: only wordmark + Log in pill survives. The GitHub link is
+       targeted by its href so the rule doesn't depend on :has() or DOM
+       structure. */
     .lnav__link--features,
-    .lnav__link--open {
+    .lnav__link--open,
+    .lnav__link[href*="github.com"],
+    .lnav__cta {
         display: none;
     }
 
+    .lnav__link--login {
+        background: var(--accent-so);
+        color: var(--accent-ink);
+        padding: 8px 14px;
+        border-radius: 999px;
+    }
+
+    /* Hero: smaller H1, smaller intro, stacked full-width CTAs. */
+    .lhero {
+        padding-top: 24px;
+        gap: 28px;
+    }
+
     .lhero__h1 {
-        font-size: 40px;
+        font-size: 42px;
+        letter-spacing: -1.6px;
+        line-height: 1.05;
+    }
+
+    .lhero__intro {
+        font-size: 15px;
+    }
+
+    .lhero__ctas {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .lhero__cta-primary,
+    .lhero__cta-ghost {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .lhero__trust {
+        gap: 12px 14px;
+        font-size: 12.5px;
+    }
+
+    /* Hero card mock */
+    .lhero__card {
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .lhero__card-timer {
+        font-size: 46px;
+        letter-spacing: -2px;
+    }
+
+    /* Features: header stacks, card padding tightens. */
+    .lfeatures {
+        padding-top: 80px;
+    }
+
+    .lfeatures__head {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .lfeatures__h2 {
+        font-size: 30px;
+        letter-spacing: -1.2px;
+    }
+
+    .lfeature-card {
+        padding: 20px;
+    }
+
+    /* Open-source CTA: compact, two side-by-side full-width buttons,
+       headline wraps. */
+    .loss {
+        margin-top: 80px;
+    }
+
+    .loss__card {
+        padding: 24px;
+        border-radius: 22px;
+    }
+
+    .loss__h2 {
+        font-size: 26px;
+        letter-spacing: -0.8px;
+    }
+
+    .loss__copy {
+        font-size: 14.5px;
+    }
+
+    .loss__buttons {
+        gap: 10px;
+    }
+
+    .loss__btn-primary,
+    .loss__btn-ghost {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .loss__terminal-pre {
+        font-size: 11.5px;
+        padding: 14px;
+    }
+
+    /* Footer: centered single column. */
+    .lfooter {
+        margin-top: 60px;
+        padding-top: 28px;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        text-align: center;
+    }
+
+    .lfooter__links {
+        justify-content: center;
+    }
+}
+
+/* Tighter hero size at very narrow widths. */
+@media (max-width: 480px) {
+    .lhero__h1 {
+        font-size: 36px;
         letter-spacing: -1.2px;
     }
 
     .lhero__card-timer {
-        font-size: 44px;
+        font-size: 40px;
     }
 }

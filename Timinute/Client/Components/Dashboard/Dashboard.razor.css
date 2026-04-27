@@ -279,3 +279,65 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Mobile reflow: tighter padding, hero number shrinks, stat cards 2-up,
+   chart card heights reduce. Recent activity row drops the desktop-only
+   columns into a stacked layout. */
+@media (max-width: 768px) {
+    .aurora-dashboard {
+        padding: 12px 16px 16px;
+        gap: 14px;
+    }
+
+    .aurora-dashboard__hero-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .aurora-hero-card {
+        grid-column: 1 / -1;
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .aurora-hero-card__big {
+        font-size: 46px;
+        letter-spacing: -2px;
+    }
+
+    .aurora-hero-card__unit {
+        font-size: 22px;
+    }
+
+    .aurora-stat-card__big {
+        font-size: 26px;
+        letter-spacing: -1px;
+    }
+
+    .aurora-stat-card__unit {
+        font-size: 16px;
+    }
+
+    .aurora-activity__row {
+        grid-template-columns: 14px 1fr 80px;
+        row-gap: 4px;
+        padding: 12px 14px;
+    }
+
+    .aurora-activity__time,
+    .aurora-activity__more {
+        display: none;
+    }
+
+    .aurora-activity__duration {
+        font-size: 13px;
+    }
+
+    .aurora-chart-header__title {
+        font-size: 14px;
+    }
+
+    .aurora-chart-header__sub {
+        font-size: 12.5px;
+    }
+}

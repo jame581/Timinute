@@ -299,3 +299,66 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Mobile: timer is centered, action row centers around the play/pause
+   button (reset · play/pause · edit), and project/tags/manual-entry stack
+   below the task name. */
+@media (max-width: 768px) {
+    .aurora-tracker-page {
+        padding: 12px 16px 16px;
+        gap: 14px;
+    }
+
+    .aurora-tracker-card {
+        padding: 24px 18px;
+    }
+
+    .aurora-tracker-card__top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+    }
+
+    .aurora-tracker-card__left {
+        width: 100%;
+    }
+
+    .aurora-tracker-card__label {
+        justify-content: center;
+    }
+
+    .aurora-timer {
+        font-size: 60px;
+        letter-spacing: -2.5px;
+    }
+
+    .aurora-tracker-card__meta {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .aurora-tracker-card__right {
+        gap: 18px;
+        justify-content: center;
+    }
+
+    .aurora-tracker-card__inputs {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .aurora-tracker-tile--name {
+        grid-column: 1 / -1;
+    }
+
+    .aurora-today__row {
+        grid-template-columns: 4px 1fr auto;
+        row-gap: 4px;
+    }
+
+    .aurora-today__range,
+    .aurora-today__actions {
+        display: none;
+    }
+}

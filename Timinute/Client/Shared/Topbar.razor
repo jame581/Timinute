@@ -3,6 +3,7 @@
 @inject AuthenticationStateProvider AuthState
 @inject Radzen.DialogService DialogService
 @inject IJSRuntime JS
+@inject Timinute.Client.Services.MobileSheetService Sheet
 
 <header class="aurora-topbar">
     <div class="aurora-topbar__left">
@@ -11,18 +12,27 @@
     </div>
 
     <div class="aurora-topbar__right">
-        <div class="aurora-search">
-            <span class="aurora-search__icon">
-                <AuroraIcons Name="search" Size="16" />
-            </span>
-            <input type="text" class="aurora-search__input" placeholder="Search tasks, projects…" />
-            <span class="aurora-search__chip">⌘K</span>
-        </div>
+        @if (!IsMobile)
+        {
+            <div class="aurora-search">
+                <span class="aurora-search__icon">
+                    <AuroraIcons Name="search" Size="16" />
+                </span>
+                <input type="text" class="aurora-search__input" placeholder="Search tasks, projects…" />
+                <span class="aurora-search__chip">⌘K</span>
+            </div>
 
-        <button class="aurora-quick-add" @onclick="OpenQuickAdd">
-            <AuroraIcons Name="plus" Size="16" />
-            <span>Quick add</span>
-        </button>
+            <button class="aurora-quick-add" @onclick="OpenQuickAdd">
+                <AuroraIcons Name="plus" Size="16" />
+                <span>Quick add</span>
+            </button>
+        }
+        else
+        {
+            <button type="button" class="aurora-topbar__avatar" @onclick="OpenSheet" aria-label="More">
+                @Initials
+            </button>
+        }
     </div>
 </header>
 
@@ -38,10 +48,24 @@
         ["trash"]                  = ("Trash",         "Restore or permanently delete."),
     };
 
+    [CascadingParameter(Name = "IsMobile")] public bool IsMobile { get; set; }
+
     private string CurrentTitle = "Timinute";
     private string CurrentSubtitle = "";
     private string FirstName = "";
+    private string LastName = "";
     private IJSObjectReference? shortcutsModule;
+
+    private string Initials
+    {
+        get
+        {
+            var f = string.IsNullOrWhiteSpace(FirstName) ? "" : FirstName.Trim()[0].ToString();
+            var l = string.IsNullOrWhiteSpace(LastName) ? "" : LastName.Trim()[0].ToString();
+            var combined = (f + l).ToUpperInvariant();
+            return combined.Length == 0 ? "?" : combined;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,13 +77,16 @@
             FirstName = user.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
                        ?? user.Identity.Name?.Split('@')[0]
                        ?? "";
+            LastName = user.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value ?? "";
         }
         Resolve();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        // Skip the Cmd/Ctrl+K module on mobile — the search input isn't rendered
+        // and there's no on-screen keyboard affordance for the shortcut.
+        if (firstRender && !IsMobile && shortcutsModule is null)
         {
             shortcutsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/topbar-shortcuts.js");
             await shortcutsModule.InvokeVoidAsync("registerCmdKFocus", ".aurora-search__input");
@@ -111,6 +138,8 @@
             new Dictionary<string, object?>(),
             new Radzen.DialogOptions { Width = "640px" });
     }
+
+    private void OpenSheet() => Sheet.Show();
 
     public async ValueTask DisposeAsync()
     {

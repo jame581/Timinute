@@ -1,26 +1,64 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject Timinute.Client.Services.ViewportService Viewport
 
 <head>
     <RadzenTheme Theme="material" @rendermode="RenderMode.InteractiveAuto" />
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </head>
 
-<AuthorizeView>
-    <Authorized>
-        <div class="aurora-app">
-            <NavMenu />
-            <main class="aurora-main">
-                <Topbar />
-                <article class="aurora-content">
-                    @Body
-                </article>
-            </main>
-        </div>
-    </Authorized>
-    <NotAuthorized>
-        @Body
-    </NotAuthorized>
-</AuthorizeView>
+<CascadingValue Value="Viewport.IsMobile" Name="IsMobile">
+    <AuthorizeView>
+        <Authorized>
+            <div class="aurora-app @(Viewport.IsMobile ? "is-mobile" : "")">
+                @if (!Viewport.IsMobile)
+                {
+                    <NavMenu />
+                }
+                <main class="aurora-main">
+                    <Topbar />
+                    <article class="aurora-content">
+                        @Body
+                    </article>
+                    @if (Viewport.IsMobile)
+                    {
+                        <MobileTabBar />
+                        <MobileMoreSheet />
+                    }
+                </main>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            @Body
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingValue>
 
 <RadzenDialog />
 <RadzenNotification />
+
+@code {
+    protected override void OnInitialized()
+    {
+        Viewport.OnChanged += OnViewportChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // No `firstRender` guard: InitializeAsync is internally idempotent on success
+        // and resets its `initialized` flag on failure, so calling it on every render
+        // gives us a free retry path if the first JS import is racing prerender or
+        // hot reload. The dedupe is cheap (a single bool check after the first hit).
+        await Viewport.InitializeAsync();
+    }
+
+    private void OnViewportChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Viewport.OnChanged -= OnViewportChanged;
+    }
+}
