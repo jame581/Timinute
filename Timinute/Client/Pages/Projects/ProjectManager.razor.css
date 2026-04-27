@@ -154,8 +154,22 @@
     }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
+    .aurora-pm-page {
+        padding: 12px 16px 16px;
+        gap: 14px;
+    }
+
     .aurora-pm-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .aurora-pm-card {
+        padding: 16px !important;
+    }
+
+    .aurora-pm-spark {
+        height: 28px;
     }
 }

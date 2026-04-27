@@ -166,3 +166,53 @@
         text-align: left;
     }
 }
+
+/* Mobile: filter bar collapses to search + primary +. Day-group rows
+   stack name on top, project pill + time-range as a meta line, mono
+   duration right-aligned. */
+@media (max-width: 768px) {
+    .aurora-tt-page {
+        padding: 12px 16px 16px;
+        gap: 12px;
+    }
+
+    .aurora-tt-filter > .aurora-btn--ghost {
+        display: none;
+    }
+
+    .aurora-tt-row {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "name duration"
+            "meta meta";
+        row-gap: 4px;
+        column-gap: 10px;
+        padding: 12px 14px;
+    }
+
+    .aurora-tt-row__name {
+        grid-area: name;
+    }
+
+    .aurora-tt-row__duration {
+        grid-area: duration;
+        text-align: right;
+        font-size: 13px;
+    }
+
+    .aurora-tt-row__pill {
+        grid-area: meta;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .aurora-tt-row__pill::after {
+        content: attr(data-range);
+    }
+
+    .aurora-tt-row__range,
+    .aurora-tt-row__actions {
+        display: none;
+    }
+}
