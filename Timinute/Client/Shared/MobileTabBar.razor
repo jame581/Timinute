@@ -1,1 +1,82 @@
-@* Stub — full implementation lands in step 4. Keeps MainLayout's reference compilable. *@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject Radzen.DialogService DialogService
+
+<nav class="mtb" aria-label="Primary mobile navigation">
+    @foreach (var item in LeftItems)
+    {
+        <a class="mtb__item @(IsActive(item.Href) ? "is-active" : "")"
+           href="@item.Href" aria-label="@item.Label">
+            <AuroraIcons Name="@item.Icon" Size="21" StrokeWidth="1.8" />
+            <span class="mtb__label">@item.Label</span>
+        </a>
+    }
+
+    <button class="mtb__fab" type="button" @onclick="OpenQuickAdd" aria-label="Quick add">
+        <AuroraIcons Name="plus" Size="22" StrokeWidth="2.2" />
+    </button>
+
+    @foreach (var item in RightItems)
+    {
+        <a class="mtb__item @(IsActive(item.Href) ? "is-active" : "")"
+           href="@item.Href" aria-label="@item.Label">
+            <AuroraIcons Name="@item.Icon" Size="21" StrokeWidth="1.8" />
+            <span class="mtb__label">@item.Label</span>
+        </a>
+    }
+</nav>
+
+@code {
+    private record TabItem(string Label, string Href, string Icon);
+
+    // Order matters — these flank the FAB. Left two on the left, right two on the right.
+    private static readonly TabItem[] LeftItems =
+    {
+        new("Home",    "",              "dashboard"),
+        new("Tracker", "timetracker",   "timer"),
+    };
+
+    private static readonly TabItem[] RightItems =
+    {
+        new("Tasks",    "trackedtasks",   "list"),
+        new("Projects", "projectmanager", "folder"),
+    };
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private bool IsActive(string href)
+    {
+        var current = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var queryIdx = current.IndexOf('?');
+        if (queryIdx >= 0) current = current.Substring(0, queryIdx);
+        var fragIdx = current.IndexOf('#');
+        if (fragIdx >= 0) current = current.Substring(0, fragIdx);
+        current = current.TrimEnd('/');
+        var target = href.TrimEnd('/');
+
+        if (string.IsNullOrEmpty(target)) return current.Length == 0;
+        return current.Equals(target, StringComparison.OrdinalIgnoreCase)
+            || current.StartsWith(target + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task OpenQuickAdd()
+    {
+        await DialogService.OpenAsync<Timinute.Client.Components.TrackedTasks.AddTrackedTask>(
+            "Quick add",
+            new Dictionary<string, object?>(),
+            new Radzen.DialogOptions { Width = "min(560px, 92vw)" });
+    }
+}
