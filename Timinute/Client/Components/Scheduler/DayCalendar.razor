@@ -45,6 +45,8 @@
             var daysFromMonday = ((int)SelectedDay.DayOfWeek + 6) % 7; // Mon=0..Sun=6
             SelectedDay = WeekStart.AddDays(daysFromMonday);
         }
+
+        RebuildSelectedDay();
     }
 
     public void Dispose()
@@ -57,13 +59,25 @@
         }
     }
 
-    private List<TrackedTaskDto> SelectedDayTasks =>
-        Tasks.Where(t => t.StartDate.LocalDateTime.Date == SelectedDay.Date)
-             .OrderBy(t => t.StartDate)
-             .ToList();
+    // Cached per parameter set + on selection change so the markup can reference
+    // it multiple times without re-allocating/re-sorting on each access.
+    private List<TrackedTaskDto> selectedDayTasks = new();
+    private double selectedDayHours;
 
-    private double SelectedDayHours =>
-        SelectedDayTasks.Sum(t => t.Duration.TotalHours);
+    private void RebuildSelectedDay()
+    {
+        selectedDayTasks = Tasks
+            .Where(t => t.StartDate.LocalDateTime.Date == SelectedDay.Date)
+            .OrderBy(t => t.StartDate)
+            .ToList();
+        selectedDayHours = selectedDayTasks.Sum(t => t.Duration.TotalHours);
+    }
+
+    private void SelectDay(DateTime day)
+    {
+        SelectedDay = day;
+        RebuildSelectedDay();
+    }
 
     private bool SelectedIsToday => SelectedDay.Date == DateTime.Today;
 
@@ -118,7 +132,7 @@
             var isSelected = d.Date == SelectedDay.Date;
             <button type="button"
                     class="dcal__strip-day @(isSelected ? "is-selected" : "")"
-                    @onclick="() => SelectedDay = d.Date">
+                    @onclick="() => SelectDay(d.Date)">
                 <span class="dcal__strip-eyebrow">@d.ToString("ddd", System.Globalization.CultureInfo.InvariantCulture).ToUpperInvariant()</span>
                 <span class="dcal__strip-num">@d.Day</span>
             </button>
@@ -129,7 +143,7 @@
     <div class="dcal__header">
         <div class="dcal__header-meta">
             <div class="dcal__header-label">@SelectedDayLabel</div>
-            <div class="dcal__header-sub">@SelectedDayTasks.Count task@(SelectedDayTasks.Count == 1 ? "" : "s") · @SelectedDayHours.ToString("0.#")h</div>
+            <div class="dcal__header-sub">@selectedDayTasks.Count task@(selectedDayTasks.Count == 1 ? "" : "s") · @selectedDayHours.ToString("0.#")h</div>
         </div>
         <div class="dcal__segmented">
             <button class="dcal__segmented-btn is-active" type="button">Day</button>
@@ -165,7 +179,7 @@
                 </div>
             }
 
-            @foreach (var t in SelectedDayTasks)
+            @foreach (var t in selectedDayTasks)
             {
                 var (top, height) = PositionFor(t);
                 var color = ColorService.GetColor(t.Project);

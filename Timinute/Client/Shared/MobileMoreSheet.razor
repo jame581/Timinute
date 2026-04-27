@@ -11,6 +11,7 @@
            aria-modal="true"
            aria-label="More navigation"
            tabindex="-1"
+           @ref="sheetEl"
            @onkeydown="HandleKeyDown">
         <div class="mms__handle" aria-hidden="true"></div>
 
@@ -47,6 +48,9 @@
         new("Trash",    "trash",     "trash"),
     };
 
+    private ElementReference sheetEl;
+    private bool needsFocus;
+
     protected override void OnInitialized()
     {
         Sheet.OnChange += OnChange;
@@ -54,7 +58,20 @@
 
     private void OnChange()
     {
+        // When the sheet opens, queue a focus pass so Escape and screen-reader
+        // announcement land on the dialog instead of the trigger button.
+        if (Sheet.IsOpen) needsFocus = true;
         InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (needsFocus && Sheet.IsOpen)
+        {
+            needsFocus = false;
+            try { await sheetEl.FocusAsync(preventScroll: true); }
+            catch (Microsoft.JSInterop.JSException) { /* element may have unmounted */ }
+        }
     }
 
     private void Close() => Sheet.Hide();

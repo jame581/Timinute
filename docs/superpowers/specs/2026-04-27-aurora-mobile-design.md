@@ -1,7 +1,7 @@
 # Aurora Mobile — Design Spec
 
 **Status:** Approved for implementation. Aurora desktop redesign fully shipped 2026-04-26/27 (PRs #31–#34).
-**Source of truth for visuals:** `D:\Web\jame581\design_handoff_aurora\aurora-mobile.jsx` (in-app), `aurora-mobile-landing.jsx` (landing), and the "Mobile (iOS) screens" section of the handoff `README.md`.
+**Source of truth for visuals:** the Aurora handoff bundle (Claude Design output) — `aurora-mobile.jsx` (in-app), `aurora-mobile-landing.jsx` (landing), and the "Mobile (iOS) screens" section of `README.md`. The bundle is a local design artifact kept outside the repo (the originating workstation has it at `D:\Web\jame581\design_handoff_aurora\`); ask the project owner for a copy if you need to regenerate from source.
 **This document:** project-specific decisions the visual handoff does not specify, plus a brief on-ramp for the implementer.
 
 ---

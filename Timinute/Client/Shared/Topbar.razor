@@ -84,7 +84,9 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        // Skip the Cmd/Ctrl+K module on mobile — the search input isn't rendered
+        // and there's no on-screen keyboard affordance for the shortcut.
+        if (firstRender && !IsMobile && shortcutsModule is null)
         {
             shortcutsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/topbar-shortcuts.js");
             await shortcutsModule.InvokeVoidAsync("registerCmdKFocus", ".aurora-search__input");

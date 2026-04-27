@@ -813,10 +813,12 @@
         padding-right: 20px;
     }
 
-    /* Top nav: only wordmark + Log in pill survives. */
+    /* Top nav: only wordmark + Log in pill survives. The GitHub link is
+       targeted by its href so the rule doesn't depend on :has() or DOM
+       structure. */
     .lnav__link--features,
     .lnav__link--open,
-    .lnav__link:has(> svg),
+    .lnav__link[href*="github.com"],
     .lnav__cta {
         display: none;
     }

@@ -23,24 +23,39 @@ namespace Timinute.Client.Services
         }
 
         /// <summary>
-        /// Idempotent. Safe to call from any component that wants to ensure the
-        /// service is bootstrapped — typically MainLayout in OnAfterRenderAsync(firstRender).
+        /// Idempotent on success; retries on failure. Safe to call from any
+        /// component that wants to ensure the service is bootstrapped — typically
+        /// MainLayout in OnAfterRenderAsync.
         /// </summary>
         public async ValueTask InitializeAsync()
         {
             if (initialized) return;
-            initialized = true;
 
+            IJSObjectReference? localModule = null;
+            DotNetObjectReference<ViewportService>? localRef = null;
             try
             {
-                module = await js.InvokeAsync<IJSObjectReference>("import", "./js/viewport.js");
-                selfRef = DotNetObjectReference.Create(this);
-                await module.InvokeVoidAsync("register", selfRef);
+                localModule = await js.InvokeAsync<IJSObjectReference>("import", "./js/viewport.js");
+                localRef = DotNetObjectReference.Create(this);
+                await localModule.InvokeVoidAsync("register", localRef);
+
+                // Only commit the registration once everything succeeded — otherwise we'd
+                // leak partially-created handles across retries.
+                module = localModule;
+                selfRef = localRef;
+                initialized = true;
             }
             catch
             {
-                // Prerendering or torn-down circuit — IsMobile stays false; OK as a default.
-                initialized = false;
+                // Prerendering or torn-down circuit. Tear down any partial state so the
+                // next render's retry starts from a clean slate; IsMobile stays false.
+                localRef?.Dispose();
+                if (localModule is not null)
+                {
+                    try { await localModule.DisposeAsync(); }
+                    catch (JSDisconnectedException) { }
+                    catch (JSException) { }
+                }
             }
         }
 
@@ -54,16 +69,25 @@ namespace Timinute.Client.Services
 
         public async ValueTask DisposeAsync()
         {
-            if (module is not null)
+            try
             {
-                try
+                if (module is not null)
                 {
-                    await module.InvokeVoidAsync("unregister");
-                    await module.DisposeAsync();
+                    try
+                    {
+                        await module.InvokeVoidAsync("unregister");
+                        await module.DisposeAsync();
+                    }
+                    catch (JSDisconnectedException) { }
+                    catch (JSException) { }
                 }
-                catch (JSDisconnectedException) { }
             }
-            selfRef?.Dispose();
+            finally
+            {
+                selfRef?.Dispose();
+                selfRef = null;
+                module = null;
+            }
         }
     }
 }

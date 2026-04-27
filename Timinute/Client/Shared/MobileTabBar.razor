@@ -5,9 +5,10 @@
 <nav class="mtb" aria-label="Primary mobile navigation">
     @foreach (var item in LeftItems)
     {
-        <a class="mtb__item @(IsActive(item.Href) ? "is-active" : "")"
+        var isActive = IsActive(item.Href);
+        <a class="mtb__item @(isActive ? "is-active" : "")"
            href="@item.Href" aria-label="@item.Label"
-           aria-current="@(IsActive(item.Href) ? "page" : null)">
+           aria-current="@(isActive ? "page" : null)">
             <AuroraIcons Name="@item.Icon" Size="21" StrokeWidth="1.8" />
             <span class="mtb__label">@item.Label</span>
         </a>
@@ -19,9 +20,10 @@
 
     @foreach (var item in RightItems)
     {
-        <a class="mtb__item @(IsActive(item.Href) ? "is-active" : "")"
+        var isActive = IsActive(item.Href);
+        <a class="mtb__item @(isActive ? "is-active" : "")"
            href="@item.Href" aria-label="@item.Label"
-           aria-current="@(IsActive(item.Href) ? "page" : null)">
+           aria-current="@(isActive ? "page" : null)">
             <AuroraIcons Name="@item.Icon" Size="21" StrokeWidth="1.8" />
             <span class="mtb__label">@item.Label</span>
         </a>
