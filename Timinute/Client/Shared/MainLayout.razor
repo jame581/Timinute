@@ -45,10 +45,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await Viewport.InitializeAsync();
-        }
+        // No `firstRender` guard: InitializeAsync is internally idempotent on success
+        // and resets its `initialized` flag on failure, so calling it on every render
+        // gives us a free retry path if the first JS import is racing prerender or
+        // hot reload. The dedupe is cheap (a single bool check after the first hit).
+        await Viewport.InitializeAsync();
     }
 
     private void OnViewportChanged()

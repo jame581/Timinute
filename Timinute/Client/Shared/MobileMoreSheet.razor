@@ -6,7 +6,12 @@
 @if (Sheet.IsOpen)
 {
     <div class="mms__backdrop" @onclick="Close"></div>
-    <aside class="mms" role="dialog" aria-label="More navigation">
+    <aside class="mms"
+           role="dialog"
+           aria-modal="true"
+           aria-label="More navigation"
+           tabindex="-1"
+           @onkeydown="HandleKeyDown">
         <div class="mms__handle" aria-hidden="true"></div>
 
         @foreach (var item in Items)
@@ -24,7 +29,7 @@
 
         <button type="button" class="mms__row mms__row--danger" @onclick="LogOut">
             <span class="mms__icon">
-                <AuroraIcons Name="arrowR" Size="20" />
+                <AuroraIcons Name="logout" Size="20" />
             </span>
             <span class="mms__label">Log out</span>
             <span class="mms__chevron" aria-hidden="true"></span>
@@ -53,6 +58,14 @@
     }
 
     private void Close() => Sheet.Hide();
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Sheet.Hide();
+        }
+    }
 
     private void Go(string href)
     {

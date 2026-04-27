@@ -59,10 +59,14 @@
     transition: background .15s ease;
 }
 
-.mms__row:hover,
+.mms__row:hover {
+    background: var(--surface-2);
+}
+
 .mms__row:focus-visible {
     background: var(--surface-2);
-    outline: none;
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
 }
 
 .mms__row + .mms__row {

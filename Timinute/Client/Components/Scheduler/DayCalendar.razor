@@ -28,13 +28,22 @@
 
     protected override void OnParametersSet()
     {
-        // If the host hands us a new week, default the selection to today when in range,
-        // otherwise the first day of that week.
-        if (SelectedDay == default || SelectedDay < WeekStart || SelectedDay >= WeekStart.AddDays(7))
+        // First mount: prefer today when it falls in the visible week, otherwise the
+        // start of the week.
+        if (SelectedDay == default)
         {
             SelectedDay = (DateTime.Today >= WeekStart && DateTime.Today < WeekStart.AddDays(7))
                 ? DateTime.Today
                 : WeekStart;
+            return;
+        }
+
+        // Week navigation: preserve the user's weekday selection across prev/next so
+        // the visible column stays put. Selected Friday → still Friday in the new week.
+        if (SelectedDay < WeekStart || SelectedDay >= WeekStart.AddDays(7))
+        {
+            var daysFromMonday = ((int)SelectedDay.DayOfWeek + 6) % 7; // Mon=0..Sun=6
+            SelectedDay = WeekStart.AddDays(daysFromMonday);
         }
     }
 
