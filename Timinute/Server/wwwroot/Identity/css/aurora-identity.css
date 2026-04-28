@@ -21,6 +21,26 @@
     --danger: #EF4444;
 }
 
+/* Dark-mode tokens — mirror aurora.css [data-theme="dark"] so the
+   Identity Razor pages (Login, Register, Manage subpages) render
+   correctly when the user has chosen Dark or System+OS-dark. The
+   theme-bootstrap.js loaded in _Layout.cshtml sets data-theme on
+   <html> synchronously before first paint, so the overrides apply
+   without a flash. */
+html[data-theme="dark"] {
+    --bg: #0F0E1A;
+    --surface: #171627;
+    --surface-2: #1E1D31;
+    --text: #EFEDF8;
+    --text-mu: #9C99B0;
+    --text-dim: #7A7894;
+    --border: #262438;
+    --accent: #7C7CFF;
+    --accent-so: #1F1E3D;
+    --accent-ink: #B5B5FF;
+    --danger: #F87171;
+}
+
 html, body {
     margin: 0;
     padding: 0;

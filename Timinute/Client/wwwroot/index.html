@@ -123,6 +123,38 @@
                 animation: none;
             }
         }
+
+        /* Dark-mode boot splash. theme-bootstrap.js sets data-theme on <html>
+           synchronously above (loaded in <head> before this <style> block),
+           so these overrides apply on first paint without flashing the
+           light splash. Hex values match aurora.css [data-theme="dark"]. */
+        html[data-theme="dark"], html[data-theme="dark"] body {
+            background: #0F0E1A;
+        }
+
+        html[data-theme="dark"] .aurora-boot {
+            color: #EFEDF8;
+        }
+
+        html[data-theme="dark"] .aurora-boot__wordmark {
+            color: #EFEDF8;
+        }
+
+        html[data-theme="dark"] .aurora-boot__wordmark-dot {
+            color: #7C7CFF;
+        }
+
+        html[data-theme="dark"] .aurora-boot__sub {
+            color: #9C99B0;
+        }
+
+        html[data-theme="dark"] .aurora-boot__progress {
+            background: #262438;
+        }
+
+        html[data-theme="dark"] .aurora-boot__progress::after {
+            background: linear-gradient(90deg, transparent, #7C7CFF, transparent);
+        }
     </style>
 </head>
 
