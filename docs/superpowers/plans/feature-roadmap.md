@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-04-28 — after v2.0.1 patch batch released and Settings cluster spec approved._
+_Last reviewed: 2026-04-29 — after v2.1 release (Settings cluster + dark mode)._
 
 ## Current Feature Set
 
@@ -20,14 +20,16 @@ _Last reviewed: 2026-04-28 — after v2.0.1 patch batch released and Settings cl
 - **Search/filter:** `[HttpGet("search")]` on tasks (date range, project, name, task-count) and projects (name, min-task-count).
 - **Data export:** CSV + Excel for tasks, project summaries, monthly analytics (`ExportController`).
 
-### UI / UX (Aurora design system, v2.0)
-- **Design tokens** in `aurora.css` — surfaces, sidebar, accent (indigo), category palette, radii, shadows, fonts (Geist + Geist Mono).
+### UI / UX (Aurora design system, v2.1)
+- **Design tokens** in `aurora.css` — surfaces, sidebar, accent (indigo), category palette, radii, shadows, fonts (Geist + Geist Mono). Dark-mode token block at `[data-theme="dark"]` mirrored on the Identity Razor pages (`aurora-identity.css`).
 - **In-app shell:** sidebar (desktop) / bottom tab bar with FAB (mobile) + slide-up overflow sheet for off-tab destinations.
-- **Aurora-skinned screens:** Dashboard, Time tracker, Tracked tasks, Calendar, Projects, Profile, Trash, Login, Register.
+- **Aurora-skinned screens:** Dashboard, Time tracker, Tracked tasks, Calendar, Projects, Profile (with Preferences card), Trash, Login, Register, OIDC redirect-back shells.
 - **Landing page:** redesigned hero with live decorative timer, feature grid, OSS CTA, terminal mock, footer.
-- **Boot splash:** Aurora-themed `index.html` first-paint shell.
-- **Responsive:** mobile breakpoint at ≤768px; landing also has a ≤480px tighter pass.
-- **Accessibility:** `prefers-reduced-motion` honored on the `aurora-pulse` animation, `aria-current="page"` on active nav, `:focus-visible` outlines on interactive elements, `aria-modal` + Escape-to-close on the mobile sheet.
+- **Boot splash:** Aurora-themed `index.html` first-paint shell — honors `data-theme="dark"`.
+- **Responsive:** mobile breakpoint at ≤768px; landing also has a ≤480px tighter pass. Profile Preferences card uses a list-row treatment on mobile (label left, control right-aligned).
+- **Dark mode:** `Light / Dark / System` preference, no flash on reload (synchronous pre-Blazor `theme-bootstrap.js`), localStorage cache + server source of truth, watches `prefers-color-scheme` for System users. Quick toggle in the desktop topbar (sun/moon icon).
+- **User preferences:** owned EF entity `UserPreferences` on `ApplicationUser` (theme + weekly goal + workday hours). Dashboard hero card shows `Today X.Xh / Yh target` alongside weekly progress.
+- **Accessibility:** `prefers-reduced-motion` honored on the `aurora-pulse` animation + boot/auth shells, `aria-current="page"` on active nav, `:focus-visible` outlines on interactive elements, `aria-modal` + Escape-to-close on the mobile sheet, `role="status" aria-live="polite"` on the auth in-flight shells.
 
 ---
 
@@ -36,10 +38,7 @@ _Last reviewed: 2026-04-28 — after v2.0.1 patch batch released and Settings cl
 | Feature | Description | Complexity | Notes |
 |---------|-------------|------------|-------|
 | Tags / Labels | Tag entity, many-to-many to TrackedTask, UI for tagging on tasks + filter by tag | M | The design has tag pills (`focus`, `backend`) on the time tracker visually, but they're hardcoded |
-| Settings / Preferences | User profile editable fields, configurable weekly goal (currently hardcoded `32h`), workday hours, dark-mode toggle | M | Mobile Profile spec deferred a settings list card waiting for this |
-| Dark-mode toggle | Tokens already defined in `aurora.css` `[data-theme="dark"]`; needs UI toggle + localStorage persistence + initial system-preference detection | S | Cheapest path: settings card row → `[data-theme]` attribute on `<html>` |
-| Configurable weekly goal | Backed-up column on `ApplicationUser`, settings UI, dashboard reads it | S | `Dashboard.razor:213` currently hardcodes `WeeklyGoalHours = 32` |
-| Enhanced analytics | Custom date ranges, daily/weekly summaries, productivity trends, push aggregation server-side | M | Dashboard stats currently load all user tasks client-side |
+| Enhanced analytics | Custom date ranges, daily/weekly summaries, productivity trends, push aggregation server-side. First consumer of `WorkdayHoursPerDay` (stored in v2.1) beyond the Dashboard's "Today vs target" indicator. | M | Dashboard stats currently load all user tasks client-side |
 | Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | Topbar bell is hidden on desktop (visual placeholder only) waiting for this |
 | Time tracking enhancements | Pomodoro timer, time estimates/goals, break tracking | L | None |
 
@@ -57,14 +56,12 @@ _Last reviewed: 2026-04-28 — after v2.0.1 patch batch released and Settings cl
 ## Dependency Graph
 
 ```
-Settings ─┬─ Dark-mode toggle (UI)
-          ├─ Configurable weekly goal
-          └─ Team workspaces (P2)
+Settings/Preferences ─── Team workspaces (P2)   [Settings cluster shipped in v2.1]
 
 Tags ─┬─ External-ticket integrations (P2)
       └─ AI categorization (P2)
 
-Enhanced analytics — independent
+Enhanced analytics — independent (consumes WorkdayHoursPerDay shipped in v2.1)
 Notifications — independent
 Time tracking enhancements — independent
 ```
@@ -73,16 +70,19 @@ Time tracking enhancements — independent
 
 ## Tech debt
 
-Status reviewed 2026-04-27.
+Status reviewed 2026-04-29.
 
 | Item | Status | Notes |
 |------|--------|-------|
+| Build & Test workflow not registered | open | `.github/workflows/build_test.yml` is on master since `c57fa82` (PR #37) but `gh workflow list` doesn't show it as active and `gh run list --workflow=build_test.yml` returns 0 runs ever. CI on PRs only runs CodeQL. Investigate: YAML parse issue, or needs a `workflow_dispatch` to bootstrap registration. |
 | Constants class growing large — split per domain | open | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
 | Request/response logging middleware | open | Useful before production; not in critical path |
 | DB indexes on UserId, ProjectId | open | Repository queries filter by these on every endpoint |
 | Composite indexes for common analytics queries | open | Dashboard hits `GetTrackedTasks` per session |
 | Unique constraint: project names per user | open | DB-level constraint + 409 handling on duplicate create |
 | API versioning for future breaking changes | open | None of the API is published yet, so this is preparatory |
+| Server-side validation tests as integration tests | open | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
+| Unified `UserProfileService` to dedupe `GET /User/me` | open | Profile, Dashboard, MainLayout, ThemeService each currently hit GetMe. ThemeService has an internal cache; the others don't. Raised by `superpowers:code-reviewer` on PR #41 (M6). |
 | Extract common DataGrid logic | ✅ moot | Aurora replaced `RadzenDataGrid` with custom row layouts; no shared grid logic remains |
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
 | `:has()` browser-support fragility on landing nav | ✅ done | PR #35 review fix — switched to `[href*="github.com"]` |
@@ -90,15 +90,27 @@ Status reviewed 2026-04-27.
 
 ---
 
-## P1 follow-ups raised by reviews (added since the v2.0 ship)
-
-These are new entries (or refinements of existing ones) that came out of v2.0-rollup reviews and warrant their own roadmap line, separate from the patch list above.
+## P1 follow-ups raised by reviews
 
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
 | `StartDate` DTO contract: `DateTimeOffset?` → `DateTimeOffset` | `[Required]` on a nullable struct generates ambiguous OpenAPI / client-generator output. Either drop `[Required]` and document partial-update semantics, or make the field non-nullable and rely on the controller-level `EndDate > StartDate` check for presence. Affects `CreateTrackedTaskDto` and `UpdateTrackedTaskDto`. Breaking change for any external consumer of the API. | S | PR #37 Copilot review |
 | `UserController.GetMe` server-side aggregation | Currently pulls all of a user's tasks + projects into memory to compute totals/counts. Add `CountAsync(filter)` + `SumAsync(filter, selector)` to `IRepository<T>` (or expose `IQueryable`) and use them. Scales to users with thousands of tasks. | M | PR #37 Copilot review |
-| Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. | — | PR #37 release review M-3 (process, not code) |
+| Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
+| OS-theme-change notification for System users | The pre-Blazor `theme-bootstrap.js` re-applies `<html data-theme>` when `prefers-color-scheme` changes mid-session, but doesn't notify Blazor — Topbar's icon stays stale until the next render. Wire `theme-bootstrap.js` `register(dotnetRef)` + `[JSInvokable] NotifyResolvedThemeChanged()` on `ThemeService`. ~30 LOC. | S | PR #41/#42 Copilot review (M2) — deferred from v2.1 by project owner |
+
+## Recently shipped (v2.1, 2026-04-29)
+
+| Feature | PRs |
+|---------|-----|
+| Settings / Preferences (owned EF entity, GET/PUT, Profile UI) | #40 |
+| Dark-mode toggle (no-flash bootstrap, full app coverage incl. landing + Identity + auth shells) | #40 + #41 |
+| Configurable weekly goal (decimal half-hour precision, Dashboard reads from preferences) | #40 |
+| `WorkdayHoursPerDay` (stored in v2.1, consumed by Dashboard "Today vs target") | #40 + #41 |
+| Quick theme toggle in desktop topbar | #41 |
+| Mobile Profile prefs list-row CSS treatment | #41 |
+| Branded auth shells (RemoteAuthenticatorView slots) | #41 |
+| Real GitHub star count on landing | #38 (v2.0.1) |
 
 ## How this doc is maintained
 
