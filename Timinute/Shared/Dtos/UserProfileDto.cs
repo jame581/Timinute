@@ -9,5 +9,6 @@ namespace Timinute.Shared.Dtos
         public TimeSpan TotalTrackedTime { get; set; }
         public int ProjectCount { get; set; }
         public int TaskCount { get; set; }
+        public UserPreferencesDto Preferences { get; set; } = new();
     }
 }

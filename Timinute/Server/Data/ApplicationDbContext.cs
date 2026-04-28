@@ -2,11 +2,19 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
+using Timinute.Shared.Dtos;
 
 namespace Timinute.Server.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {
+        // Seeded user IDs — referenced by both ApplicationUser.HasData and the
+        // OwnsOne(Preferences).HasData below so the owned entity rows have the
+        // correct FK values for the seed users.
+        private const string SeedUserId1 = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d";
+        private const string SeedUserId2 = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e";
+        private const string SeedUserId3 = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f";
+
         public DbSet<TrackedTask> TrackedTasks { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
 
@@ -19,6 +27,28 @@ namespace Timinute.Server.Data
             base.OnModelCreating(builder);
 
             // Setup entities
+
+            builder.Entity<ApplicationUser>().OwnsOne(u => u.Preferences, p =>
+            {
+                p.Property(x => x.Theme)
+                    .HasConversion<string>()
+                    .HasMaxLength(8)
+                    .HasDefaultValue(ThemePreference.System)
+                    .IsRequired();
+
+                p.Property(x => x.WeeklyGoalHours).HasDefaultValue(32.0m);
+                p.Property(x => x.WorkdayHoursPerDay).HasDefaultValue(8.0m);
+
+                // Seed default preferences for the three test users so the
+                // owned-entity rows have a row-per-user once the migration
+                // applies. Production users get their values from the column
+                // DEFAULTs declared above.
+                p.HasData(
+                    new { ApplicationUserId = SeedUserId1, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m },
+                    new { ApplicationUserId = SeedUserId2, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m },
+                    new { ApplicationUserId = SeedUserId3, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m }
+                );
+            });
 
             builder.Entity<Project>()
                 .Property(x => x.ProjectId)
@@ -85,9 +115,11 @@ namespace Timinute.Server.Data
             const string roleBasicId = "b0a2e199-0a21-4158-8586-b1c2e2a1d64c";
             const string roleAdminId = "f3c1a2d7-4e5b-4f8a-9c6d-1a2b3c4d5e6f";
 
-            const string userId1 = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d";
-            const string userId2 = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e";
-            const string userId3 = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f";
+            // Use the class-level seed user IDs so the OwnsOne(Preferences)
+            // seed and the ApplicationUser seed reference the same values.
+            const string userId1 = SeedUserId1;
+            const string userId2 = SeedUserId2;
+            const string userId3 = SeedUserId3;
 
             var roles = new List<ApplicationRole>
             {
@@ -97,11 +129,14 @@ namespace Timinute.Server.Data
 
             var seedCreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
+            // Preferences navigation is null! on the seed instances — EF rejects
+            // seed parents that have an owned navigation set; the owned-entity
+            // rows are seeded separately via OwnsOne(...).HasData above.
             var applicationUsers = new List<ApplicationUser>()
             {
-                new ApplicationUser { Id = userId1, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000001", SecurityStamp = "s0c194a8-0001-0001-0001-000000000001", Email = "test1@email.com", FirstName = "Jan", LastName = "Testovic", EmailConfirmed = true, UserName = "test1@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt },
-                new ApplicationUser { Id = userId2, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000002", SecurityStamp = "s0c194a8-0001-0001-0001-000000000002", Email = "test2@email.com", FirstName = "Ivana", LastName = "Maricenkova", EmailConfirmed = true, UserName = "test2@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt },
-                new ApplicationUser { Id = userId3, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000003", SecurityStamp = "s0c194a8-0001-0001-0001-000000000003", Email = "test3@email.com", FirstName = "Marek", LastName = "Klukac", EmailConfirmed = true, UserName = "test3@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt },
+                new ApplicationUser { Id = userId1, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000001", SecurityStamp = "s0c194a8-0001-0001-0001-000000000001", Email = "test1@email.com", FirstName = "Jan", LastName = "Testovic", EmailConfirmed = true, UserName = "test1@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt, Preferences = null! },
+                new ApplicationUser { Id = userId2, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000002", SecurityStamp = "s0c194a8-0001-0001-0001-000000000002", Email = "test2@email.com", FirstName = "Ivana", LastName = "Maricenkova", EmailConfirmed = true, UserName = "test2@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt, Preferences = null! },
+                new ApplicationUser { Id = userId3, ConcurrencyStamp = "c0c194a8-0001-0001-0001-000000000003", SecurityStamp = "s0c194a8-0001-0001-0001-000000000003", Email = "test3@email.com", FirstName = "Marek", LastName = "Klukac", EmailConfirmed = true, UserName = "test3@email.com", PasswordHash = "AQAAAAEAACcQAAAAEDgV3QGcSGxXfgIEFYvljstwmQb05lu59FQY/6H4R7SLAZkYc2uJCmNyio51dtfuGg==", CreatedAt = seedCreatedAt, Preferences = null! },
             };
 
             builder.Entity<ApplicationRole>().HasData(roles);

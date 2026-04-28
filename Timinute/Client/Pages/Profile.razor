@@ -7,6 +7,8 @@
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager Navigation
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
+@inject Timinute.Client.Services.ThemeService ThemeService
+@inject Radzen.NotificationService NotificationService
 
 <PageTitle>User profile</PageTitle>
 
@@ -55,12 +57,65 @@
                 </div>
             </div>
         </AuroraCard>
+
+        <AuroraCard>
+            <div class="aurora-prefs__title">Preferences</div>
+
+            <div class="aurora-prefs__row">
+                <div class="aurora-prefs__label">Theme</div>
+                <div class="aurora-prefs__pills">
+                    @foreach (var option in ThemeOptions)
+                    {
+                        var isSelected = CurrentTheme == option;
+                        <button type="button"
+                                class="aurora-prefs__pill @(isSelected ? "is-selected" : "")"
+                                disabled="@isThemeBusy"
+                                @onclick="() => SelectTheme(option)">
+                            @option.ToString()
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="aurora-prefs__row">
+                <div class="aurora-prefs__label">Weekly goal</div>
+                <div class="aurora-prefs__input-wrap">
+                    <input type="number" step="0.5" min="1" max="168"
+                           class="aurora-prefs__input"
+                           @bind="DraftWeeklyGoalHours" />
+                    <span class="aurora-prefs__suffix">h</span>
+                </div>
+            </div>
+
+            <div class="aurora-prefs__row">
+                <div class="aurora-prefs__label">Workday</div>
+                <div class="aurora-prefs__input-wrap">
+                    <input type="number" step="0.5" min="0.5" max="24"
+                           class="aurora-prefs__input"
+                           @bind="DraftWorkdayHoursPerDay" />
+                    <span class="aurora-prefs__suffix">h</span>
+                </div>
+            </div>
+
+            <div class="aurora-prefs__footer">
+                <AuroraButton Variant="primary" OnClick="SavePreferences" Disabled="@isSaving">
+                    @(isSaving ? "Saving…" : "Save preferences")
+                </AuroraButton>
+            </div>
+        </AuroraCard>
     }
 </div>
 
 @code {
+    private static readonly ThemePreference[] ThemeOptions = new[] { ThemePreference.Light, ThemePreference.Dark, ThemePreference.System };
+
     private bool IsLoading = true;
     private UserProfileDto? Me;
+    private ThemePreference CurrentTheme = ThemePreference.System;
+    private decimal DraftWeeklyGoalHours = 32.0m;
+    private decimal DraftWorkdayHoursPerDay = 8.0m;
+    private bool isSaving;
+    private bool isThemeBusy;
 
     private string Initials =>
         Me == null ? "?" :
@@ -97,12 +152,90 @@
         try
         {
             Me = await client.GetFromJsonAsync<UserProfileDto>("User/me");
+            if (Me?.Preferences != null)
+            {
+                CurrentTheme = Me.Preferences.Theme;
+                DraftWeeklyGoalHours = Me.Preferences.WeeklyGoalHours;
+                DraftWorkdayHoursPerDay = Me.Preferences.WorkdayHoursPerDay;
+
+                // Reuse this GetMe to seed the local theme cache rather than
+                // letting MainLayout fire a duplicate request.
+                await ThemeService.SyncFromServerAsync(Me.Preferences);
+            }
         }
         catch
         {
             Me = null;
         }
         IsLoading = false;
+    }
+
+    private async Task SelectTheme(ThemePreference choice)
+    {
+        if (Me?.Preferences == null || isThemeBusy || CurrentTheme == choice) return;
+
+        var previous = CurrentTheme;
+        isThemeBusy = true;
+        CurrentTheme = choice;
+        StateHasChanged();
+
+        try
+        {
+            await ThemeService.SetAsync(choice, Me.Preferences);
+            // Persist the new value into the local Me cache so a subsequent
+            // Save preferences click (numeric fields) doesn't ship a stale theme.
+            Me.Preferences.Theme = choice;
+        }
+        catch (Exception ex)
+        {
+            // Revert via ApplyLocalAsync (no PUT) so a flaky network can't
+            // throw a second exception out of the catch block.
+            CurrentTheme = previous;
+            try { await ThemeService.ApplyLocalAsync(previous); } catch { /* best-effort revert */ }
+            NotificationService.Notify(Radzen.NotificationSeverity.Error, "Could not save theme", ex.Message, 4000);
+        }
+        finally
+        {
+            isThemeBusy = false;
+        }
+    }
+
+    private async Task SavePreferences()
+    {
+        if (Me?.Preferences == null || isSaving) return;
+
+        isSaving = true;
+        try
+        {
+            var client = ClientFactory.CreateClient(Constants.API.ClientName);
+            var dto = new UpdateUserPreferencesDto
+            {
+                Theme = CurrentTheme,
+                WeeklyGoalHours = DraftWeeklyGoalHours,
+                WorkdayHoursPerDay = DraftWorkdayHoursPerDay,
+            };
+            var response = await client.PutAsJsonAsync("User/me/preferences", dto);
+            response.EnsureSuccessStatusCode();
+
+            var saved = await response.Content.ReadFromJsonAsync<UserPreferencesDto>();
+            if (saved != null)
+            {
+                Me.Preferences = saved;
+                CurrentTheme = saved.Theme;
+                DraftWeeklyGoalHours = saved.WeeklyGoalHours;
+                DraftWorkdayHoursPerDay = saved.WorkdayHoursPerDay;
+            }
+
+            NotificationService.Notify(Radzen.NotificationSeverity.Success, "Preferences saved", string.Empty, 2500);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(Radzen.NotificationSeverity.Error, "Could not save preferences", ex.Message, 4000);
+        }
+        finally
+        {
+            isSaving = false;
+        }
     }
 
     private void EditMe()

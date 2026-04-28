@@ -119,8 +119,11 @@
 </div>
 
 @code {
-    private const int WeeklyGoalHours = 32;
-    private string WeeklyGoal => $"{WeeklyGoalHours}h";
+    // Sourced from UserPreferences via GetMe; falls back to 32 if the server
+    // call fails so the dashboard's progress bar still renders something
+    // sensible. Decimal so 7.5h-style preferences render correctly.
+    private decimal WeeklyGoalHours = 32.0m;
+    private string WeeklyGoal => $"{WeeklyGoalHours:0.#}h";
 
     private List<TrackedTaskDto> AllUserTasks = new();
     private List<TrackedTaskDto> RecentTasks = new();
@@ -154,6 +157,19 @@
         catch
         {
             AllUserTasks = new();
+        }
+
+        try
+        {
+            var me = await client.GetFromJsonAsync<Timinute.Shared.Dtos.UserProfileDto>("User/me");
+            if (me?.Preferences != null)
+            {
+                WeeklyGoalHours = me.Preferences.WeeklyGoalHours;
+            }
+        }
+        catch
+        {
+            // Keep the 32.0 fallback — progress bar still renders.
         }
 
         ComputeWeekStats();
@@ -191,7 +207,7 @@
         }
 
         DaysLeft = System.Math.Max(0, 7 - ((int)(now - startOfWeekOffset).TotalDays + 1));
-        ProgressPct = System.Math.Clamp((thisWeekHours / WeeklyGoalHours) * 100, 0, 100);
+        ProgressPct = (double)System.Math.Clamp(((decimal)thisWeekHours / WeeklyGoalHours) * 100m, 0m, 100m);
     }
 
     private void ComputeMonthlyChart()
