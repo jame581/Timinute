@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Timinute.Shared.Dtos;
 
 namespace Timinute.Server.Models
 {

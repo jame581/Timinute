@@ -36,6 +36,11 @@ namespace Timinute.Server
             // Application User model
             CreateMap<ApplicationUser, ApplicationUserDto>();
             CreateMap<ApplicationUserDto, ApplicationUser>();
+
+            // User preferences
+            CreateMap<UserPreferences, UserPreferencesDto>();
+            CreateMap<UserPreferencesDto, UserPreferences>();
+            CreateMap<UpdateUserPreferencesDto, UserPreferences>();
         }
     }
 }

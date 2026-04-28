@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
+using Timinute.Shared.Dtos;
 
 namespace Timinute.Server.Data
 {

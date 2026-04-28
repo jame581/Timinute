@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Timinute.Server;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
 using Timinute.Server.Models;
@@ -19,6 +21,15 @@ namespace Timinute.Server.Tests.Controllers
     public class UserControllerTest : ControllerTestBase<UserController>
     {
         private const string _databaseName = "UserController_Test_DB";
+        private readonly IMapper _mapper;
+
+        public UserControllerTest()
+        {
+            var configExpression = new MapperConfigurationExpression();
+            configExpression.AddProfile<MappingProfile>();
+            var configuration = new MapperConfiguration(configExpression, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
+            _mapper = new Mapper(configuration);
+        }
 
         [Fact]
         public async Task Get_Me_Returns_Profile_With_Aggregated_Totals_Test()
@@ -54,12 +65,41 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Get_Me_Returns_Preferences_With_Defaults_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "Prefs");
+            var user = new ApplicationUser
+            {
+                Id = "ApplicationUser1",
+                Email = "test1@email.com",
+                FirstName = "Jan",
+                LastName = "Testovic",
+                CreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                // Preferences not explicitly set — relies on the C# initializer's default new() for parity with the GetMe response.
+            };
+
+            var controller = CreateControllerWith(applicationDbContext, user);
+
+            var actionResult = await controller.GetMe();
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+            var profile = okResult!.Value as UserProfileDto;
+            Assert.NotNull(profile);
+
+            Assert.NotNull(profile!.Preferences);
+            Assert.Equal(ThemePreference.System, profile.Preferences.Theme);
+            Assert.Equal(32.0m, profile.Preferences.WeeklyGoalHours);
+            Assert.Equal(8.0m, profile.Preferences.WorkdayHoursPerDay);
+        }
+
+        [Fact]
         public async Task Get_Me_Without_Sub_Claim_Returns_Unauthorized_Test()
         {
             var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "NoSub");
             var userManagerMock = BuildUserManagerMock();
 
-            var controller = new UserController(userManagerMock.Object, new RepositoryFactory(applicationDbContext))
+            var controller = new UserController(userManagerMock.Object, _mapper, new RepositoryFactory(applicationDbContext))
             {
                 ControllerContext = new ControllerContext
                 {
@@ -81,7 +121,7 @@ namespace Timinute.Server.Tests.Controllers
             userManagerMock.Setup(m => m.FindByIdAsync("ApplicationUserMissing"))
                 .ReturnsAsync((ApplicationUser?)null);
 
-            var controller = new UserController(userManagerMock.Object, new RepositoryFactory(applicationDbContext))
+            var controller = new UserController(userManagerMock.Object, _mapper, new RepositoryFactory(applicationDbContext))
             {
                 ControllerContext = new ControllerContext
                 {
@@ -110,12 +150,12 @@ namespace Timinute.Server.Tests.Controllers
                 null!, null!, null!, null!, null!, null!, null!, null!);
         }
 
-        private static UserController CreateControllerWith(ApplicationDbContext db, ApplicationUser user)
+        private UserController CreateControllerWith(ApplicationDbContext db, ApplicationUser user)
         {
             var userManagerMock = BuildUserManagerMock();
             userManagerMock.Setup(m => m.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-            return new UserController(userManagerMock.Object, new RepositoryFactory(db))
+            return new UserController(userManagerMock.Object, _mapper, new RepositoryFactory(db))
             {
                 ControllerContext = new ControllerContext
                 {

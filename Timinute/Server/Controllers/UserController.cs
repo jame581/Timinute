@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +16,17 @@ namespace Timinute.Server.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> userManager;
+        private readonly IMapper mapper;
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<TrackedTask> taskRepository;
 
         public UserController(
             UserManager<ApplicationUser> userManager,
+            IMapper mapper,
             IRepositoryFactory repositoryFactory)
         {
             this.userManager = userManager;
+            this.mapper = mapper;
             projectRepository = repositoryFactory.GetRepository<Project>();
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }
@@ -57,7 +61,8 @@ namespace Timinute.Server.Controllers
                 CreatedAt = user.CreatedAt,
                 TotalTrackedTime = TimeSpan.FromTicks(totalTicks),
                 ProjectCount = projectCount,
-                TaskCount = tasks.Count
+                TaskCount = tasks.Count,
+                Preferences = mapper.Map<UserPreferencesDto>(user.Preferences ?? new UserPreferences())
             });
         }
     }
