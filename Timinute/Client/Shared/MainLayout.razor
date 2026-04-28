@@ -1,6 +1,8 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject Timinute.Client.Services.ViewportService Viewport
+@inject Timinute.Client.Services.ThemeService Theme
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState
 
 <head>
     <RadzenTheme Theme="material" @rendermode="RenderMode.InteractiveAuto" />
@@ -43,6 +45,8 @@
         Viewport.OnChanged += OnViewportChanged;
     }
 
+    private bool themeSynced;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // No `firstRender` guard: InitializeAsync is internally idempotent on success
@@ -50,6 +54,20 @@
         // gives us a free retry path if the first JS import is racing prerender or
         // hot reload. The dedupe is cheap (a single bool check after the first hit).
         await Viewport.InitializeAsync();
+
+        // One-shot theme sync: pulls the authenticated user's preference from
+        // the server and writes it into localStorage so cross-device toggles
+        // catch up on the next reload. Guarded with a local flag so it runs
+        // exactly once per layout instance.
+        if (!themeSynced)
+        {
+            var auth = await AuthState.GetAuthenticationStateAsync();
+            if (auth.User.Identity?.IsAuthenticated == true)
+            {
+                themeSynced = true;
+                await Theme.SyncFromServerAsync();
+            }
+        }
     }
 
     private void OnViewportChanged()
