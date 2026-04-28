@@ -31,7 +31,7 @@ namespace Timinute.Server.Controllers
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }
 
-        // GET: api/User/me
+        // GET: User/me
         [HttpGet("me")]
         public async Task<ActionResult<UserProfileDto>> GetMe()
         {
@@ -66,7 +66,7 @@ namespace Timinute.Server.Controllers
             });
         }
 
-        // PUT: api/User/me/preferences
+        // PUT: User/me/preferences
         [HttpPut("me/preferences")]
         public async Task<ActionResult<UserPreferencesDto>> UpdatePreferences([FromBody] UpdateUserPreferencesDto dto)
         {
@@ -77,9 +77,16 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
+            // Match the production status code emitted by the global
+            // InvalidModelStateResponseFactory configured in Program.cs (422
+            // Unprocessable Entity, not 400). [ApiController] short-circuits
+            // before this action runs in real HTTP requests, so this branch
+            // is only reachable from unit tests that inject ModelState
+            // directly — but keeping it consistent prevents test/prod
+            // divergence in the asserted status code.
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return UnprocessableEntity(ModelState);
             }
 
             var user = await userManager.FindByIdAsync(userId);
@@ -92,6 +99,8 @@ namespace Timinute.Server.Controllers
             // copies them onto the owned navigation. Preferences is non-null
             // in production (C# initializer); we still guard for the test
             // path where ApplicationUser may be constructed without it.
+            // dto.Theme is guaranteed non-null past the ModelState gate
+            // above ([Required] on the nullable enum on the DTO).
             user.Preferences ??= new UserPreferences();
             mapper.Map(dto, user.Preferences);
 

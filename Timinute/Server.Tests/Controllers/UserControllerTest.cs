@@ -175,7 +175,7 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
-        public async Task Update_Preferences_Weekly_Goal_Out_Of_Range_Returns_BadRequest_Test()
+        public async Task Update_Preferences_Weekly_Goal_Out_Of_Range_Returns_UnprocessableEntity_Test()
         {
             var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePrefsWeekly");
             var user = new ApplicationUser
@@ -189,6 +189,8 @@ namespace Timinute.Server.Tests.Controllers
 
             var controller = CreateControllerWith(applicationDbContext, user);
             // Simulates the Range attribute failing during binding/validation.
+            // Production short-circuits via InvalidModelStateResponseFactory and
+            // returns 422; we mirror that status here for test/prod parity.
             controller.ModelState.AddModelError(nameof(UpdateUserPreferencesDto.WeeklyGoalHours), "must be between 1.0 and 168.0");
 
             var dto = new UpdateUserPreferencesDto
@@ -200,11 +202,11 @@ namespace Timinute.Server.Tests.Controllers
 
             var actionResult = await controller.UpdatePreferences(dto);
 
-            Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+            Assert.IsType<UnprocessableEntityObjectResult>(actionResult.Result);
         }
 
         [Fact]
-        public async Task Update_Preferences_Workday_Out_Of_Range_Returns_BadRequest_Test()
+        public async Task Update_Preferences_Workday_Out_Of_Range_Returns_UnprocessableEntity_Test()
         {
             var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePrefsWorkday");
             var user = new ApplicationUser
@@ -228,7 +230,7 @@ namespace Timinute.Server.Tests.Controllers
 
             var actionResult = await controller.UpdatePreferences(dto);
 
-            Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+            Assert.IsType<UnprocessableEntityObjectResult>(actionResult.Result);
         }
 
         [Fact]

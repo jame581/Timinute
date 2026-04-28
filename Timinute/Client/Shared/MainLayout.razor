@@ -57,15 +57,22 @@
 
         // One-shot theme sync: pulls the authenticated user's preference from
         // the server and writes it into localStorage so cross-device toggles
-        // catch up on the next reload. Guarded with a local flag so it runs
-        // exactly once per layout instance.
+        // catch up on the next reload. Only set themeSynced=true on a
+        // non-null result so a transient failure (network blip, anonymous
+        // race) leaves the flag false and the next render re-attempts.
+        // ThemeService.SyncFromServerAsync is itself idempotent — concurrent
+        // callers share the same in-flight Task — so per-render retries are
+        // cheap.
         if (!themeSynced)
         {
             var auth = await AuthState.GetAuthenticationStateAsync();
             if (auth.User.Identity?.IsAuthenticated == true)
             {
-                themeSynced = true;
-                await Theme.SyncFromServerAsync();
+                var result = await Theme.SyncFromServerAsync();
+                if (result != null)
+                {
+                    themeSynced = true;
+                }
             }
         }
     }

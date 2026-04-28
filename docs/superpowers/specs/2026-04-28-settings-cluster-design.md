@@ -120,7 +120,7 @@ public class UserPreferencesDto
 ### 4.2 `PUT /User/me/preferences` (new)
 
 ```
-PUT  /api/User/me/preferences
+PUT  /User/me/preferences
 Authorization: Bearer <jwt>
 Content-Type: application/json
 
@@ -132,17 +132,23 @@ Body:
 }
 
 200 OK → UserPreferencesDto (echoes the saved state)
-400 Bad Request → validation errors (range, required)
+422 Unprocessable Entity → validation errors (range, required) as ValidationProblemDetails
 401 Unauthorized → no/invalid JWT
 ```
+
+The 422 response is emitted by the global `InvalidModelStateResponseFactory` configured in `Server/Program.cs` (`ValidationProblemDetails` with `traceId` extension, `application/problem+json` content-type). The action's explicit `if (!ModelState.IsValid)` branch returns `UnprocessableEntity(ModelState)` to mirror the same status code if the action is invoked outside the standard `[ApiController]` pipeline (e.g. from a unit test that injects ModelState directly).
 
 `UpdateUserPreferencesDto` — full-replace, all fields required:
 
 ```csharp
 public class UpdateUserPreferencesDto
 {
+    // Nullable so [Required] actually rejects a missing JSON field —
+    // on a non-nullable enum the binder substitutes the CLR default
+    // (System) and validation passes silently, breaking the
+    // "all fields required" contract.
     [Required]
-    public ThemePreference Theme { get; set; }
+    public ThemePreference? Theme { get; set; }
 
     [Required, Range(typeof(decimal), "1.0", "168.0")]
     public decimal WeeklyGoalHours { get; set; }
