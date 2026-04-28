@@ -215,7 +215,18 @@
                 WorkdayHoursPerDay = DraftWorkdayHoursPerDay,
             };
             var response = await client.PutAsJsonAsync("User/me/preferences", dto);
-            response.EnsureSuccessStatusCode();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // 422 carries ValidationProblemDetails (per Server/Program.cs's
+                // InvalidModelStateResponseFactory); 400 from the controller's
+                // own ModelState branch carries the same shape. Surface the
+                // per-field messages instead of EnsureSuccessStatusCode's
+                // generic "Response status code does not indicate success".
+                var detail = await TryReadValidationDetailAsync(response);
+                NotificationService.Notify(Radzen.NotificationSeverity.Error, "Could not save preferences", detail, 4000);
+                return;
+            }
 
             var saved = await response.Content.ReadFromJsonAsync<UserPreferencesDto>();
             if (saved != null)
@@ -236,6 +247,42 @@
         {
             isSaving = false;
         }
+    }
+
+    private static async Task<string> TryReadValidationDetailAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream);
+            if (doc.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var parts = new List<string>();
+                foreach (var field in errors.EnumerateObject())
+                {
+                    if (field.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        foreach (var msg in field.Value.EnumerateArray())
+                        {
+                            var text = msg.GetString();
+                            if (!string.IsNullOrWhiteSpace(text))
+                                parts.Add($"{field.Name}: {text}");
+                        }
+                    }
+                }
+                if (parts.Count > 0) return string.Join("; ", parts);
+            }
+            if (doc.RootElement.TryGetProperty("title", out var title))
+            {
+                var t = title.GetString();
+                if (!string.IsNullOrWhiteSpace(t)) return t!;
+            }
+        }
+        catch
+        {
+            // Body wasn't JSON or wasn't shaped like ValidationProblemDetails — fall through.
+        }
+        return $"Server returned {(int)response.StatusCode} {response.ReasonPhrase}.";
     }
 
     private void EditMe()

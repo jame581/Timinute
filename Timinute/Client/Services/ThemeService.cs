@@ -73,9 +73,15 @@ namespace Timinute.Client.Services
         // without hitting the server. Used by Profile's revert path so a
         // post-PUT-failure rollback doesn't trigger another PUT (which can
         // also fail and double-throw).
-        public Task ApplyLocalAsync(ThemePreference value)
+        //
+        // Also raises Changed so any subscribed component (Topbar today,
+        // anything future) sees the rolled-back value. The originating
+        // component's own handler short-circuits on its busy-flag so this
+        // doesn't double-render.
+        public async Task ApplyLocalAsync(ThemePreference value)
         {
-            return ApplyLocalCoreAsync(value);
+            await ApplyLocalCoreAsync(value);
+            Changed?.Invoke(value);
         }
 
         private async Task<UserPreferencesDto?> FetchAndApplyAsync()
