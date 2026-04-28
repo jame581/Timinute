@@ -206,21 +206,56 @@
         letter-spacing: -0.5px;
     }
 
+    /* Settings list-row treatment on mobile: each row reads as a tappable
+       list item with the label on the left and the control(s) right-aligned.
+       Matches the design intent the Aurora mobile spec deferred ("settings
+       list card on the Profile screen") while reusing the desktop card's
+       inline editors instead of building separate sheets. */
     .aurora-prefs__row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 0;
+        min-height: 48px; /* tap-target size */
     }
 
     .aurora-prefs__label {
-        flex-basis: auto;
+        flex: 0 0 auto;
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .aurora-prefs__pills {
+        gap: 6px;
+    }
+
+    .aurora-prefs__pill {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .aurora-prefs__input {
+        width: 72px;
+        text-align: right;
     }
 
     .aurora-prefs__footer {
         justify-content: stretch;
+        margin-top: 8px;
     }
 
     .aurora-prefs__footer > * {
         flex: 1;
+    }
+}
+
+/* Tighter phones: theme pills take a full row of their own so the three
+   options remain comfortably tappable. */
+@media (max-width: 480px) {
+    .aurora-prefs__row:has(.aurora-prefs__pills) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
     }
 }
