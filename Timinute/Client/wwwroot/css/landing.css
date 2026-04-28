@@ -647,7 +647,12 @@
     align-items: center;
     gap: 8px;
     background: #fff;
-    color: var(--text) !important;
+    /* Literal dark text — the .loss__card behind this button is hardcoded
+       to the always-dark #1B1A2E -> #5B5BF5 gradient regardless of theme,
+       and the button's background is hardcoded white, so the text must
+       also be hardcoded dark. var(--text) flips to a light color in dark
+       mode and produced light-on-white (illegible). */
+    color: #1A1A24 !important;
     text-decoration: none;
     font-size: 14.5px;
     font-weight: 500;
