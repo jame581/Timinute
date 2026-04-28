@@ -4,6 +4,7 @@ using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
+using Timinute.Client.Services;
 using Timinute.Shared.Dtos.Project;
 
 namespace Timinute.Client.Components
@@ -15,10 +16,7 @@ namespace Timinute.Client.Components
 
         private Project NewProject { get; set; } = new();
 
-        private static readonly string[] Palette =
-        {
-            "#6366F1", "#F59E0B", "#10B981", "#EC4899", "#94A3B8"
-        };
+        private IReadOnlyList<string> Palette => ColorService.GetPalette();
 
         #region Dependency Injection
 
@@ -30,6 +28,9 @@ namespace Timinute.Client.Components
 
         [Inject]
         private DialogService DialogService { get; set; } = null!;
+
+        [Inject]
+        private ProjectColorService ColorService { get; set; } = null!;
 
         #endregion
 

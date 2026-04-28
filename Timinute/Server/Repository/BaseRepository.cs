@@ -216,6 +216,8 @@ namespace Timinute.Server.Repository
 
         public async Task<IEnumerable<TEntity>> GetDeleted(Expression<Func<TEntity, bool>>? filter = null)
         {
+            EnsureSoftDeletable();
+
             // Build expression: e => e.DeletedAt != null (only for ISoftDeletable entities)
             var param = Expression.Parameter(typeof(TEntity), "e");
             var prop = Expression.Property(param, nameof(ISoftDeletable.DeletedAt));
@@ -242,6 +244,8 @@ namespace Timinute.Server.Repository
 
         public async Task<int> PurgeExpired(DateTimeOffset olderThan)
         {
+            EnsureSoftDeletable();
+
             // Build expression: e => e.DeletedAt != null && e.DeletedAt.Value < olderThan
             var param = Expression.Parameter(typeof(TEntity), "e");
             var prop = Expression.Property(param, nameof(ISoftDeletable.DeletedAt));       // DateTimeOffset?
@@ -261,6 +265,15 @@ namespace Timinute.Server.Repository
             dbSet.RemoveRange(toDelete);
             await context.SaveChangesAsync();
             return toDelete.Count;
+        }
+
+        private static void EnsureSoftDeletable()
+        {
+            if (!typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
+            {
+                throw new InvalidOperationException(
+                    $"Entity of type {typeof(TEntity).Name} does not implement ISoftDeletable; soft-delete operations are not supported.");
+            }
         }
     }
 }
