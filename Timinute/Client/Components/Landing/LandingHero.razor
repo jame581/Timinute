@@ -29,7 +29,7 @@
             </a>
             <a class="lhero__cta-ghost" href="https://github.com/jame581/Timinute" target="_blank" rel="noopener">
                 <AuroraIcons Name="github" Size="15" /> Star on GitHub
-                <span class="lhero__star-count">· 1.2k</span>
+                <span class="lhero__star-count">· @starCount</span>
             </a>
         </div>
 
@@ -83,9 +83,12 @@
 </section>
 
 @code {
+    private const string StarCountFallback = "1.2k";
+
     private int seconds = 1827;
     private System.Timers.Timer? tickTimer;
     private bool disposed;
+    private string starCount = StarCountFallback;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -115,6 +118,8 @@
             }
         }
 
+        await LoadStarCountAsync();
+
         if (reducedMotion || disposed) return;
 
         tickTimer = new System.Timers.Timer(1000) { AutoReset = true };
@@ -142,6 +147,34 @@
             1 => m.ToString("00"),
             _ => s.ToString("00"),
         };
+    }
+
+    private async Task LoadStarCountAsync()
+    {
+        IJSObjectReference? module = null;
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/github-stars.js");
+            var fetched = await module.InvokeAsync<string?>("getStars", "jame581", "Timinute");
+            if (!disposed && !string.IsNullOrWhiteSpace(fetched))
+            {
+                starCount = fetched;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch
+        {
+            // Network error, JS interop torn down, or rate-limited — keep fallback.
+        }
+        finally
+        {
+            if (module is not null)
+            {
+                try { await module.DisposeAsync(); }
+                catch (Microsoft.JSInterop.JSDisconnectedException) { }
+                catch (Microsoft.JSInterop.JSException) { }
+            }
+        }
     }
 
     public void Dispose()

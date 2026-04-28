@@ -11,6 +11,14 @@ namespace Timinute.Server.Data.Migrations
     public partial class MigrateDateTimeToDateTimeOffset : Migration
     {
         /// <inheritdoc />
+        // Note on UTC preservation for the StartDate/EndDate AlterColumn calls below:
+        // SQL Server's implicit conversion of `datetime2` -> `datetimeoffset` interprets
+        // the existing value as the server-local clock with offset +00:00, i.e. it is
+        // preserved as-stored, not normalized to UTC. Pre-v2.0 timestamps in the DB
+        // were already stored as UTC by convention (DateTime.UtcNow on the server),
+        // so the resulting DateTimeOffset values carry the correct instant. If you
+        // are restoring from a backup that wrote local-time DateTimes, run a one-off
+        // adjustment (UPDATE ... SWITCHOFFSET / TODATETIMEOFFSET) before applying.
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
