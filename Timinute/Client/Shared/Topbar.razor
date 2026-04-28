@@ -67,10 +67,13 @@
     private string LastName = "";
     private IJSObjectReference? shortcutsModule;
 
-    // Tracks the *resolved* light/dark applied to <html data-theme>, so the
-    // toggle icon flips on System users when the OS theme changes. Initial
+    // Tracks the *resolved* light/dark applied to <html data-theme>. Initial
     // value resolved from the bootstrap script via ThemeService on first
-    // render; subsequent updates via Theme.Changed (toggle from anywhere).
+    // render; updated via Theme.Changed when toggling from Topbar or Profile,
+    // or when MainLayout's server sync brings in a different theme. Note:
+    // this state is NOT updated by the bootstrap's matchMedia listener for
+    // mid-session OS-theme changes — those re-apply data-theme on <html>
+    // but don't notify Blazor. The icon resolves correctly on next render.
     private ThemePreference currentThemeChoice = ThemePreference.System;
     private bool isDarkResolved;
     private bool isThemeBusy;
@@ -175,11 +178,23 @@
     {
         // Fired by ThemeService whenever theme changes anywhere (here, Profile,
         // server sync). Update local state without a re-PUT.
+        //
+        // Skip while ToggleTheme is in flight: it already owns the optimistic
+        // UI state, and SetThemeOnlyAsync re-fires Changed on its own success
+        // path. Without this guard the queued lambda would re-apply the same
+        // value mid-toggle, causing a redundant render.
+        if (isThemeBusy) return;
+
         InvokeAsync(async () =>
         {
-            currentThemeChoice = value;
-            isDarkResolved = await ResolveIsDarkAsync(value);
-            StateHasChanged();
+            try
+            {
+                currentThemeChoice = value;
+                isDarkResolved = await ResolveIsDarkAsync(value);
+                StateHasChanged();
+            }
+            catch (ObjectDisposedException) { /* component gone */ }
+            catch (JSDisconnectedException) { /* circuit gone */ }
         });
     }
 

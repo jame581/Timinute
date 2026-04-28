@@ -191,6 +191,10 @@
 
     private void ComputeTodayStats()
     {
+        // Attribution by start time: a session that began yesterday at 23:30
+        // and ended after midnight is *not* counted toward today, even though
+        // most of its duration was today. Conventional choice for time
+        // trackers and matches how the weekly progress bar attributes too.
         var todayLocal = DateTimeOffset.Now.Date;
         var todayHours = AllUserTasks
             .Where(t => t.StartDate.LocalDateTime.Date == todayLocal)
