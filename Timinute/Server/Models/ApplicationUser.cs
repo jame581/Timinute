@@ -17,6 +17,8 @@ namespace Timinute.Server.Models
 
         public DateTimeOffset CreatedAt { get; set; }
 
+        public UserPreferences Preferences { get; set; } = new();
+
         public ICollection<TrackedTask>? TrackedTasks { get; set; }
 
         public ICollection<Project>? Projects { get; set; }
