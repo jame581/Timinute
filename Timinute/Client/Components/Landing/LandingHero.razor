@@ -118,7 +118,10 @@
             }
         }
 
-        await LoadStarCountAsync();
+        // Fire-and-forget: the method has its own try/catch + disposed guard
+        // and marshals StateHasChanged back via InvokeAsync. Awaiting here would
+        // delay the decorative timer's first tick by the GitHub-API round-trip.
+        _ = LoadStarCountAsync();
 
         if (reducedMotion || disposed) return;
 
