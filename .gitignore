@@ -367,6 +367,7 @@ tempkey.jwk
 
 # Claude Code
 .claude/
+CLAUDE.md
 
 # Claude Code superpowers runtime state
 .superpowers/

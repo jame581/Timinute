@@ -13,7 +13,8 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 - **Projects** with user-picked colors, monthly stats, and per-project sparklines.
 - **Dashboard** — gradient hero stat card, top-project + last-month tiles, hand-built SVG bar chart and donut, recent activity list.
 - **Trash** — 30-day soft-delete recovery for projects and tasks, cascade-restore on Project, background hard-purge service.
-- **Search + filter + export** — date range, project, name, task-count filters; CSV and Excel exports.
+- **Search + filter** — `TrackedTask/search` (date range, project, name, task-count) and `Project/search` (name, min-task-count).
+- **Data export** — CSV and Excel exports for tasks, project summaries, and monthly analytics.
 - **Identity** — Duende IdentityServer for auth (JWT for the API, cookie for Identity UI), Basic/Admin roles, lockout, registration via Razor Pages.
 - **Mobile responsive** — bottom glass tab bar with FAB, slide-up overflow sheet, full reflow at ≤768px.
 - **Accessibility** — `prefers-reduced-motion` honored, `aria-current` on active nav, focus-visible outlines, modal sheet semantics.
