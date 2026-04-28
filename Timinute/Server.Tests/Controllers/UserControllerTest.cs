@@ -137,6 +137,126 @@ namespace Timinute.Server.Tests.Controllers
             Assert.IsType<NotFoundResult>(actionResult.Result);
         }
 
+        [Fact]
+        public async Task Update_Preferences_With_Valid_Returns_200_And_Persists_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePrefsValid");
+            var user = new ApplicationUser
+            {
+                Id = "ApplicationUser1",
+                Email = "test1@email.com",
+                FirstName = "Jan",
+                LastName = "Testovic",
+                CreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            };
+
+            var controller = CreateControllerWith(applicationDbContext, user, withUpdateAsync: true);
+            var dto = new UpdateUserPreferencesDto
+            {
+                Theme = ThemePreference.Dark,
+                WeeklyGoalHours = 37.5m,
+                WorkdayHoursPerDay = 7.5m,
+            };
+
+            var actionResult = await controller.UpdatePreferences(dto);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+            var saved = okResult!.Value as UserPreferencesDto;
+            Assert.NotNull(saved);
+            Assert.Equal(ThemePreference.Dark, saved!.Theme);
+            Assert.Equal(37.5m, saved.WeeklyGoalHours);
+            Assert.Equal(7.5m, saved.WorkdayHoursPerDay);
+
+            // Persisted onto the user instance via the owned navigation.
+            Assert.Equal(ThemePreference.Dark, user.Preferences!.Theme);
+            Assert.Equal(37.5m, user.Preferences.WeeklyGoalHours);
+            Assert.Equal(7.5m, user.Preferences.WorkdayHoursPerDay);
+        }
+
+        [Fact]
+        public async Task Update_Preferences_Weekly_Goal_Out_Of_Range_Returns_BadRequest_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePrefsWeekly");
+            var user = new ApplicationUser
+            {
+                Id = "ApplicationUser1",
+                Email = "test1@email.com",
+                FirstName = "Jan",
+                LastName = "Testovic",
+                CreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            };
+
+            var controller = CreateControllerWith(applicationDbContext, user);
+            // Simulates the Range attribute failing during binding/validation.
+            controller.ModelState.AddModelError(nameof(UpdateUserPreferencesDto.WeeklyGoalHours), "must be between 1.0 and 168.0");
+
+            var dto = new UpdateUserPreferencesDto
+            {
+                Theme = ThemePreference.Dark,
+                WeeklyGoalHours = 169.0m,
+                WorkdayHoursPerDay = 8.0m,
+            };
+
+            var actionResult = await controller.UpdatePreferences(dto);
+
+            Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+        }
+
+        [Fact]
+        public async Task Update_Preferences_Workday_Out_Of_Range_Returns_BadRequest_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePrefsWorkday");
+            var user = new ApplicationUser
+            {
+                Id = "ApplicationUser1",
+                Email = "test1@email.com",
+                FirstName = "Jan",
+                LastName = "Testovic",
+                CreatedAt = new DateTimeOffset(2022, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            };
+
+            var controller = CreateControllerWith(applicationDbContext, user);
+            controller.ModelState.AddModelError(nameof(UpdateUserPreferencesDto.WorkdayHoursPerDay), "must be between 0.5 and 24.0");
+
+            var dto = new UpdateUserPreferencesDto
+            {
+                Theme = ThemePreference.System,
+                WeeklyGoalHours = 32.0m,
+                WorkdayHoursPerDay = 0.4m,
+            };
+
+            var actionResult = await controller.UpdatePreferences(dto);
+
+            Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+        }
+
+        [Fact]
+        public async Task Update_Preferences_Without_Sub_Claim_Returns_Unauthorized_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdatePrefsNoSub");
+            var userManagerMock = BuildUserManagerMock();
+
+            var controller = new UserController(userManagerMock.Object, _mapper, new RepositoryFactory(applicationDbContext))
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity()) }
+                }
+            };
+
+            var dto = new UpdateUserPreferencesDto
+            {
+                Theme = ThemePreference.Dark,
+                WeeklyGoalHours = 32.0m,
+                WorkdayHoursPerDay = 8.0m,
+            };
+
+            var actionResult = await controller.UpdatePreferences(dto);
+
+            Assert.IsType<UnauthorizedResult>(actionResult.Result);
+        }
+
         protected override Task<UserController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             // Not used directly — the suite builds controllers via CreateControllerWith because we need a stubbed UserManager.
@@ -150,10 +270,14 @@ namespace Timinute.Server.Tests.Controllers
                 null!, null!, null!, null!, null!, null!, null!, null!);
         }
 
-        private UserController CreateControllerWith(ApplicationDbContext db, ApplicationUser user)
+        private UserController CreateControllerWith(ApplicationDbContext db, ApplicationUser user, bool withUpdateAsync = false)
         {
             var userManagerMock = BuildUserManagerMock();
             userManagerMock.Setup(m => m.FindByIdAsync(user.Id)).ReturnsAsync(user);
+            if (withUpdateAsync)
+            {
+                userManagerMock.Setup(m => m.UpdateAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(IdentityResult.Success);
+            }
 
             return new UserController(userManagerMock.Object, _mapper, new RepositoryFactory(db))
             {
