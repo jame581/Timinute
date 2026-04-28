@@ -120,6 +120,26 @@ namespace Timinute.Client.Services
             response.EnsureSuccessStatusCode();
         }
 
+        // Convenience for callers that don't already have UserPreferencesDto
+        // in hand (e.g. the topbar quick-toggle button). Awaits the cached
+        // sync Task to recover current weeklyGoal/workdayHours, then PUTs the
+        // full DTO with the new theme. Throws on PUT failure — caller reverts
+        // via ApplyLocalAsync.
+        public async Task SetThemeOnlyAsync(ThemePreference value)
+        {
+            var prefs = await SyncFromServerAsync();
+            if (prefs == null)
+            {
+                // No prefs available (anonymous, network error). Apply locally
+                // so the UI feels responsive; the next authenticated GetMe
+                // will re-sync from server.
+                await ApplyLocalCoreAsync(value);
+                Changed?.Invoke(value);
+                return;
+            }
+            await SetAsync(value, prefs);
+        }
+
         private async Task ApplyLocalCoreAsync(ThemePreference value)
         {
             try

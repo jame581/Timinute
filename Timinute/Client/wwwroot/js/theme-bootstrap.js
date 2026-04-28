@@ -50,5 +50,11 @@
         get: function () {
             try { return localStorage.getItem(KEY) || 'System'; } catch { return 'System'; }
         },
+        // Returns "dark" or "light" — the resolved value currently on
+        // <html data-theme>. Used by the topbar toggle to render the
+        // correct icon when the stored value is "System".
+        getResolved: function () {
+            return root.getAttribute('data-theme') || 'light';
+        },
     };
 })();

@@ -21,7 +21,7 @@
                 {
                     <span class="aurora-hero-card__chip">@(WeekDeltaPercent.Value >= 0 ? "+" : "")@WeekDeltaPercent.Value.ToString("0.#")% vs last week</span>
                 }
-                <span class="aurora-hero-card__sub">Goal @WeeklyGoal · @DaysLeft days left</span>
+                <span class="aurora-hero-card__sub">Goal @WeeklyGoal · @DaysLeft days left · Today @TodayDisplay</span>
             </div>
             <div class="aurora-hero-card__progress">
                 <div class="aurora-hero-card__progress-fill" style="width: @ProgressPct.ToString("0", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
@@ -123,7 +123,11 @@
     // call fails so the dashboard's progress bar still renders something
     // sensible. Decimal so 7.5h-style preferences render correctly.
     private decimal WeeklyGoalHours = 32.0m;
+    private decimal WorkdayHoursPerDay = 8.0m;
+    private decimal TodayHours;
+
     private string WeeklyGoal => $"{WeeklyGoalHours:0.#}h";
+    private string TodayDisplay => $"{TodayHours:0.#}h / {WorkdayHoursPerDay:0.#}h target";
 
     private List<TrackedTaskDto> AllUserTasks = new();
     private List<TrackedTaskDto> RecentTasks = new();
@@ -165,13 +169,15 @@
             if (me?.Preferences != null)
             {
                 WeeklyGoalHours = me.Preferences.WeeklyGoalHours;
+                WorkdayHoursPerDay = me.Preferences.WorkdayHoursPerDay;
             }
         }
         catch
         {
-            // Keep the 32.0 fallback — progress bar still renders.
+            // Keep the 32.0 / 8.0 fallbacks — progress bar still renders.
         }
 
+        ComputeTodayStats();
         ComputeWeekStats();
         ComputeMonthlyChart();
         ComputeDonut();
@@ -181,6 +187,19 @@
             .OrderByDescending(t => t.StartDate)
             .Take(5)
             .ToList();
+    }
+
+    private void ComputeTodayStats()
+    {
+        // Attribution by start time: a session that began yesterday at 23:30
+        // and ended after midnight is *not* counted toward today, even though
+        // most of its duration was today. Conventional choice for time
+        // trackers and matches how the weekly progress bar attributes too.
+        var todayLocal = DateTimeOffset.Now.Date;
+        var todayHours = AllUserTasks
+            .Where(t => t.StartDate.LocalDateTime.Date == todayLocal)
+            .Sum(t => t.Duration.TotalHours);
+        TodayHours = (decimal)todayHours;
     }
 
     private void ComputeWeekStats()

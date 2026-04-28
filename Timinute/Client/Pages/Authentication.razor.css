@@ -1,0 +1,108 @@
+/* Shared shell for the in-flight auth states (LoggingIn, CompletingLoggingIn,
+   LogOut, etc.). Visually mirrors the Aurora boot splash — same wordmark,
+   same progress bar — so the sign-in / sign-out flow feels continuous with
+   the app boot rather than flashing an unstyled fallback. */
+
+.aurora-auth-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 24px;
+    text-align: center;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+}
+
+.aurora-auth-shell__brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.aurora-auth-shell__mark {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #5B5BF5, #9D7CFF);
+    box-shadow: 0 12px 32px -10px rgba(91, 91, 245, .55);
+    display: grid;
+    place-items: center;
+    animation: aurora-auth-float 3s ease-in-out infinite;
+}
+
+.aurora-auth-shell__wordmark {
+    font-weight: 600;
+    font-size: 32px;
+    letter-spacing: -0.8px;
+    color: var(--text);
+}
+
+.aurora-auth-shell__dot {
+    color: var(--accent);
+}
+
+.aurora-auth-shell__title {
+    font: 500 18px var(--font-sans);
+    color: var(--text);
+    margin: 0;
+}
+
+.aurora-auth-shell__sub {
+    color: var(--text-mu);
+    font-size: 14px;
+    margin: 0;
+    max-width: 380px;
+}
+
+.aurora-auth-shell__progress {
+    position: relative;
+    width: 180px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+    .aurora-auth-shell__progress::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 35%;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        border-radius: 999px;
+        animation: aurora-auth-bar 1.4s ease-in-out infinite;
+    }
+
+.aurora-auth-shell__link {
+    margin-top: 8px;
+    color: var(--accent);
+    text-decoration: none;
+    font: 500 14px var(--font-sans);
+}
+
+    .aurora-auth-shell__link:hover {
+        text-decoration: underline;
+    }
+
+@keyframes aurora-auth-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@keyframes aurora-auth-bar {
+    0% { left: -35%; }
+    100% { left: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aurora-auth-shell__mark,
+    .aurora-auth-shell__progress::after {
+        animation: none;
+    }
+}

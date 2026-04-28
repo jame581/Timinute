@@ -4,13 +4,85 @@
 
 @if (!IsRegister)
 {
-    <RemoteAuthenticatorView Action="@Action" />
+    <RemoteAuthenticatorView Action="@Action">
+        <LoggingIn>
+            @AuthShell("Signing you in…", "Redirecting to your identity provider.")
+        </LoggingIn>
+        <CompletingLoggingIn>
+            @AuthShell("Completing sign-in…", "Verifying your session.")
+        </CompletingLoggingIn>
+        <LogOut>
+            @AuthShell("Signing you out…", "Closing your session.")
+        </LogOut>
+        <CompletingLogOut>
+            @AuthShell("Completing sign-out…", "Almost done.")
+        </CompletingLogOut>
+        <LogOutSucceeded>
+            @AuthShell("You're signed out.", "Redirecting to the home page.")
+        </LogOutSucceeded>
+        <LogInFailed Context="message">
+            <div class="aurora-auth-shell">
+                <div class="aurora-auth-shell__brand">
+                    <div class="aurora-auth-shell__mark">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="13" r="8" />
+                            <path d="M12 9v4l2.5 2" />
+                            <path d="M9 2h6" />
+                        </svg>
+                    </div>
+                    <div class="aurora-auth-shell__wordmark">timinute<span class="aurora-auth-shell__dot">.</span></div>
+                </div>
+                <p class="aurora-auth-shell__title">Sign-in failed</p>
+                <p class="aurora-auth-shell__sub">@message</p>
+                <a class="aurora-auth-shell__link" href="/authentication/login">Try again</a>
+            </div>
+        </LogInFailed>
+        <LogOutFailed Context="message">
+            <div class="aurora-auth-shell">
+                <div class="aurora-auth-shell__brand">
+                    <div class="aurora-auth-shell__mark">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="13" r="8" />
+                            <path d="M12 9v4l2.5 2" />
+                            <path d="M9 2h6" />
+                        </svg>
+                    </div>
+                    <div class="aurora-auth-shell__wordmark">timinute<span class="aurora-auth-shell__dot">.</span></div>
+                </div>
+                <p class="aurora-auth-shell__title">Sign-out failed</p>
+                <p class="aurora-auth-shell__sub">@message</p>
+                <a class="aurora-auth-shell__link" href="/">Back to home</a>
+            </div>
+        </LogOutFailed>
+    </RemoteAuthenticatorView>
 }
 
 @code {
     [Parameter] public string? Action { get; set; }
 
     private bool IsRegister => string.Equals(Action, "register", System.StringComparison.OrdinalIgnoreCase);
+
+    // Shared branded shell for the in-flight auth states — mirrors the
+    // Aurora boot splash so the sign-in / sign-out flow doesn't flash an
+    // unstyled "Completing login..." line. See Authentication.razor.css.
+    private RenderFragment AuthShell(string title, string subtitle) => __builder =>
+    {
+        <div class="aurora-auth-shell" role="status" aria-live="polite">
+            <div class="aurora-auth-shell__brand">
+                <div class="aurora-auth-shell__mark" aria-hidden="true">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="13" r="8" />
+                        <path d="M12 9v4l2.5 2" />
+                        <path d="M9 2h6" />
+                    </svg>
+                </div>
+                <div class="aurora-auth-shell__wordmark">timinute<span class="aurora-auth-shell__dot">.</span></div>
+            </div>
+            <p class="aurora-auth-shell__title">@title</p>
+            <p class="aurora-auth-shell__sub">@subtitle</p>
+            <div class="aurora-auth-shell__progress" aria-hidden="true"></div>
+        </div>
+    };
 
     protected override void OnInitialized()
     {
