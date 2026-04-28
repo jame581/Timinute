@@ -188,8 +188,10 @@
         }
         catch (Exception ex)
         {
+            // Revert via ApplyLocalAsync (no PUT) so a flaky network can't
+            // throw a second exception out of the catch block.
             CurrentTheme = previous;
-            await ThemeService.SetAsync(previous, Me.Preferences);
+            try { await ThemeService.ApplyLocalAsync(previous); } catch { /* best-effort revert */ }
             NotificationService.Notify(Radzen.NotificationSeverity.Error, "Could not save theme", ex.Message, 4000);
         }
         finally
@@ -224,7 +226,7 @@
                 DraftWorkdayHoursPerDay = saved.WorkdayHoursPerDay;
             }
 
-            NotificationService.Notify(Radzen.NotificationSeverity.Success, "Preferences saved", null, 2500);
+            NotificationService.Notify(Radzen.NotificationSeverity.Success, "Preferences saved", string.Empty, 2500);
         }
         catch (Exception ex)
         {

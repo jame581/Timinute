@@ -16,6 +16,13 @@ namespace Timinute.Client.Services
         private readonly IJSRuntime js;
         private readonly IHttpClientFactory clientFactory;
 
+        // Holds the once-per-session sync Task so multiple callers (MainLayout,
+        // Profile, Dashboard) don't all fire their own GET /User/me. First caller
+        // populates; everyone else awaits the cached task. Profile's overload
+        // (which already has the prefs) populates this with a completed task so
+        // a later MainLayout call is a no-op.
+        private Task<UserPreferencesDto?>? syncTask;
+
         public ThemeService(IJSRuntime js, IHttpClientFactory clientFactory)
         {
             this.js = js;
@@ -44,7 +51,34 @@ namespace Timinute.Client.Services
         // preference into localStorage so the next reload's bootstrap reads
         // the up-to-date value. Silently no-ops if unauthenticated or the
         // call fails — the bootstrap script already applied a default theme.
-        public async Task SyncFromServerAsync()
+        // Idempotent: subsequent callers await the cached task and don't
+        // refire the network request.
+        public Task<UserPreferencesDto?> SyncFromServerAsync()
+        {
+            return syncTask ??= FetchAndApplyAsync();
+        }
+
+        // Server sync (overload): used when the caller already has the
+        // server response, e.g. Profile.razor reusing its own GetMe. Also
+        // populates the cache so a subsequent parameterless call (e.g. from
+        // MainLayout) doesn't fire a duplicate GET /User/me.
+        public async Task SyncFromServerAsync(UserPreferencesDto serverPrefs)
+        {
+            syncTask ??= Task.FromResult<UserPreferencesDto?>(serverPrefs);
+            await ApplyLocalAsync(serverPrefs.Theme);
+            Changed?.Invoke(serverPrefs.Theme);
+        }
+
+        // Local-only update: applies the theme to localStorage + <html data-theme>
+        // without hitting the server. Used by Profile's revert path so a
+        // post-PUT-failure rollback doesn't trigger another PUT (which can
+        // also fail and double-throw).
+        public Task ApplyLocalAsync(ThemePreference value)
+        {
+            return ApplyLocalCoreAsync(value);
+        }
+
+        private async Task<UserPreferencesDto?> FetchAndApplyAsync()
         {
             try
             {
@@ -52,29 +86,27 @@ namespace Timinute.Client.Services
                 var profile = await client.GetFromJsonAsync<UserProfileDto>("User/me");
                 if (profile?.Preferences != null)
                 {
-                    await ApplyLocalAsync(profile.Preferences.Theme);
+                    await ApplyLocalCoreAsync(profile.Preferences.Theme);
                     Changed?.Invoke(profile.Preferences.Theme);
+                    return profile.Preferences;
                 }
             }
             catch
             {
                 // Anonymous, network error, or server hiccup — keep cache.
+                // Reset syncTask so a later, post-auth call can retry.
+                syncTask = null;
             }
-        }
-
-        // Server sync (overload): used when the caller already has the
-        // server response, e.g. Profile.razor reusing its own GetMe.
-        public async Task SyncFromServerAsync(UserPreferencesDto serverPrefs)
-        {
-            await ApplyLocalAsync(serverPrefs.Theme);
-            Changed?.Invoke(serverPrefs.Theme);
+            return null;
         }
 
         // Toggle path: optimistic local update (instant UI), then PUT.
-        // On PUT failure the caller is responsible for reverting via SetAsync(prev).
+        // On PUT failure the caller is responsible for reverting via
+        // ApplyLocalAsync(prev) — NOT via SetAsync(prev), which would PUT
+        // again and can throw a second uncaught exception.
         public async Task SetAsync(ThemePreference value, UserPreferencesDto fullPrefs)
         {
-            await ApplyLocalAsync(value);
+            await ApplyLocalCoreAsync(value);
             Changed?.Invoke(value);
 
             var client = clientFactory.CreateClient(Constants.API.ClientName);
@@ -88,7 +120,7 @@ namespace Timinute.Client.Services
             response.EnsureSuccessStatusCode();
         }
 
-        private async Task ApplyLocalAsync(ThemePreference value)
+        private async Task ApplyLocalCoreAsync(ThemePreference value)
         {
             try
             {
