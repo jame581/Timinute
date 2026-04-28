@@ -1,9 +1,11 @@
 @implements IAsyncDisposable
+@using Timinute.Shared.Dtos
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthState
 @inject Radzen.DialogService DialogService
 @inject IJSRuntime JS
 @inject Timinute.Client.Services.MobileSheetService Sheet
+@inject Timinute.Client.Services.ThemeService Theme
 
 <header class="aurora-topbar">
     <div class="aurora-topbar__left">
@@ -21,6 +23,15 @@
                 <input type="text" class="aurora-search__input" placeholder="Search tasks, projects…" />
                 <span class="aurora-search__chip">⌘K</span>
             </div>
+
+            <button type="button"
+                    class="aurora-topbar__icon-btn"
+                    @onclick="ToggleTheme"
+                    disabled="@isThemeBusy"
+                    aria-label="@(isDarkResolved ? "Switch to light theme" : "Switch to dark theme")"
+                    title="@(isDarkResolved ? "Switch to light" : "Switch to dark")">
+                <AuroraIcons Name="@(isDarkResolved ? "sun" : "moon")" Size="16" />
+            </button>
 
             <button class="aurora-quick-add" @onclick="OpenQuickAdd">
                 <AuroraIcons Name="plus" Size="16" />
@@ -56,6 +67,17 @@
     private string LastName = "";
     private IJSObjectReference? shortcutsModule;
 
+    // Tracks the *resolved* light/dark applied to <html data-theme>. Initial
+    // value resolved from the bootstrap script via ThemeService on first
+    // render; updated via Theme.Changed when toggling from Topbar or Profile,
+    // or when MainLayout's server sync brings in a different theme. Note:
+    // this state is NOT updated by the bootstrap's matchMedia listener for
+    // mid-session OS-theme changes — those re-apply data-theme on <html>
+    // but don't notify Blazor. The icon resolves correctly on next render.
+    private ThemePreference currentThemeChoice = ThemePreference.System;
+    private bool isDarkResolved;
+    private bool isThemeBusy;
+
     private string Initials
     {
         get
@@ -70,6 +92,7 @@
     protected override async Task OnInitializedAsync()
     {
         Navigation.LocationChanged += OnLocationChanged;
+        Theme.Changed += OnThemeChanged;
         var auth = await AuthState.GetAuthenticationStateAsync();
         var user = auth.User;
         if (user.Identity?.IsAuthenticated == true)
@@ -91,6 +114,88 @@
             shortcutsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/topbar-shortcuts.js");
             await shortcutsModule.InvokeVoidAsync("registerCmdKFocus", ".aurora-search__input");
         }
+
+        // First render: read the bootstrap-applied theme so the icon matches
+        // what's already on screen.
+        if (firstRender)
+        {
+            currentThemeChoice = await Theme.GetCurrentAsync();
+            isDarkResolved = await ResolveIsDarkAsync(currentThemeChoice);
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> ResolveIsDarkAsync(ThemePreference choice)
+    {
+        if (choice == ThemePreference.Dark) return true;
+        if (choice == ThemePreference.Light) return false;
+        // System: read the resolved value from the bootstrap script (which
+        // already applied data-theme to <html>). CSP-safe — no eval.
+        try
+        {
+            var resolved = await JS.InvokeAsync<string?>("__theme.getResolved");
+            return string.Equals(resolved, "dark", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        if (isThemeBusy) return;
+
+        var next = isDarkResolved ? ThemePreference.Light : ThemePreference.Dark;
+        var previousChoice = currentThemeChoice;
+        var previousIsDark = isDarkResolved;
+
+        isThemeBusy = true;
+        currentThemeChoice = next;
+        isDarkResolved = next == ThemePreference.Dark;
+        StateHasChanged();
+
+        try
+        {
+            await Theme.SetThemeOnlyAsync(next);
+        }
+        catch
+        {
+            // Revert UI; ApplyLocalAsync re-applies the previous theme to
+            // <html data-theme> + localStorage without re-PUTting.
+            currentThemeChoice = previousChoice;
+            isDarkResolved = previousIsDark;
+            try { await Theme.ApplyLocalAsync(previousChoice); } catch { /* best-effort */ }
+        }
+        finally
+        {
+            isThemeBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnThemeChanged(ThemePreference value)
+    {
+        // Fired by ThemeService whenever theme changes anywhere (here, Profile,
+        // server sync). Update local state without a re-PUT.
+        //
+        // Skip while ToggleTheme is in flight: it already owns the optimistic
+        // UI state, and SetThemeOnlyAsync re-fires Changed on its own success
+        // path. Without this guard the queued lambda would re-apply the same
+        // value mid-toggle, causing a redundant render.
+        if (isThemeBusy) return;
+
+        InvokeAsync(async () =>
+        {
+            try
+            {
+                currentThemeChoice = value;
+                isDarkResolved = await ResolveIsDarkAsync(value);
+                StateHasChanged();
+            }
+            catch (ObjectDisposedException) { /* component gone */ }
+            catch (JSDisconnectedException) { /* circuit gone */ }
+        });
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -144,6 +249,7 @@
     public async ValueTask DisposeAsync()
     {
         Navigation.LocationChanged -= OnLocationChanged;
+        Theme.Changed -= OnThemeChanged;
         if (shortcutsModule is not null)
         {
             try

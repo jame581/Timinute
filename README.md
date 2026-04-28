@@ -1,10 +1,13 @@
 # Timinute
 
-[![Build & Test](https://github.com/jame581/Timinute/actions/workflows/build_test.yml/badge.svg)](https://github.com/jame581/Timinute/actions/workflows/build_test.yml)
+[![Release](https://github.com/jame581/Timinute/actions/workflows/release.yml/badge.svg)](https://github.com/jame581/Timinute/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/jame581/Timinute)](https://github.com/jame581/Timinute/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 
 The free, open-source time tracker that respects your minutes. Track work hours across projects, see exactly where your time goes, and get clear weekly overviews — all in a self-hostable Blazor WebAssembly app.
 
-Originally a demo of modern Blazor; now fully redesigned around the **Aurora** visual system (v2.0) with a tokenized design system, hand-built SVG charts, a custom calendar, and full mobile-responsive treatment.
+Originally a demo of modern Blazor; now fully redesigned around the **Aurora** visual system (v2.1) with a tokenized design system, hand-built SVG charts, a custom calendar, full mobile-responsive treatment, and a no-flash dark mode that follows your system or your preference.
 
 ## Highlights
 
@@ -17,6 +20,8 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 - **Data export** — CSV and Excel exports for tasks, project summaries, and monthly analytics.
 - **Identity** — Duende IdentityServer for auth (JWT for the API, cookie for Identity UI), Basic/Admin roles, lockout, registration via Razor Pages.
 - **Mobile responsive** — bottom glass tab bar with FAB, slide-up overflow sheet, full reflow at ≤768px.
+- **Dark mode** — `Light / Dark / System` preference, no flash on reload (synchronous pre-Blazor bootstrap), watches `prefers-color-scheme` for System users. Quick toggle in the desktop topbar.
+- **User preferences** — configurable weekly goal and workday-hours target persisted server-side per user; the Dashboard hero card consumes both for weekly progress and a "Today X.Xh / Yh target" indicator.
 - **Accessibility** — `prefers-reduced-motion` honored, `aria-current` on active nav, focus-visible outlines, modal sheet semantics.
 
 ## Screenshots
@@ -112,6 +117,8 @@ docker run -v timinute-keys:/keys ...
 ```
 
 > **v2.0 migration note:** the migration from IdentityServer4 to Duende dropped the IS4-era `DeviceCodes` / `Keys` / `PersistedGrants` tables. If you're upgrading a database that contained any IS4 grant data, that data is lost — log all users out and have them re-authenticate post-deploy.
+
+> **v2.1 migration note:** `AddUserPreferences` adds three columns to `AspNetUsers` (`Preferences_Theme nvarchar(8)`, `Preferences_WeeklyGoalHours decimal(4,1)`, `Preferences_WorkdayHoursPerDay decimal(4,1)`) with sensible defaults applied to existing rows in one statement. No data loss, no separate UPDATE pass.
 
 ## Project layout
 

@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-04-27 — after Aurora mobile (PR #35) merged into `develop`._
+_Last reviewed: 2026-04-28 — after v2.0.1 patch batch released and Settings cluster spec approved._
 
 ## Current Feature Set
 
@@ -42,7 +42,6 @@ _Last reviewed: 2026-04-27 — after Aurora mobile (PR #35) merged into `develop
 | Enhanced analytics | Custom date ranges, daily/weekly summaries, productivity trends, push aggregation server-side | M | Dashboard stats currently load all user tasks client-side |
 | Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | Topbar bell is hidden on desktop (visual placeholder only) waiting for this |
 | Time tracking enhancements | Pomodoro timer, time estimates/goals, break tracking | L | None |
-| Real GitHub star count | Replace landing's hardcoded `· 1.2k` with live fetch from GitHub API + localStorage cache | S | Deferred from Aurora work |
 
 ## Pending — P2 (Nice-to-Have)
 
@@ -68,7 +67,6 @@ Tags ─┬─ External-ticket integrations (P2)
 Enhanced analytics — independent
 Notifications — independent
 Time tracking enhancements — independent
-Real GitHub star count — independent
 ```
 
 ---
@@ -106,5 +104,4 @@ These are new entries (or refinements of existing ones) that came out of v2.0-ro
 
 - New features start as a spec in `docs/superpowers/specs/`, optionally with an implementation plan in `docs/superpowers/plans/`.
 - When a plan lands, move it to `docs/superpowers/plans/done/` and prepend a `Status:` block at the top with the merging PR + date.
-- Update this roadmap (P1/P2 tables + Tech-debt + v2.0.1 patch list) in the same PR that completes a feature, so the file always reflects what's currently in `develop`.
-- When the v2.0.1 patch list is shipped, delete the section.
+- Update this roadmap (P1/P2 tables + Tech-debt) in the same PR that completes a feature, so the file always reflects what's currently in `develop`.

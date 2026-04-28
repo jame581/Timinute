@@ -9,6 +9,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — Timinute</title>
 
+    <!-- Pre-page theme bootstrap — must run before first paint so the
+         user's stored theme is applied without a flash of light-mode.
+         Same script the Blazor client uses; served from the Client's
+         wwwroot which is exposed at the app root. See
+         Client/wwwroot/js/theme-bootstrap.js. -->
+    <script src="~/js/theme-bootstrap.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@@400;500;600;700&display=swap" rel="stylesheet" />

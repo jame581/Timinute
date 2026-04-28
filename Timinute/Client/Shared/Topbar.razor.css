@@ -35,6 +35,36 @@
     flex-shrink: 0;
 }
 
+.aurora-topbar__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    color: var(--text-mu);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.aurora-topbar__icon-btn:hover:not(:disabled) {
+    background: var(--accent-so);
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.aurora-topbar__icon-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.aurora-topbar__icon-btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
 .aurora-search {
     display: flex;
     align-items: center;
