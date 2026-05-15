@@ -251,10 +251,14 @@ void IdentitySetup()
         // Duende IdentityServer enables automatic key management by default.
         // Keys are generated, rotated, and persisted to KeyPath. This MUST be a
         // persistent volume in containerised / multi-replica deployments.
-        identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.KeyManagementOptions>(options =>
+        // NOTE: We configure IdentityServerOptions (not KeyManagementOptions) because
+        // Duende registers an IPostConfigureOptions<KeyManagementOptions> that copies
+        // values from IdentityServerOptions.KeyManagement.* and would otherwise
+        // overwrite anything we set directly on KeyManagementOptions.
+        identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.IdentityServerOptions>(options =>
         {
-            options.Enabled = true;
-            options.KeyPath = keyPath;
+            options.KeyManagement.Enabled = true;
+            options.KeyManagement.KeyPath = keyPath;
         });
     }
 }
