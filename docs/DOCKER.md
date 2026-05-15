@@ -82,7 +82,7 @@ docker compose exec db bash -c \
    -Q 'BACKUP DATABASE Timinute TO DISK = N\"/var/opt/mssql/data/Timinute.bak\" WITH FORMAT, INIT'"
 
 docker cp "$(docker compose ps -q db):/var/opt/mssql/data/Timinute.bak" \
-  "./Timinute-$(Get-Date -Format yyyyMMdd).bak"
+  "./Timinute-$(date +%Y%m%d).bak"
 
 # Snapshot signing and data-protection keys
 docker run --rm \
@@ -90,6 +90,8 @@ docker run --rm \
   -v "$(pwd)":/out \
   alpine tar -czf "/out/timinute-keys-$(date +%Y%m%d).tar.gz" -C /keys .
 ```
+
+PowerShell users: replace `$(date +%Y%m%d)` with `$(Get-Date -Format yyyyMMdd)` in the snippets above.
 
 To restore the keys volume from a backup:
 

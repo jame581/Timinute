@@ -23,5 +23,7 @@ COPY --from=build --chown=app:app /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080 \
     DatabaseMigrationOnStartup=true
 EXPOSE 8080
+# VOLUME is metadata; the actual /keys directory was created and chowned
+# earlier (as root) before the USER switch.
 VOLUME ["/keys"]
 ENTRYPOINT ["dotnet", "Timinute.Server.dll"]
