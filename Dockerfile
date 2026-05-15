@@ -17,6 +17,7 @@ RUN dotnet publish Timinute/Server/Timinute.Server.csproj \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+RUN mkdir -p /keys && chown app:app /keys
 USER app
 COPY --from=build --chown=app:app /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080 \
