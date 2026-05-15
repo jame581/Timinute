@@ -1,0 +1,40 @@
+name: timinute
+
+services:
+  app:
+    image: ghcr.io/jame581/timinute:${TIMINUTE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Server=db,1433;Database=Timinute;User Id=sa;
+        Password=${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env};
+        TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=true
+      IdentityServer__Authority: ${IdentityServer__Authority:?set IdentityServer__Authority in .env}
+    ports:
+      - "${TIMINUTE_PORT:-8080}:8080"
+    volumes:
+      - timinute-keys:/keys
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env}
+      MSSQL_PID: Express
+    volumes:
+      - timinute-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -No -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  timinute-keys:
+  timinute-data:
