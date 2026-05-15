@@ -1,5 +1,7 @@
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +25,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+if (!builder.Environment.IsDevelopment())
+{
+    var dpKeysPath = builder.Configuration["DataProtection:KeyPath"] ?? "/keys/data-protection";
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dpKeysPath));
+}
 
 // Identity configuration
 IdentitySetup();
@@ -113,6 +122,18 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// Same-origin auth → SameSite=Lax is correct and works in both HTTP-only
+// (local smoke / dev) and HTTPS-behind-reverse-proxy (production). The
+// default SameSite=None setting on Identity / IdentityServer cookies is
+// dropped silently by browsers when the request is not HTTPS, which breaks
+// the login flow in any non-TLS deployment. Secure flag mirrors the request
+// scheme so it's set in production-https and unset in http-smoke.
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
+    options.Secure = CookieSecurePolicy.SameAsRequest;
+});
+
 var app = builder.Build();
 
 if (app.Configuration.GetValue("DatabaseMigrationOnStartup", true))
@@ -145,6 +166,7 @@ else
 }
 
 app.UseForwardedHeaders();
+app.UseCookiePolicy();
 app.UseHttpsRedirection();
 
 app.UseResponseCaching();
