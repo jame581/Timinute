@@ -3,6 +3,7 @@
 @using Timinute.Shared.Dtos.Dashboard
 @using Timinute.Shared.Dtos.Project
 @inject IHttpClientFactory ClientFactory
+@inject Timinute.Client.Services.UserProfileService UserProfileService
 @inject Timinute.Client.Services.ProjectColorService ColorService
 
 <div class="aurora-dashboard">
@@ -165,7 +166,7 @@
 
         try
         {
-            var me = await client.GetFromJsonAsync<Timinute.Shared.Dtos.UserProfileDto>("User/me");
+            var me = await UserProfileService.GetCurrentAsync();
             if (me?.Preferences != null)
             {
                 WeeklyGoalHours = me.Preferences.WeeklyGoalHours;
