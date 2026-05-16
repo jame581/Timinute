@@ -214,6 +214,9 @@
                 WeeklyGoalHours = DraftWeeklyGoalHours,
                 WorkdayHoursPerDay = DraftWorkdayHoursPerDay,
             };
+            // NOTE: invalidate after any mutation that changes /User/me's payload —
+            // keeps Profile/Dashboard/Topbar consistent. ThemeService.SetAsync does
+            // the same after its PUT path.
             var response = await client.PutAsJsonAsync("User/me/preferences", dto);
 
             if (!response.IsSuccessStatusCode)
@@ -227,6 +230,8 @@
                 NotificationService.Notify(Radzen.NotificationSeverity.Error, "Could not save preferences", detail, 4000);
                 return;
             }
+
+            await UserProfileService.InvalidateAsync();
 
             var saved = await response.Content.ReadFromJsonAsync<UserPreferencesDto>();
             if (saved != null)

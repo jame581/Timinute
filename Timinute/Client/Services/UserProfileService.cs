@@ -21,6 +21,9 @@ namespace Timinute.Client.Services
             this.clientFactory = clientFactory;
         }
 
+        // Reserved for future components that need to react to profile updates
+        // (e.g. a nav-menu showing the user's name after a profile rename).
+        // No subscribers today.
         public event Action<UserProfileDto?>? Changed;
 
         public Task<UserProfileDto?> GetCurrentAsync()

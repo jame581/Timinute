@@ -42,6 +42,12 @@ namespace Timinute.Server.Repository
         /// the optional filter. Translated server-side by EF Core when the
         /// selector hits column-mapped properties.
         /// </summary>
+        /// <remarks>
+        /// Note: TimeSpan.Ticks selectors against SQL Server <c>time(7)</c>
+        /// columns require EF Core's <c>DATEDIFF_BIG</c> translation. Validate
+        /// against real SQL Server before relying on this in production —
+        /// EF InMemory accepts the projection without exercising the SQL path.
+        /// </remarks>
         Task<long> SumAsync(
             Expression<Func<TEntity, long>> selector,
             Expression<Func<TEntity, bool>>? filter = null);

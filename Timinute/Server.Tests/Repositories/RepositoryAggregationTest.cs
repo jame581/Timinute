@@ -80,5 +80,23 @@ namespace Timinute.Server.Tests.Repositories
 
             Assert.Equal(0L, totalTicks);
         }
+
+        [Fact]
+        public async Task SumAsync_RespectsGlobalQueryFilter_ExcludesSoftDeleted()
+        {
+            var db = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SumSoftDeleted");
+            var repo = new BaseRepository<TrackedTask>(db);
+
+            // Capture the full sum for ApplicationUser1, then soft-delete one
+            // task and confirm the new sum drops by that task's duration.
+            var fullSumTicks = await repo.SumAsync(t => t.Duration.Ticks, t => t.UserId == "ApplicationUser1");
+            var deletedTaskTicks = (await db.TrackedTasks.FindAsync("TrackedTaskId1"))!.Duration.Ticks;
+
+            await repo.SoftDelete("TrackedTaskId1");
+
+            var afterSumTicks = await repo.SumAsync(t => t.Duration.Ticks, t => t.UserId == "ApplicationUser1");
+
+            Assert.Equal(fullSumTicks - deletedTaskTicks, afterSumTicks);
+        }
     }
 }
