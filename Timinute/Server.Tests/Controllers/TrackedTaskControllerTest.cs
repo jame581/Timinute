@@ -221,7 +221,7 @@ namespace Timinute.Server.Tests.Controllers
 
             Assert.Equal(trackedTaskToUpdate.TaskId, updatedTrackedTask!.TaskId);
             Assert.Equal(trackedTaskToUpdate.Name, updatedTrackedTask.Name);
-            Assert.Equal(trackedTaskToUpdate.StartDate!.Value.UtcDateTime, updatedTrackedTask.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
+            Assert.Equal(trackedTaskToUpdate.StartDate.UtcDateTime, updatedTrackedTask.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -279,7 +279,7 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(newlyCreatedTrackedTask);
 
             Assert.Equal(trackedTaskToCreate.Name, newlyCreatedTrackedTask!.Name);
-            Assert.Equal(trackedTaskToCreate.StartDate!.Value.UtcDateTime, newlyCreatedTrackedTask!.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
+            Assert.Equal(trackedTaskToCreate.StartDate.UtcDateTime, newlyCreatedTrackedTask!.StartDate.UtcDateTime, TimeSpan.FromSeconds(1));
             Assert.Equal(trackedTaskToCreate.Duration, newlyCreatedTrackedTask!.Duration);
         }
 

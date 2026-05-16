@@ -29,5 +29,27 @@ namespace Timinute.Server.Repository
         /// palette assignment that should not collide with a still-active sibling color.
         /// </summary>
         Task<int> CountAll(Expression<Func<TEntity, bool>>? filter = null);
+
+        /// <summary>
+        /// Asynchronously counts entities matching the optional filter.
+        /// Honors EF global query filters (e.g. soft delete) — use <see cref="CountAll"/>
+        /// when you need the unfiltered (including soft-deleted) count.
+        /// </summary>
+        Task<int> CountAsync(Expression<Func<TEntity, bool>>? filter = null);
+
+        /// <summary>
+        /// Asynchronously sums the projected long values for entities matching
+        /// the optional filter. Translated server-side by EF Core when the
+        /// selector hits column-mapped properties.
+        /// </summary>
+        /// <remarks>
+        /// Note: TimeSpan.Ticks selectors against SQL Server <c>time(7)</c>
+        /// columns require EF Core's <c>DATEDIFF_BIG</c> translation. Validate
+        /// against real SQL Server before relying on this in production —
+        /// EF InMemory accepts the projection without exercising the SQL path.
+        /// </remarks>
+        Task<long> SumAsync(
+            Expression<Func<TEntity, long>> selector,
+            Expression<Func<TEntity, bool>>? filter = null);
     }
 }
