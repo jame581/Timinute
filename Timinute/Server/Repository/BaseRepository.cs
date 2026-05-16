@@ -242,6 +242,24 @@ namespace Timinute.Server.Repository
             return await query.CountAsync();
         }
 
+        public async Task<int> CountAsync(Expression<Func<TEntity, bool>>? filter = null)
+        {
+            IQueryable<TEntity> query = dbSet;
+            if (filter != null)
+                query = query.Where(filter);
+            return await query.CountAsync();
+        }
+
+        public async Task<long> SumAsync(
+            Expression<Func<TEntity, long>> selector,
+            Expression<Func<TEntity, bool>>? filter = null)
+        {
+            IQueryable<TEntity> query = dbSet;
+            if (filter != null)
+                query = query.Where(filter);
+            return await query.Select(selector).SumAsync();
+        }
+
         public async Task<int> PurgeExpired(DateTimeOffset olderThan)
         {
             EnsureSoftDeletable();
