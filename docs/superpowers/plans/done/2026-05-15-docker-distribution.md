@@ -1,5 +1,7 @@
 # Docker Distribution Implementation Plan
 
+> **Status:** ✅ Shipped — merged into `develop` via `feature/docker-distribution` on 2026-05-16 (merge commit `7596e7b`, PR #43). `Dockerfile` + `docker-compose.yml` + `.env.example` + `.dockerignore`, multi-arch GHCR publish workflow on `v*` tag and `develop` push, `docs/DOCKER.md` self-host guide, and five `Program.cs` production-hardening changes (`ForwardedHeaders` first in pipeline with `AllowAnyProxy`-gated trust, config-gated startup migration, Duende `KeyPath` via `IdentityServerOptions`, ASP.NET data protection persistence, `SameSite=Lax` cookie policy). Tagged release `v*` will publish `:latest`/`:X.Y.Z`/`:X.Y`/`:X` to `ghcr.io/jame581/timinute`; `develop` push publishes `:develop` preview channel.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a Docker image + bundled `docker-compose.yml` as a second distribution channel for Timinute, published to GHCR as `ghcr.io/jame581/timinute` for `linux/amd64` + `linux/arm64`, while leaving the existing per-OS release tarballs untouched.
