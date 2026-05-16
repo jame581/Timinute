@@ -4,6 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/jame581/Timinute)](https://github.com/jame581/Timinute/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![Docker](https://img.shields.io/badge/ghcr.io-jame581%2Ftiminute-blue?logo=docker)](https://github.com/jame581/Timinute/pkgs/container/timinute)
 
 The free, open-source time tracker that respects your minutes. Track work hours across projects, see exactly where your time goes, and get clear weekly overviews — all in a self-hostable Blazor WebAssembly app.
 
@@ -83,6 +84,18 @@ Seeded test users (passwords are intentionally trivial — local dev only):
 | test1@email.com | Basic |
 | test2@email.com | Basic |
 | test3@email.com | Basic |
+
+## Run with Docker
+
+```bash
+git clone https://github.com/jame581/Timinute.git
+cd Timinute
+cp .env.example .env
+# edit .env: set MSSQL_SA_PASSWORD and IdentityServer__Authority
+docker compose up -d
+```
+
+The app comes up on `http://localhost:8080`. For real deployments, put a TLS-terminating reverse proxy in front and set `IdentityServer__Authority` to the public https URL. Full self-host guide (reverse proxy, external SQL, backups, upgrades): [`docs/DOCKER.md`](docs/DOCKER.md).
 
 ## Production deployment
 
