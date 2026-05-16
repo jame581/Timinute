@@ -26,9 +26,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-if (!builder.Environment.IsDevelopment())
+var dpKeysPath = builder.Configuration["DataProtection:KeyPath"];
+if (!string.IsNullOrEmpty(dpKeysPath))
 {
-    var dpKeysPath = builder.Configuration["DataProtection:KeyPath"] ?? "/keys/data-protection";
     builder.Services.AddDataProtection()
         .PersistKeysToFileSystem(new DirectoryInfo(dpKeysPath));
 }
@@ -118,8 +118,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
                              | ForwardedHeaders.XForwardedProto
                              | ForwardedHeaders.XForwardedHost;
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
+
+    // Only clear the known-proxy trust list when the operator explicitly opts in.
+    // The default ASP.NET Core behavior (loopback-only trust) is safer for
+    // accidentally-internet-exposed deployments; Docker sets this true in its
+    // ENV because the container talks to a proxy on a private docker network.
+    if (builder.Configuration.GetValue("ForwardedHeaders:AllowAnyProxy", false))
+    {
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
 });
 
 // Same-origin auth → SameSite=Lax is correct and works in both HTTP-only
@@ -136,12 +144,14 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 
 var app = builder.Build();
 
-if (app.Configuration.GetValue("DatabaseMigrationOnStartup", true))
+if (app.Configuration.GetValue("DatabaseMigrationOnStartup", false))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
          .Database.Migrate();
 }
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -164,8 +174,6 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
-app.UseForwardedHeaders();
 app.UseCookiePolicy();
 app.UseHttpsRedirection();
 
@@ -268,11 +276,11 @@ void IdentitySetup()
     }
     else
     {
-        var keyPath = builder.Configuration["IdentityServer:KeyManagement:KeyPath"] ?? "/keys";
+        var keyPath = builder.Configuration["IdentityServer:KeyManagement:KeyPath"];
 
         // Duende IdentityServer enables automatic key management by default.
-        // Keys are generated, rotated, and persisted to KeyPath. This MUST be a
-        // persistent volume in containerised / multi-replica deployments.
+        // KeyPath defaults to "keys" relative to CWD; set explicitly via config
+        // for any deployment with a stable persistent directory.
         // NOTE: We configure IdentityServerOptions (not KeyManagementOptions) because
         // Duende registers an IPostConfigureOptions<KeyManagementOptions> that copies
         // values from IdentityServerOptions.KeyManagement.* and would otherwise
@@ -280,7 +288,10 @@ void IdentitySetup()
         identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.IdentityServerOptions>(options =>
         {
             options.KeyManagement.Enabled = true;
-            options.KeyManagement.KeyPath = keyPath;
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                options.KeyManagement.KeyPath = keyPath;
+            }
         });
     }
 }

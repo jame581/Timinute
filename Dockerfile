@@ -21,7 +21,10 @@ RUN mkdir -p /keys && chown app:app /keys
 USER app
 COPY --from=build --chown=app:app /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080 \
-    DatabaseMigrationOnStartup=true
+    DatabaseMigrationOnStartup=true \
+    DataProtection__KeyPath=/keys/data-protection \
+    IdentityServer__KeyManagement__KeyPath=/keys \
+    ForwardedHeaders__AllowAnyProxy=true
 EXPOSE 8080
 # VOLUME is metadata; the actual /keys directory was created and chowned
 # earlier (as root) before the USER switch.

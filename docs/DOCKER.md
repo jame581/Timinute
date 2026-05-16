@@ -39,7 +39,8 @@ All settings flow through ASP.NET Core's hierarchical configuration — environm
 | `IdentityServer__Authority`                  | `https://localhost:7047`  | OIDC issuer URL — must exactly match the browser URL      |
 | `IdentityServer__KeyManagement__KeyPath`     | `/keys`                   | Directory for Duende signing keys (rarely changed)        |
 | `DataProtection__KeyPath`                    | `/keys/data-protection`   | Directory for ASP.NET data protection keys (rarely changed) |
-| `DatabaseMigrationOnStartup`                 | `true`                    | Auto-apply EF migrations on container start               |
+| `DatabaseMigrationOnStartup`                 | `false` in code; `true` in Docker image | Auto-apply EF migrations on start. Non-Docker production deployments must opt in explicitly or run migrations manually. |
+| `ForwardedHeaders__AllowAnyProxy`            | `false` in code; `true` in Docker image | Clears ASP.NET Core's loopback-only proxy trust list. The Docker image sets this because the container talks to a reverse proxy over a private network. Leave unset if the app is directly internet-exposed without a proxy. |
 | `ASPNETCORE_ENVIRONMENT`                     | `Production` (in compose) | Standard ASP.NET environment flag                         |
 | `ASPNETCORE_URLS`                            | `http://+:8080`           | Listen address inside the container                       |
 | `TrashRetention__Days`                       | `30`                      | Soft-delete retention days before hard-purge              |
@@ -176,7 +177,7 @@ To use an existing SQL Server instead of the bundled one:
    ```
 
 4. `MSSQL_SA_PASSWORD` is no longer used; remove it from `.env`.
-5. Ensure the target database exists before first start. `DatabaseMigrationOnStartup=true` will create tables but not the database itself.
+5. With `DatabaseMigrationOnStartup=true` (the Docker default), EF Core will create the database if it doesn't already exist, *provided* the SQL login has `CREATE DATABASE` permission. Restricted logins should pre-create the database (empty) and grant the login `db_owner` on it.
 
 ## Upgrading
 
