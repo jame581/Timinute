@@ -48,21 +48,20 @@ namespace Timinute.Server.Controllers
                 return NotFound();
             }
 
-            var tasks = (await taskRepository.Get(t => t.UserId == userId)).ToList();
-            var projectCount = (await projectRepository.Get(p => p.UserId == userId)).Count();
-
-            var totalTicks = tasks.Aggregate(0L, (acc, t) => acc + t.Duration.Ticks);
+            var taskCount    = await taskRepository.CountAsync(t => t.UserId == userId);
+            var projectCount = await projectRepository.CountAsync(p => p.UserId == userId);
+            var totalTicks   = await taskRepository.SumAsync(t => t.Duration.Ticks, t => t.UserId == userId);
 
             return Ok(new UserProfileDto
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email ?? string.Empty,
-                CreatedAt = user.CreatedAt,
+                FirstName        = user.FirstName,
+                LastName         = user.LastName,
+                Email            = user.Email ?? string.Empty,
+                CreatedAt        = user.CreatedAt,
                 TotalTrackedTime = TimeSpan.FromTicks(totalTicks),
-                ProjectCount = projectCount,
-                TaskCount = tasks.Count,
-                Preferences = mapper.Map<UserPreferencesDto>(user.Preferences ?? new UserPreferences())
+                ProjectCount     = projectCount,
+                TaskCount        = taskCount,
+                Preferences      = mapper.Map<UserPreferencesDto>(user.Preferences ?? new UserPreferences())
             });
         }
 
