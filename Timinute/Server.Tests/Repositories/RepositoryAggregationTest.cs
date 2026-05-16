@@ -32,10 +32,13 @@ namespace Timinute.Server.Tests.Repositories
             var db = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CountAll");
             var repo = new BaseRepository<TrackedTask>(db);
 
-            // Seed total tracked tasks (all users combined) — see TestHelper.FillInitData
+            // TestHelper.FillInitData seeds 8 tracked tasks across 3 users
+            // (User1: 4, User2: 3, User3: 1). ApplicationDbContext.OnModelCreating
+            // may also apply HasData seeding on top, so assert >= 8 rather than
+            // == 8 to stay robust against the model-seed path being present or not.
             var count = await repo.CountAsync();
 
-            Assert.True(count > 0, "expected seed data to provide at least one tracked task");
+            Assert.True(count >= 8, $"expected at least 8 tracked tasks from FillInitData; got {count}");
         }
 
         [Fact]
