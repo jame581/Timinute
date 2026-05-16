@@ -11,7 +11,7 @@ namespace Timinute.Client.Services
     // localStorage is a *cache* of the server's value, not the source of
     // truth. SyncFromServerAsync writes the server's preference back into
     // localStorage on app boot so cross-device toggles eventually catch up.
-    public class ThemeService : IDisposable
+    public class ThemeService : IAsyncDisposable, IDisposable
     {
         private readonly IJSRuntime js;
         private readonly IHttpClientFactory clientFactory;
@@ -159,6 +159,22 @@ namespace Timinute.Client.Services
             return Task.CompletedTask;
         }
 
+        public async ValueTask DisposeAsync()
+        {
+            if (selfRef != null)
+            {
+                try { await js.InvokeVoidAsync("__theme.unregister"); }
+                catch (JSException) { /* bootstrap absent — non-fatal */ }
+                catch (JSDisconnectedException) { /* circuit gone */ }
+            }
+            selfRef?.Dispose();
+            selfRef = null;
+        }
+
+        // Sync fallback for paths that go through IDisposable rather than
+        // IAsyncDisposable. Cannot call JS here (would block or throw on
+        // a disconnected circuit), so the JS-side dotnetRef stays attached
+        // until the next page load. DisposeAsync above is the preferred path.
         public void Dispose()
         {
             selfRef?.Dispose();

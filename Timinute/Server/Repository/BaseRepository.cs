@@ -257,7 +257,12 @@ namespace Timinute.Server.Repository
             IQueryable<TEntity> query = dbSet;
             if (filter != null)
                 query = query.Where(filter);
-            return await query.Select(selector).SumAsync();
+            // Project to long? and coalesce so empty-set behavior is
+            // provider-agnostic. On relational providers, SQL SUM(...)
+            // returns NULL for an empty set; EF Core typically handles
+            // this for long but the explicit projection makes the contract
+            // unambiguous regardless of provider quirks.
+            return await query.Select(selector).Select(v => (long?)v).SumAsync() ?? 0L;
         }
 
         public async Task<int> PurgeExpired(DateTimeOffset olderThan)

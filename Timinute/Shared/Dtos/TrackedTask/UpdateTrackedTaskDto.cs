@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Timinute.Shared.Dtos.Project;
+using Timinute.Shared.Validators;
 
 namespace Timinute.Shared.Dtos.TrackedTask
 {
@@ -13,6 +14,7 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public string Name { get; set; } = null!;
 
         [Required]
+        [NonDefaultDateTimeOffset]
         public DateTimeOffset StartDate { get; set; }
 
         public DateTimeOffset? EndDate { get; set; }

@@ -30,7 +30,7 @@ The four items, all originally raised in earlier PR reviews:
 | Path | Purpose |
 |------|---------|
 | `Timinute/Client/Services/UserProfileService.cs` | Caches `Task<UserProfileDto?>` (syncTask pattern). Exposes `GetCurrentAsync()`, `InvalidateAsync()`, and a `Changed` event. |
-| `Server.Tests/Repository/RepositoryAggregationTests.cs` | Unit tests for `CountAsync` + `SumAsync` against EF InMemory. |
+| `Timinute/Server.Tests/Repositories/RepositoryAggregationTest.cs` | Unit tests for `CountAsync` + `SumAsync` against EF InMemory. |
 
 ### Modified files
 
@@ -74,6 +74,8 @@ Applies identically to `CreateTrackedTaskDto` and `UpdateTrackedTaskDto`.
 
 - Controller's `EndDate > StartDate` check — fires when `EndDate` is reasonable and `StartDate` is `MinValue`.
 - `[MinDuration]` on `Duration` — catches near-zero durations.
+
+**Update (post-implementation):** `[Required]` does NOT catch an omitted `startDate` in the JSON payload (model binding sets the non-nullable struct to `default(DateTimeOffset)` and validation passes). A custom `[NonDefaultDateTimeOffsetAttribute]` validator was added in `Timinute/Shared/Validators/` to reject `default(DateTimeOffset)` inputs.
 
 **Breaking change:** the wire format changes from `"startDate": "2026-..." | null` to `"startDate": "2026-..."`. No external API consumers exist today (the WASM client and server move in lockstep; the landing page does not hit `/TrackedTask`). The PR body will explicitly flag this for any future external integration.
 
@@ -147,7 +149,7 @@ The smoke test in this bundle will validate the happy path against the real SQL 
 
 ### Tests added
 
-`Server.Tests/Repository/RepositoryAggregationTests.cs` (new file, 5 tests):
+`Timinute/Server.Tests/Repositories/RepositoryAggregationTest.cs` (new file, 5 tests):
 
 - `CountAsync_WithFilter_ReturnsMatchingCount`
 - `CountAsync_NoFilter_ReturnsTotal`
