@@ -11,10 +11,11 @@ namespace Timinute.Client.Services
     // localStorage is a *cache* of the server's value, not the source of
     // truth. SyncFromServerAsync writes the server's preference back into
     // localStorage on app boot so cross-device toggles eventually catch up.
-    public class ThemeService
+    public class ThemeService : IDisposable
     {
         private readonly IJSRuntime js;
         private readonly IHttpClientFactory clientFactory;
+        private DotNetObjectReference<ThemeService>? selfRef;
 
         // Holds the once-per-session sync Task so multiple callers (MainLayout,
         // Profile, Dashboard) don't all fire their own GET /User/me. First caller
@@ -154,6 +155,35 @@ namespace Timinute.Client.Services
             }
             catch (JSException) { /* bootstrap script absent — non-fatal */ }
             catch (JSDisconnectedException) { /* circuit gone */ }
+        }
+
+        // Register a callback so theme-bootstrap.js can notify us when
+        // the OS color scheme changes mid-session for a 'System' user.
+        // Idempotent — only the first call hits JS; later calls are no-ops.
+        public async Task RegisterOsChangeListenerAsync()
+        {
+            if (selfRef != null) return;
+            selfRef = DotNetObjectReference.Create(this);
+            try { await js.InvokeVoidAsync("__theme.register", selfRef); }
+            catch (JSException) { selfRef.Dispose(); selfRef = null; /* bootstrap absent */ }
+            catch (JSDisconnectedException) { selfRef.Dispose(); selfRef = null; /* circuit gone */ }
+        }
+
+        // Invoked from theme-bootstrap.js when the OS color scheme changes
+        // AND the user's stored preference is 'System'. The JS bootstrap
+        // has already updated <html data-theme>; we just fire Changed so
+        // Topbar re-renders its sun/moon icon.
+        [JSInvokable]
+        public Task NotifyResolvedThemeChangedAsync()
+        {
+            Changed?.Invoke(ThemePreference.System);
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            selfRef?.Dispose();
+            selfRef = null;
         }
     }
 }
