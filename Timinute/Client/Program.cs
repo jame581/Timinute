@@ -24,6 +24,7 @@ builder.Services.AddScoped<Timinute.Client.Services.UndoNotificationService>();
 builder.Services.AddScoped<Timinute.Client.Services.ProjectColorService>();
 builder.Services.AddScoped<Timinute.Client.Services.ViewportService>();
 builder.Services.AddScoped<Timinute.Client.Services.MobileSheetService>();
+builder.Services.AddScoped<Timinute.Client.Services.UserProfileService>();
 builder.Services.AddScoped<Timinute.Client.Services.ThemeService>();
 
 builder.Services.AddOidcAuthentication(options =>
