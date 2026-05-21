@@ -19,18 +19,17 @@ namespace Timinute.Client.Tests.Helpers
             this.responder = responder;
         }
 
-        // Interlocked because the concurrency test fires overlapping requests.
+        // callCount is incremented with Interlocked (the concurrency test fires
+        // overlapping requests) and read with Volatile.Read once they finish.
         public int CallCount => Volatile.Read(ref callCount);
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref callCount);
-            // Yield so the request is genuinely asynchronous, the way a browser
-            // fetch always is. A synchronous Task.FromResult double would let
-            // UserProfileService.FetchAsync complete inline — masking the
-            // ordering its failure-retry path depends on (the catch nulls the
-            // cache field only after GetCurrentAsync has assigned it).
+            // Yield so the request completes asynchronously, the way a real
+            // browser fetch always does — a synchronous Task.FromResult double
+            // would not exercise continuation scheduling.
             await Task.Yield();
             return await responder(request);
         }

@@ -14,6 +14,11 @@ namespace Timinute.Client.Tests.Services
     // change listener bridged from theme-bootstrap.js — RegisterOsChangeListenerAsync,
     // the [JSInvokable] NotifyResolvedThemeChangedAsync callback, and the
     // register/unregister disposal handshake.
+    //
+    // Note: ThemeService calls IJSRuntime.InvokeVoidAsync, an extension method
+    // that delegates to InvokeAsync<IJSVoidResult>(identifier, args). Moq can
+    // only see the underlying interface method, so the setups and verifies
+    // below target InvokeAsync<IJSVoidResult>.
     public class ThemeServiceTest
     {
         [Fact]

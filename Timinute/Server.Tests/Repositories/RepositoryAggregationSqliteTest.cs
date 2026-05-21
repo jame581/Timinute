@@ -22,8 +22,10 @@ namespace Timinute.Server.Tests.Repositories
     // the failure is reproduced (and the fix verified) at the unit level.
     public class RepositoryAggregationSqliteTest : IAsyncLifetime
     {
-        // ApplicationDbContext seeds three users via HasData; this is the first
-        // (SeedUserId1), which owns 3 tracked tasks totaling 2 + 3 + 4 = 9 hours.
+        // Must equal ApplicationDbContext.SeedUserId1 (a private const there).
+        // That HasData-seeded user owns 3 tracked tasks totaling 2 + 3 + 4 = 9h.
+        // If the two ever drift apart, the filtered tests below match zero rows
+        // and fail loudly — they do not pass vacuously.
         private const string SeedUserId1 = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d";
 
         private SqliteConnection _connection = null!;
@@ -82,6 +84,33 @@ namespace Timinute.Server.Tests.Repositories
             var count = await repo.CountAsync(t => t.UserId == SeedUserId1);
 
             Assert.Equal(3, count);
+        }
+
+        [Fact]
+        public async Task SumAsync_ExcludesSoftDeletedRows()
+        {
+            var repo = new BaseRepository<TrackedTask>(_context);
+
+            var before = await repo.SumAsync(t => t.Duration.Ticks, t => t.UserId == SeedUserId1);
+
+            // Soft-delete one of SeedUserId1's tasks. The EF global query filter
+            // must drop it from the aggregate — the IRepository doc promises
+            // SumAsync honors that filter, and this verifies it against a real
+            // relational provider (RepositoryAggregationTest covers only COUNT).
+            var victimId = await _context.TrackedTasks
+                .Where(t => t.UserId == SeedUserId1)
+                .Select(t => t.TaskId)
+                .FirstAsync();
+            var victimTicks = (await _context.TrackedTasks
+                .Where(t => t.TaskId == victimId)
+                .Select(t => t.Duration)
+                .SingleAsync()).Ticks;
+            await repo.SoftDelete(victimId);
+
+            var after = await repo.SumAsync(t => t.Duration.Ticks, t => t.UserId == SeedUserId1);
+
+            Assert.True(victimTicks > 0, "the soft-deleted task must have a non-zero duration for this test to mean anything");
+            Assert.Equal(before - victimTicks, after);
         }
     }
 }
