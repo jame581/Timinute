@@ -32,11 +32,12 @@ namespace Timinute.Client.Services
             // that completed without a profile (unauthenticated / network
             // error) is dropped here so the next call retries.
             //
-            // fetchTask is assigned ONLY in this method — never from
-            // FetchAsync's continuation. An earlier version reset the field
-            // inside FetchAsync's catch, which raced this assignment: the
-            // continuation could null the field before `??=` had written it,
-            // re-caching the failed task and permanently blocking retries.
+            // fetchTask is assigned ONLY in this method, never from FetchAsync's
+            // continuation, so the failure-drop cannot race the cache write.
+            // The check-then-assign itself is not atomic, but this is a Blazor
+            // WebAssembly service — the app runs single-threaded, so no call can
+            // interleave between the read and the write, and overlapping async
+            // callers on the one thread still share the single in-flight task.
             var cached = fetchTask;
             if (cached is not null && !HasFailed(cached))
                 return cached;

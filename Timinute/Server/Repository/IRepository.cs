@@ -48,6 +48,11 @@ namespace Timinute.Server.Repository
         /// (e.g. soft delete); only the projected column is transferred.
         /// Returns 0 for an empty set.
         /// </summary>
+        /// <remarks>
+        /// The sum is computed client-side, so callers should pass a
+        /// <paramref name="filter"/> that bounds the row set — with no filter,
+        /// every matching row's projected value is loaded into memory.
+        /// </remarks>
         Task<long> SumAsync(
             Expression<Func<TEntity, long>> selector,
             Expression<Func<TEntity, bool>>? filter = null);

@@ -51,10 +51,9 @@ namespace Timinute.Server.Tests.Repositories
         {
             var repo = new BaseRepository<TrackedTask>(_context);
 
-            // Compute the expected value by materializing first — the same
-            // .Select(t => t.Duration.Ticks).SumAsync() the repo issues server
-            // side is exactly what cannot be translated, so it can't be the
-            // yardstick here.
+            // Compute the expected value by materializing first: a
+            // .SumAsync(t => t.Duration.Ticks) query cannot be translated on a
+            // relational provider, so such a query can't serve as the yardstick.
             var expectedTicks = (await _context.TrackedTasks
                     .Where(t => t.UserId == SeedUserId1)
                     .ToListAsync())
