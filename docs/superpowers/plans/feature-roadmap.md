@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-05-21 — after P1 follow-ups merge (PR #44)._
+_Last reviewed: 2026-05-22 — v2.2 release scope defined; P1 follow-ups merged (PRs #44, #45)._
 
 ## Current Feature Set
 
@@ -33,11 +33,35 @@ _Last reviewed: 2026-05-21 — after P1 follow-ups merge (PR #44)._
 
 ---
 
+## Planned — v2.2
+
+v2.2 bundles everything already merged to `develop` since v2.1 — Docker distribution (PR #43) and the P1 review follow-ups (PRs #44, #45), see *Recently shipped (post-v2.1)* below — with one new feature and a tech-debt sweep.
+
+### Feature
+
+| Feature | Description | Complexity |
+|---------|-------------|------------|
+| Tags / Labels | Tag entity, many-to-many to `TrackedTask`, UI for tagging tasks + filter by tag. The Aurora design shows tag pills (`focus`, `backend`) on the time tracker, currently hardcoded. Unblocks the P2 external-ticket and AI-categorization items. | M |
+
+### Tech debt to clear
+
+Promoted from the *Tech debt* table below — see there for full notes:
+
+- Build & Test workflow not registered
+- `Server/Helpers/Constants.cs` growing large — split per domain
+- Request/response logging middleware
+- DB indexes on `UserId` / `ProjectId`
+- Composite indexes for common analytics queries
+- Unique constraint: project names per user
+- API versioning for future breaking changes
+- Server-side validation tests as integration tests
+
+Per *How this doc is maintained*, Tags / Labels gets a spec in `docs/superpowers/specs/` before implementation starts.
+
 ## Pending — P1 (Should-Have)
 
 | Feature | Description | Complexity | Notes |
 |---------|-------------|------------|-------|
-| Tags / Labels | Tag entity, many-to-many to TrackedTask, UI for tagging on tasks + filter by tag | M | The design has tag pills (`focus`, `backend`) on the time tracker visually, but they're hardcoded |
 | Enhanced analytics | Custom date ranges, daily/weekly summaries, productivity trends, push aggregation server-side. First consumer of `WorkdayHoursPerDay` (stored in v2.1) beyond the Dashboard's "Today vs target" indicator. | M | Dashboard stats currently load all user tasks client-side |
 | Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | Topbar bell is hidden on desktop (visual placeholder only) waiting for this |
 | Time tracking enhancements | Pomodoro timer, time estimates/goals, break tracking | L | None |
@@ -70,19 +94,19 @@ Time tracking enhancements — independent
 
 ## Tech debt
 
-Status reviewed 2026-04-29.
+Status reviewed 2026-05-22.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Build & Test workflow not registered | open | `.github/workflows/build_test.yml` is on master since `c57fa82` (PR #37) but `gh workflow list` doesn't show it as active and `gh run list --workflow=build_test.yml` returns 0 runs ever. CI on PRs only runs CodeQL. Investigate: YAML parse issue, or needs a `workflow_dispatch` to bootstrap registration. |
-| Constants class growing large — split per domain | open | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
-| Request/response logging middleware | open | Useful before production; not in critical path |
-| DB indexes on UserId, ProjectId | open | Repository queries filter by these on every endpoint |
-| Composite indexes for common analytics queries | open | Dashboard hits `GetTrackedTasks` per session |
-| Unique constraint: project names per user | open | DB-level constraint + 409 handling on duplicate create |
-| API versioning for future breaking changes | open | None of the API is published yet, so this is preparatory |
-| Server-side validation tests as integration tests | open | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
-| Unified `UserProfileService` to dedupe `GET /User/me` | open | Profile, Dashboard, MainLayout, ThemeService each currently hit GetMe. ThemeService has an internal cache; the others don't. Raised by `superpowers:code-reviewer` on PR #41 (M6). |
+| Build & Test workflow not registered | → v2.2 | `.github/workflows/build_test.yml` is on master since `c57fa82` (PR #37) but `gh workflow list` doesn't show it as active and `gh run list --workflow=build_test.yml` returns 0 runs ever. CI on PRs only runs CodeQL. Investigate: YAML parse issue, or needs a `workflow_dispatch` to bootstrap registration. |
+| Constants class growing large — split per domain | → v2.2 | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
+| Request/response logging middleware | → v2.2 | Useful before production; not in critical path |
+| DB indexes on UserId, ProjectId | → v2.2 | Repository queries filter by these on every endpoint |
+| Composite indexes for common analytics queries | → v2.2 | Dashboard hits `GetTrackedTasks` per session |
+| Unique constraint: project names per user | → v2.2 | DB-level constraint + 409 handling on duplicate create |
+| API versioning for future breaking changes | → v2.2 | None of the API is published yet, so this is preparatory |
+| Server-side validation tests as integration tests | → v2.2 | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
+| Unified `UserProfileService` to dedupe `GET /User/me` | ✅ done | Shipped in PR #44 — `UserProfileService` owns a cached `GET /User/me`; ThemeService, Profile, and Dashboard now route through it (one read per session). |
 | Extract common DataGrid logic | ✅ moot | Aurora replaced `RadzenDataGrid` with custom row layouts; no shared grid logic remains |
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
 | `:has()` browser-support fragility on landing nav | ✅ done | PR #35 review fix — switched to `[href*="github.com"]` |
