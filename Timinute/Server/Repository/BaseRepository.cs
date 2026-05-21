@@ -257,12 +257,15 @@ namespace Timinute.Server.Repository
             IQueryable<TEntity> query = dbSet;
             if (filter != null)
                 query = query.Where(filter);
-            // Project to long? and coalesce so empty-set behavior is
-            // provider-agnostic. On relational providers, SQL SUM(...)
-            // returns NULL for an empty set; EF Core typically handles
-            // this for long but the explicit projection makes the contract
-            // unambiguous regardless of provider quirks.
-            return await query.Select(selector).Select(v => (long?)v).SumAsync() ?? 0L;
+            // The projected values are materialized, then summed in memory.
+            // EF Core can client-evaluate a selector in the final projection
+            // (e.g. TimeSpan.Ticks over a SQL Server `time` column) but NOT
+            // inside a server-side SUM — query.Select(selector).SumAsync()
+            // throws "could not be translated" on any relational provider.
+            // ToListAsync transfers only the projected column for the filtered
+            // rows; Enumerable.Sum returns 0 for an empty set.
+            var values = await query.Select(selector).ToListAsync();
+            return values.Sum();
         }
 
         public async Task<int> PurgeExpired(DateTimeOffset olderThan)

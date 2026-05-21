@@ -38,16 +38,16 @@ namespace Timinute.Server.Repository
         Task<int> CountAsync(Expression<Func<TEntity, bool>>? filter = null);
 
         /// <summary>
-        /// Asynchronously sums the projected long values for entities matching
-        /// the optional filter. Translated server-side by EF Core when the
-        /// selector hits column-mapped properties.
+        /// Asynchronously sums the projected <see cref="long"/> values for
+        /// entities matching the optional filter. The projection is materialized
+        /// and summed in memory rather than via a server-side SQL <c>SUM</c>:
+        /// the intended selector (<c>TimeSpan.Ticks</c> over a SQL Server
+        /// <c>time</c> column) has no SQL aggregate translation, and EF Core
+        /// cannot client-evaluate an aggregate. The query is still scoped by
+        /// <paramref name="filter"/> and honors EF global query filters
+        /// (e.g. soft delete); only the projected column is transferred.
+        /// Returns 0 for an empty set.
         /// </summary>
-        /// <remarks>
-        /// Note: TimeSpan.Ticks selectors against SQL Server <c>time(7)</c>
-        /// columns require EF Core's <c>DATEDIFF_BIG</c> translation. Validate
-        /// against real SQL Server before relying on this in production —
-        /// EF InMemory accepts the projection without exercising the SQL path.
-        /// </remarks>
         Task<long> SumAsync(
             Expression<Func<TEntity, long>> selector,
             Expression<Func<TEntity, bool>>? filter = null);
