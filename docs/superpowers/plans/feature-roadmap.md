@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-05-16 — after Docker distribution merge (PR #43)._
+_Last reviewed: 2026-05-21 — after P1 follow-ups merge (PR #44)._
 
 ## Current Feature Set
 
@@ -94,16 +94,14 @@ Status reviewed 2026-04-29.
 
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
-| `StartDate` DTO contract: `DateTimeOffset?` → `DateTimeOffset` | `[Required]` on a nullable struct generates ambiguous OpenAPI / client-generator output. Either drop `[Required]` and document partial-update semantics, or make the field non-nullable and rely on the controller-level `EndDate > StartDate` check for presence. Affects `CreateTrackedTaskDto` and `UpdateTrackedTaskDto`. Breaking change for any external consumer of the API. | S | PR #37 Copilot review |
-| `UserController.GetMe` server-side aggregation | Currently pulls all of a user's tasks + projects into memory to compute totals/counts. Add `CountAsync(filter)` + `SumAsync(filter, selector)` to `IRepository<T>` (or expose `IQueryable`) and use them. Scales to users with thousands of tasks. | M | PR #37 Copilot review |
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
-| OS-theme-change notification for System users | The pre-Blazor `theme-bootstrap.js` re-applies `<html data-theme>` when `prefers-color-scheme` changes mid-session, but doesn't notify Blazor — Topbar's icon stays stale until the next render. Wire `theme-bootstrap.js` `register(dotnetRef)` + `[JSInvokable] NotifyResolvedThemeChanged()` on `ThemeService`. ~30 LOC. | S | PR #41/#42 Copilot review (M2) — deferred from v2.1 by project owner |
 
 ## Recently shipped (post-v2.1, develop)
 
 | Feature | PRs |
 |---------|-----|
 | Docker distribution — multi-stage image on `aspnet:10.0`, `docker-compose.yml` bundling SQL Server 2025, GHCR multi-arch (`linux/amd64` + `linux/arm64`) publish on `v*` tag and `develop` push, `docs/DOCKER.md` self-host guide. Includes production-hardening fixes surfaced during smoke: `ForwardedHeaders` moved to first in pipeline, Duende `KeyPath` set via `IdentityServerOptions` (not `KeyManagementOptions`), `SameSite=Lax` cookie policy, persistent ASP.NET data protection keys, all Docker-specific defaults pushed into `Dockerfile` `ENV` (not baked into `Program.cs`). | #43 |
+| P1 review follow-ups bundle — `StartDate` made non-nullable on the TrackedTask Create/Update DTOs (with a `NonDefaultDateTimeOffsetAttribute` presence guard), `UserController.GetMe` aggregates counts/totals server-side via new `IRepository<T>.CountAsync`/`SumAsync` (no longer materializes every task), OS-color-scheme-change notification wired from `theme-bootstrap.js` into `ThemeService` (`RegisterOsChangeListenerAsync` + `[JSInvokable] NotifyResolvedThemeChangedAsync`), and a new `UserProfileService` caching `/User/me` so a session makes one read instead of 3-4. | #44 |
 
 ## Recently shipped (v2.1, 2026-04-29)
 
