@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -44,6 +45,36 @@ namespace Timinute.Server.Tests.Helpers
             return context;
         }
 
+
+        /// <summary>
+        /// Builds an <see cref="ApplicationDbContext"/> over an in-memory SQLite
+        /// database. Unlike the EF InMemory provider, SQLite is a real relational
+        /// provider that exercises SQL translation — use it for tests that must
+        /// catch queries InMemory would silently evaluate client-side (e.g.
+        /// aggregate translation).
+        /// <para>
+        /// <c>EnsureCreatedAsync</c> builds the schema and applies the model's
+        /// <c>HasData</c> seed (two roles, three users, seven tracked tasks).
+        /// That seed is the fixture — <c>FillInitData</c> is deliberately not
+        /// used, since re-inserting the seeded rows would violate the unique
+        /// constraints SQLite enforces (and InMemory ignores).
+        /// </para>
+        /// The caller owns <paramref name="openConnection"/> and must keep it
+        /// open for the database's lifetime, then dispose it.
+        /// </summary>
+        public static async Task<ApplicationDbContext> GetSqliteApplicationDbContext(SqliteConnection openConnection)
+        {
+            var dbContextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlite(openConnection)
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors()
+                .Options;
+
+            var context = new ApplicationDbContext(dbContextOptions);
+            await context.Database.EnsureCreatedAsync();
+            return context;
+        }
 
         private static async Task FillInitData(ApplicationDbContext context)
         {
