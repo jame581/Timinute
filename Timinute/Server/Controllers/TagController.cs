@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Timinute.Server.Data;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
@@ -18,11 +19,13 @@ namespace Timinute.Server.Controllers
         private readonly IRepository<Tag> tagRepository;
         private readonly IMapper mapper;
         private readonly ILogger<TagController> logger;
+        private readonly ApplicationDbContext dbContext;
 
-        public TagController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TagController> logger)
+        public TagController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TagController> logger, ApplicationDbContext dbContext)
         {
             this.mapper = mapper;
             this.logger = logger;
+            this.dbContext = dbContext;
             tagRepository = repositoryFactory.GetRepository<Tag>();
         }
 
@@ -37,17 +40,18 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var tags = await tagRepository.Get(
-                t => t.UserId == userId,
-                orderBy: query => query.OrderBy(t => t.Name),
-                includeProperties: nameof(Tag.TrackedTasks));
-
-            var dtos = tags.Select(tag =>
-            {
-                var dto = mapper.Map<TagDto>(tag);
-                dto.TaskCount = tag.TrackedTasks?.Count ?? 0;
-                return dto;
-            });
+            var dtos = await dbContext.Tags
+                .AsNoTracking()
+                .Where(t => t.UserId == userId)
+                .OrderBy(t => t.Name)
+                .Select(t => new TagDto
+                {
+                    TagId = t.TagId,
+                    Name = t.Name,
+                    Color = t.Color,
+                    TaskCount = t.TrackedTasks.Count()
+                })
+                .ToListAsync();
 
             return Ok(dtos);
         }
@@ -63,15 +67,24 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var tag = await tagRepository.GetByIdInclude(t => t.TagId == id && t.UserId == userId, includeProperties: nameof(Tag.TrackedTasks));
+            var tag = await dbContext.Tags
+                .AsNoTracking()
+                .Where(t => t.TagId == id && t.UserId == userId)
+                .Select(t => new TagDto
+                {
+                    TagId = t.TagId,
+                    Name = t.Name,
+                    Color = t.Color,
+                    TaskCount = t.TrackedTasks.Count()
+                })
+                .SingleOrDefaultAsync();
+
             if (tag == null)
             {
                 return NotFound("Tag not found!");
             }
 
-            var dto = mapper.Map<TagDto>(tag);
-            dto.TaskCount = tag.TrackedTasks?.Count ?? 0;
-            return Ok(dto);
+            return Ok(tag);
         }
 
         // CREATE: api/Tag
@@ -153,10 +166,24 @@ namespace Timinute.Server.Controllers
                 return Conflict(new { message = "A tag with this name already exists." });
             }
 
-            var updatedTag = await tagRepository.GetByIdInclude(t => t.TagId == id && t.UserId == userId, includeProperties: nameof(Tag.TrackedTasks));
-            var dto = mapper.Map<TagDto>(updatedTag!);
-            dto.TaskCount = updatedTag?.TrackedTasks?.Count ?? 0;
-            return Ok(dto);
+            var updatedTag = await dbContext.Tags
+                .AsNoTracking()
+                .Where(t => t.TagId == id && t.UserId == userId)
+                .Select(t => new TagDto
+                {
+                    TagId = t.TagId,
+                    Name = t.Name,
+                    Color = t.Color,
+                    TaskCount = t.TrackedTasks.Count()
+                })
+                .SingleOrDefaultAsync();
+
+            if (updatedTag == null)
+            {
+                return NotFound("Tag not found!");
+            }
+
+            return Ok(updatedTag);
         }
 
         // DELETE: api/Tag/{id}
@@ -170,9 +197,7 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            Tag? tag = force
-                ? await tagRepository.GetByIdInclude(t => t.TagId == id && t.UserId == userId)
-                : await tagRepository.GetByIdInclude(t => t.TagId == id && t.UserId == userId, includeProperties: nameof(Tag.TrackedTasks));
+            var tag = await tagRepository.GetByIdInclude(t => t.TagId == id && t.UserId == userId);
 
             if (tag == null)
             {
@@ -181,7 +206,10 @@ namespace Timinute.Server.Controllers
 
             if (!force)
             {
-                var taskCount = tag.TrackedTasks?.Count ?? 0;
+                var taskCount = await dbContext.TrackedTasks
+                    .IgnoreQueryFilters()
+                    .Where(t => t.UserId == userId && t.Tags.Any(tagRef => tagRef.TagId == id))
+                    .CountAsync();
                 return Ok(new { taskCount });
             }
 

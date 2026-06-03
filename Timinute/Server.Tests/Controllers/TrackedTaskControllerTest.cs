@@ -461,6 +461,57 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Update_TrackedTask_Response_Includes_Project()
+        {
+            await using var connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+            var applicationDbContext = await TestHelper.GetSqliteApplicationDbContext(connection);
+
+            var project = new Project { ProjectId = "ProjectUpdateResponse1", Name = "Project 1", UserId = SeedUserId1 };
+            var startDate = DateTimeOffset.UtcNow;
+            var task = new TrackedTask
+            {
+                TaskId = "TrackedTaskUpdateResponse1",
+                Name = "Task",
+                UserId = SeedUserId1,
+                ProjectId = project.ProjectId,
+                StartDate = startDate,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = startDate.AddHours(1),
+            };
+
+            applicationDbContext.Projects.Add(project);
+            applicationDbContext.TrackedTasks.Add(task);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext, SeedUserId1);
+
+            var update = new UpdateTrackedTaskDto
+            {
+                TaskId = task.TaskId,
+                Name = "Task Updated",
+                StartDate = startDate,
+                ProjectId = project.ProjectId
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(update);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+
+            var dto = okResult!.Value as TrackedTaskDto;
+            Assert.NotNull(dto);
+            Assert.Equal(project.ProjectId, dto!.ProjectId);
+            Assert.NotNull(dto.Project);
+            Assert.Equal(project.ProjectId, dto.Project!.ProjectId);
+            Assert.Equal(project.Name, dto.Project.Name);
+        }
+
+        [Fact]
         public async Task Update_TrackedTask_Another_User_Test()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateAuthTest");

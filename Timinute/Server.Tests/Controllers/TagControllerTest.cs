@@ -358,6 +358,55 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Delete_Without_Force_Counts_Soft_Deleted_Task_Associations()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "DeleteCountSoftDeleted");
+
+            var tag = new Tag { TagId = "TagIdSoftDeleted", Name = "Work", Color = "#111111", UserId = "ApplicationUser1" };
+            var start = DateTimeOffset.UtcNow;
+            var deletedTask = new TrackedTask
+            {
+                TaskId = "TrackedTaskSoftDeletedTag1",
+                Name = "Deleted Task",
+                UserId = "ApplicationUser1",
+                StartDate = start,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(1),
+                DeletedAt = start,
+                Tags = new List<Tag> { tag }
+            };
+
+            applicationDbContext.Tags.Add(tag);
+            applicationDbContext.TrackedTasks.Add(deletedTask);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TagController controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.DeleteTag(tag.TagId);
+
+            Assert.IsType<OkObjectResult>(actionResult);
+            var okResult = actionResult as OkObjectResult;
+            Assert.NotNull(okResult);
+            var payload = okResult!.Value;
+            Assert.NotNull(payload);
+
+            int taskCount;
+            if (payload is IDictionary<string, object> dict && dict.TryGetValue("taskCount", out var value))
+            {
+                taskCount = Convert.ToInt32(value);
+            }
+            else
+            {
+                var property = payload.GetType().GetProperty("taskCount");
+                Assert.NotNull(property);
+                taskCount = Convert.ToInt32(property!.GetValue(payload));
+            }
+
+            Assert.Equal(1, taskCount);
+        }
+
+        [Fact]
         public async Task Delete_With_Force_Removes_Tag_And_Leaves_Tasks()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "DeleteForce");
@@ -439,7 +488,7 @@ namespace Timinute.Server.Tests.Controllers
                 new Claim(ClaimTypes.Name, "test1@email.com")
             }));
 
-            TagController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
+            TagController controller = new(repositoryFactory, _mapper, _loggerMock.Object, applicationDbContext)
             {
                 ControllerContext = new ControllerContext
                 {

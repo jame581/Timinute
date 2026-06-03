@@ -303,9 +303,20 @@ namespace Timinute.Server.Controllers
             }
 
             await dbContext.SaveChangesAsync();
-            dbContext.Entry(updatedTrackedTask).State = EntityState.Detached;
+            var updatedTrackedTaskEntity = await dbContext.TrackedTasks
+                .AsNoTracking()
+                .Include(t => t.Project)
+                .Include(t => t.Tags)
+                .Where(t => t.TaskId == updatedTrackedTask.TaskId && t.UserId == userId)
+                .SingleOrDefaultAsync();
 
-            return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTask));
+            if (updatedTrackedTaskEntity == null)
+            {
+                logger.LogError("Tracked task was not found after update");
+                return NotFound("Tracked task not found!");
+            }
+
+            return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTaskEntity));
         }
 
         private async Task<List<Tag>> ResolveTagsAsync(string userId, IEnumerable<string>? tagIds)
