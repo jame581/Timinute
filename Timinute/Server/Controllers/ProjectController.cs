@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using Timinute.Server.Helpers;
@@ -149,7 +150,15 @@ namespace Timinute.Server.Controllers
                 newProject.Color = ProjectPalette[existingCount % ProjectPalette.Length];
             }
 
-            await projectRepository.Insert(newProject);
+            try
+            {
+                await projectRepository.Insert(newProject);
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);
+                return Conflict(new { message = "A project with this name already exists." });
+            }
             return Ok(mapper.Map<ProjectDto>(newProject));
         }
 
@@ -302,9 +311,25 @@ namespace Timinute.Server.Controllers
 
             var updatedProject = mapper.Map(project, foundProject);
 
-            await projectRepository.Update(updatedProject);
+            try
+            {
+                await projectRepository.Update(updatedProject);
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);
+                return Conflict(new { message = "A project with this name already exists." });
+            }
 
             return Ok(mapper.Map<ProjectDto>(updatedProject));
+        }
+
+        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+        {
+            var message = ex.InnerException?.Message ?? ex.Message;
+            return message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

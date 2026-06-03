@@ -1,4 +1,5 @@
 ﻿using Timinute.Shared.Dtos.Project;
+using Timinute.Shared.Dtos.Tag;
 
 namespace Timinute.Shared.Dtos.TrackedTask
 {
@@ -11,6 +12,7 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public DateTimeOffset? EndDate { get; set; }
         public string? ProjectId { get; set; }
         public ProjectDto? Project { get; set; }
+        public List<TagDto> Tags { get; set; } = new();
         public string UserId { get; set; } = null!;
         public ApplicationUserDto User { get; set; } = null!;
     }
