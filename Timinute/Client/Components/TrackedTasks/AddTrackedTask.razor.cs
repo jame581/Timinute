@@ -63,7 +63,8 @@ namespace Timinute.Client.Components.TrackedTasks
                 Name = NewTrackedTask.Name,
                 ProjectId = SelectedProjectId,
                 StartDate = NewTrackedTask.StartDate,
-                Duration = NewTrackedTask.Duration
+                Duration = NewTrackedTask.Duration,
+                TagIds = NewTrackedTask.TagIds
             };
 
             try
@@ -83,6 +84,12 @@ namespace Timinute.Client.Components.TrackedTasks
             {
                 notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
             }
+        }
+
+        private Task OnTagIdsChanged(List<string> tagIds)
+        {
+            NewTrackedTask.TagIds = tagIds;
+            return Task.CompletedTask;
         }
 
         private void HandleInvalidSubmit(EditContext context)

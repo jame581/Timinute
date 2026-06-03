@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using Timinute.Shared.Dtos.Tag;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Client.Models
@@ -23,6 +25,10 @@ namespace Timinute.Client.Models
 
         public Project? Project { get; set; }
 
+        public List<string> TagIds { get; set; } = new();
+
+        public List<TagDto> Tags { get; set; } = new();
+
         public string UserId { get; set; } = null!;
 
         public TrackedTask()
@@ -39,6 +45,8 @@ namespace Timinute.Client.Models
             EndDate = trackedTask.EndDate?.LocalDateTime;
             ProjectId = trackedTask.ProjectId;
             UserId = trackedTask.UserId;
+            Tags = trackedTask.Tags;
+            TagIds = trackedTask.Tags.Select(tag => tag.TagId).ToList();
 
             if (trackedTask.Project != null)
             {
