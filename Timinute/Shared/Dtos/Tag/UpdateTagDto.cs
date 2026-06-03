@@ -9,6 +9,7 @@ namespace Timinute.Shared.Dtos.Tag
 
         [Required]
         [StringLength(30, MinimumLength = 1, ErrorMessage = "Tag name must be between 1 and 30 characters.")]
+        [RegularExpression("^.*\\S.*$", ErrorMessage = "Tag name must contain at least one non-whitespace character.")]
         public string Name { get; set; } = null!;
 
         [Required]
