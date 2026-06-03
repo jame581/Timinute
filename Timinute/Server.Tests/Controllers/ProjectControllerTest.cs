@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,7 @@ namespace Timinute.Server.Tests.Controllers
 
         private PagingParameters pagingParameters;
 
+        private const string SeedUserId1 = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d";
         private const string _databaseName = "ProjectController_Test_DB";
         public ProjectControllerTest()
         {
@@ -234,6 +236,51 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(newlyCreatedProject);
 
             Assert.Equal(projectToCreate.Name, newlyCreatedProject!.Name);
+        }
+
+        [Fact]
+        public async Task Create_Project_Duplicate_Name_Returns_Conflict()
+        {
+            await using var connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+            var applicationDbContext = await TestHelper.GetSqliteApplicationDbContext(connection);
+            ProjectController controller = await CreateController(applicationDbContext, SeedUserId1);
+
+            var dto = new CreateProjectDto { Name = "Duplicate" };
+
+            var first = await controller.CreateProject(dto);
+            Assert.IsAssignableFrom<OkObjectResult>(first.Result);
+
+            var second = await controller.CreateProject(dto);
+            Assert.IsAssignableFrom<ConflictObjectResult>(second.Result);
+        }
+
+        [Fact]
+        public async Task Create_Project_With_Soft_Deleted_Name_Succeeds()
+        {
+            await using var connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+            var applicationDbContext = await TestHelper.GetSqliteApplicationDbContext(connection);
+            ProjectController controller = await CreateController(applicationDbContext, SeedUserId1);
+
+            var dto = new CreateProjectDto { Name = "Recreate" };
+
+            var first = await controller.CreateProject(dto);
+            var okResult = first.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+            var firstProject = okResult!.Value as ProjectDto;
+            Assert.NotNull(firstProject);
+
+            var deleteResult = await controller.DeleteProject(firstProject!.ProjectId);
+            Assert.IsType<NoContentResult>(deleteResult);
+
+            var softDeleted = await applicationDbContext.Projects.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.ProjectId == firstProject.ProjectId);
+            Assert.NotNull(softDeleted);
+            Assert.NotNull(softDeleted!.DeletedAt);
+
+            var second = await controller.CreateProject(dto);
+            Assert.IsAssignableFrom<OkObjectResult>(second.Result);
         }
 
         [Fact]
@@ -457,7 +504,8 @@ namespace Timinute.Server.Tests.Controllers
                 new RepositoryFactory(applicationDbContext),
                 _mapper,
                 new Mock<ILogger<TrackedTaskController>>().Object,
-                taskConfig)
+                taskConfig,
+                applicationDbContext)
             {
                 ControllerContext = new ControllerContext
                 {

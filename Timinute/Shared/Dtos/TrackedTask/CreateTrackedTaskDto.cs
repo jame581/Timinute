@@ -21,5 +21,6 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public string? ProjectId { get; set; }
 
         public ProjectDto? Project { get; set; }
+        public List<string> TagIds { get; set; } = new();
     }
 }

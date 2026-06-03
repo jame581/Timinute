@@ -1,0 +1,189 @@
+@using System.Net
+@using System.Net.Http.Json
+@using Timinute.Client.Helpers
+@using Timinute.Shared.Dtos.Tag
+
+@inject IHttpClientFactory ClientFactory
+@inject Radzen.NotificationService Notifier
+
+<div class="tag-picker">
+    @foreach (var tag in SelectedTags)
+    {
+        <span class="tag-picker__pill" style="--tag-color: @tag.Color;">
+            <span class="tag-picker__dot" style="background: @tag.Color;"></span>
+            @tag.Name
+            <button class="tag-picker__remove" type="button"
+                    @onclick="() => RemoveTag(tag.TagId)"
+                    aria-label="Remove @tag.Name">×</button>
+        </span>
+    }
+
+    @if (!showDropdown)
+    {
+        <button class="tag-picker__add" type="button" @onclick="OpenDropdown">
+            <AuroraIcons Name="plus" Size="12" />
+            <span>Add tag</span>
+        </button>
+    }
+    else
+    {
+        <div class="tag-picker__dropdown">
+            <input class="tag-picker__search" type="text" placeholder="Search tags…"
+                   @bind="searchText" @bind:event="oninput" @ref="searchInput" />
+
+            @foreach (var tag in FilteredUnselectedTags)
+            {
+                <button class="tag-picker__option" type="button" @onclick="() => SelectTag(tag.TagId)">
+                    <span class="tag-picker__dot" style="background: @tag.Color;"></span>
+                    @tag.Name
+                </button>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(searchText) && !TagNameExists(searchText))
+            {
+                <div class="tag-picker__create-row">
+                    <input class="tag-picker__create-color" type="color" @bind="createColor" aria-label="New tag color" />
+                    <button class="tag-picker__option tag-picker__option--create" type="button" @onclick="CreateAndSelect">
+                        <AuroraIcons Name="plus" Size="12" />
+                        <span>Create "@searchText.Trim()"</span>
+                    </button>
+                </div>
+            }
+
+            @if (!FilteredUnselectedTags.Any() && string.IsNullOrWhiteSpace(searchText))
+            {
+                <div class="tag-picker__empty">No more tags</div>
+            }
+
+            <button class="tag-picker__close" type="button" @onclick="CloseDropdown">Done</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<string> SelectedTagIds { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> SelectedTagIdsChanged { get; set; }
+
+    private List<TagDto> allTags = new();
+    private bool showDropdown;
+    private string searchText = string.Empty;
+    private string createColor = "#6366F1";
+    private ElementReference searchInput;
+
+    private HttpClient Http => ClientFactory.CreateClient(Constants.API.ClientName);
+
+    private IEnumerable<TagDto> SelectedTags =>
+        allTags.Where(tag => SelectedTagIds.Contains(tag.TagId));
+
+    private IEnumerable<TagDto> FilteredUnselectedTags =>
+        allTags.Where(tag =>
+            !SelectedTagIds.Contains(tag.TagId)
+            && (string.IsNullOrWhiteSpace(searchText) || tag.Name.Contains(searchText.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTags();
+    }
+
+    private async Task LoadTags()
+    {
+        try
+        {
+            allTags = await Http.GetFromJsonAsync<List<TagDto>>(Constants.API.Tag.Get) ?? new();
+        }
+        catch (Exception ex)
+        {
+            allTags = new();
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load tags", ex.Message, 3000);
+        }
+    }
+
+    private async Task OpenDropdown()
+    {
+        showDropdown = true;
+        searchText = string.Empty;
+        createColor = "#6366F1";
+        await Task.Delay(10);
+        try
+        {
+            await searchInput.FocusAsync();
+        }
+        catch
+        {
+            // Ignore focus failures when the input is not available yet.
+        }
+    }
+
+    private void CloseDropdown()
+    {
+        showDropdown = false;
+        searchText = string.Empty;
+    }
+
+    private bool TagNameExists(string tagName) =>
+        allTags.Any(tag => tag.Name.Equals(tagName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private async Task SelectTag(string tagId)
+    {
+        if (SelectedTagIds.Contains(tagId))
+        {
+            return;
+        }
+
+        var updated = new List<string>(SelectedTagIds) { tagId };
+        await SelectedTagIdsChanged.InvokeAsync(updated);
+    }
+
+    private async Task RemoveTag(string tagId)
+    {
+        var updated = SelectedTagIds.Where(id => id != tagId).ToList();
+        await SelectedTagIdsChanged.InvokeAsync(updated);
+    }
+
+    private async Task CreateAndSelect()
+    {
+        var name = searchText.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                Constants.API.Tag.Create,
+                new CreateTagDto { Name = name, Color = createColor });
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                await LoadTags();
+                var existing = allTags.FirstOrDefault(tag => tag.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    await SelectTag(existing.TagId);
+                    searchText = string.Empty;
+                    createColor = "#6366F1";
+                    return;
+                }
+
+                Notifier.Notify(Radzen.NotificationSeverity.Warning, "Name taken", $"Tag \"{name}\" already exists.", 3000);
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+            var created = await response.Content.ReadFromJsonAsync<TagDto>();
+            if (created != null)
+            {
+                allTags.Add(created);
+                allTags = allTags.OrderBy(tag => tag.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                await SelectTag(created.TagId);
+                searchText = string.Empty;
+                createColor = "#6366F1";
+            }
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Create failed", ex.Message, 3000);
+        }
+    }
+}

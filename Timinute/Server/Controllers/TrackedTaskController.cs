@@ -1,8 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
+using Timinute.Server.Data;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
@@ -23,12 +27,14 @@ namespace Timinute.Server.Controllers
         private readonly IMapper mapper;
         private readonly ILogger<TrackedTaskController> logger;
         private readonly IConfiguration configuration;
+        private readonly ApplicationDbContext dbContext;
 
-        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration)
+        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration, ApplicationDbContext dbContext)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.configuration = configuration;
+            this.dbContext = dbContext;
 
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }
@@ -48,7 +54,7 @@ namespace Timinute.Server.Controllers
             var pagedTrackedTaskList = await taskRepository.GetPaged(trackedTaskParameters,
                 trackedTask => trackedTask.UserId == userId,
                 orderBy: $"{nameof(TrackedTask.StartDate)} desc",
-                includeProperties: "Project");
+                includeProperties: $"{nameof(TrackedTask.Project)},{nameof(TrackedTask.Tags)}");
 
             var metadata = new PaginationHeaderDto
             {
@@ -71,7 +77,8 @@ namespace Timinute.Server.Controllers
             [FromQuery] DateTimeOffset? from = null,
             [FromQuery] DateTimeOffset? to = null,
             [FromQuery] string? projectId = null,
-            [FromQuery] string? search = null)
+            [FromQuery] string? search = null,
+            [FromQuery] List<string>? tagIds = null)
         {
             var userId = User.FindFirstValue(Constants.Claims.UserId);
 
@@ -82,15 +89,17 @@ namespace Timinute.Server.Controllers
 
             var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
             var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
+            var normalizedTagIds = NormalizeTagIds(tagIds);
 
             var pagedTrackedTaskList = await taskRepository.GetPaged(pagingParameters,
                 t => t.UserId == userId
                     && (from == null || t.StartDate >= from.Value.ToUniversalTime())
                     && (to == null || t.StartDate <= to.Value.ToUniversalTime())
                     && (normalizedProjectId == null || t.ProjectId == normalizedProjectId)
-                    && (normalizedSearch == null || t.Name.Contains(normalizedSearch)),
+                    && (normalizedSearch == null || t.Name.Contains(normalizedSearch))
+                    && (normalizedTagIds == null || t.Tags.Any(tag => normalizedTagIds.Contains(tag.TagId))),
                 orderBy: $"{nameof(TrackedTask.StartDate)} desc",
-                includeProperties: "Project");
+                includeProperties: $"{nameof(TrackedTask.Project)},{nameof(TrackedTask.Tags)}");
 
             var metadata = new PaginationHeaderDto
             {
@@ -117,8 +126,10 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var trackedTask = await taskRepository.GetById(id);
-            if (trackedTask == null || trackedTask.UserId != userId)
+            var trackedTask = await taskRepository.GetByIdInclude(
+                t => t.TaskId == id && t.UserId == userId,
+                includeProperties: $"{nameof(TrackedTask.Project)},{nameof(TrackedTask.Tags)}");
+            if (trackedTask == null)
             {
                 return NotFound("Tracked task not found!");
             }
@@ -140,6 +151,7 @@ namespace Timinute.Server.Controllers
             newTrackedTask.UserId = userId;
             newTrackedTask.StartDate = trackedTask.StartDate.ToUniversalTime();
             newTrackedTask.EndDate = newTrackedTask.StartDate + newTrackedTask.Duration;
+            newTrackedTask.Tags = await ResolveTagsAsync(userId, trackedTask.TagIds);
 
             await taskRepository.Insert(newTrackedTask);
             return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
@@ -156,15 +168,10 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var trackedTaskToDelete = await taskRepository.Find(id);
+            var trackedTaskToDelete = await taskRepository.GetByIdInclude(t => t.TaskId == id && t.UserId == userId);
             if (trackedTaskToDelete == null)
             {
                 logger.LogError("Tracked task was not found");
-                return NotFound("Tracked task not found!");
-            }
-
-            if (trackedTaskToDelete.UserId != userId)
-            {
                 return NotFound("Tracked task not found!");
             }
 
@@ -259,16 +266,14 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var foundTrackedTask = await taskRepository.Find(trackedTask.TaskId);
+            var foundTrackedTask = await dbContext.TrackedTasks
+                .Include(t => t.Tags)
+                .AsTracking()
+                .FirstOrDefaultAsync(t => t.TaskId == trackedTask.TaskId && t.UserId == userId);
 
             if (foundTrackedTask == null)
             {
                 logger.LogError("Tracked task was not found");
-                return NotFound("Tracked task not found!");
-            }
-
-            if (foundTrackedTask.UserId != userId)
-            {
                 return NotFound("Tracked task not found!");
             }
 
@@ -287,9 +292,61 @@ namespace Timinute.Server.Controllers
                 updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
             }
 
-            await taskRepository.Update(updatedTrackedTask);
+            if (trackedTask.TagIds != null)
+            {
+                var resolvedTags = await ResolveTagsAsync(userId, trackedTask.TagIds);
+                updatedTrackedTask.Tags.Clear();
+                foreach (var tag in resolvedTags)
+                {
+                    updatedTrackedTask.Tags.Add(tag);
+                }
+            }
 
-            return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTask));
+            await dbContext.SaveChangesAsync();
+            var updatedTrackedTaskEntity = await dbContext.TrackedTasks
+                .AsNoTracking()
+                .Include(t => t.Project)
+                .Include(t => t.Tags)
+                .Where(t => t.TaskId == updatedTrackedTask.TaskId && t.UserId == userId)
+                .SingleOrDefaultAsync();
+
+            if (updatedTrackedTaskEntity == null)
+            {
+                logger.LogError("Tracked task was not found after update");
+                return NotFound("Tracked task not found!");
+            }
+
+            return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTaskEntity));
+        }
+
+        private async Task<List<Tag>> ResolveTagsAsync(string userId, IEnumerable<string>? tagIds)
+        {
+            var normalizedTagIds = NormalizeTagIds(tagIds);
+            if (normalizedTagIds == null)
+            {
+                return new List<Tag>();
+            }
+
+            return await dbContext.Tags
+                .AsTracking()
+                .Where(tag => tag.UserId == userId && normalizedTagIds.Contains(tag.TagId))
+                .ToListAsync();
+        }
+
+        private static List<string>? NormalizeTagIds(IEnumerable<string>? tagIds)
+        {
+            if (tagIds == null)
+            {
+                return null;
+            }
+
+            var normalized = tagIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .Distinct()
+                .ToList();
+
+            return normalized.Count == 0 ? null : normalized;
         }
     }
 }

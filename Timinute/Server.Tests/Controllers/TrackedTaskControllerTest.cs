@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
+using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
@@ -28,6 +30,7 @@ namespace Timinute.Server.Tests.Controllers
 
         private PagingParameters pagingParameters;
 
+        private const string SeedUserId1 = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d";
         private const string _databaseName = "TrackedTaskController_Test_DB";
         public TrackedTaskControllerTest()
         {
@@ -284,6 +287,231 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Create_TrackedTask_With_Tags_Attaches_Tags()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateTags");
+
+            var tag1 = new Tag { TagId = "TagId1", Name = "Work", Color = "#111111", UserId = "ApplicationUser1" };
+            var tag2 = new Tag { TagId = "TagId2", Name = "Personal", Color = "#222222", UserId = "ApplicationUser1" };
+            applicationDbContext.Tags.AddRange(tag1, tag2);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+            var startDate = DateTimeOffset.UtcNow;
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Tagged task",
+                StartDate = startDate,
+                Duration = TimeSpan.FromHours(1),
+                TagIds = new List<string> { tag1.TagId, tag2.TagId }
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            var okActionResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okActionResult);
+
+            var created = okActionResult!.Value as TrackedTaskDto;
+            Assert.NotNull(created);
+            Assert.Equal(2, created!.Tags.Count);
+            Assert.Contains(created.Tags, tag => tag.TagId == tag1.TagId);
+            Assert.Contains(created.Tags, tag => tag.TagId == tag2.TagId);
+
+            var saved = await applicationDbContext.TrackedTasks.Include(t => t.Tags)
+                .FirstOrDefaultAsync(t => t.TaskId == created.TaskId);
+            Assert.NotNull(saved);
+            Assert.Equal(2, saved!.Tags.Count);
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Unowned_Tag_Skips_Tag()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateUnownedTags");
+
+            var owned = new Tag { TagId = "TagId1", Name = "Owned", Color = "#111111", UserId = "ApplicationUser1" };
+            var unowned = new Tag { TagId = "TagId2", Name = "Other", Color = "#222222", UserId = "ApplicationUser2" };
+            applicationDbContext.Tags.AddRange(owned, unowned);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+            var startDate = DateTimeOffset.UtcNow;
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Tagged task",
+                StartDate = startDate,
+                Duration = TimeSpan.FromHours(1),
+                TagIds = new List<string> { owned.TagId, unowned.TagId }
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            var okActionResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okActionResult);
+
+            var created = okActionResult!.Value as TrackedTaskDto;
+            Assert.NotNull(created);
+            Assert.Single(created!.Tags);
+            Assert.Equal(owned.TagId, created.Tags[0].TagId);
+
+            var saved = await applicationDbContext.TrackedTasks.Include(t => t.Tags)
+                .FirstOrDefaultAsync(t => t.TaskId == created.TaskId);
+            Assert.NotNull(saved);
+            Assert.Single(saved!.Tags);
+            Assert.Equal(owned.TagId, saved.Tags.First().TagId);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_Replaces_Tags()
+        {
+            await using var connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+            var applicationDbContext = await TestHelper.GetSqliteApplicationDbContext(connection);
+
+            var tag1 = new Tag { TagId = "TagId1", Name = "First", Color = "#111111", UserId = SeedUserId1 };
+            var tag2 = new Tag { TagId = "TagId2", Name = "Second", Color = "#222222", UserId = SeedUserId1 };
+            var startDate = DateTimeOffset.UtcNow;
+            var task = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagUpdate",
+                Name = "Task",
+                UserId = SeedUserId1,
+                StartDate = startDate,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = startDate.AddHours(1),
+                Tags = new List<Tag> { tag1 }
+            };
+
+            applicationDbContext.Tags.AddRange(tag1, tag2);
+            applicationDbContext.TrackedTasks.Add(task);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext, SeedUserId1);
+
+            var update = new UpdateTrackedTaskDto
+            {
+                TaskId = task.TaskId,
+                Name = task.Name,
+                StartDate = startDate,
+                TagIds = new List<string> { tag2.TagId }
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(update);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var saved = await applicationDbContext.TrackedTasks.Include(t => t.Tags)
+                .FirstOrDefaultAsync(t => t.TaskId == task.TaskId);
+            Assert.NotNull(saved);
+            Assert.Single(saved!.Tags);
+            Assert.Equal(tag2.TagId, saved.Tags.First().TagId);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_Without_TagIds_Preserves_Existing_Tags()
+        {
+            await using var connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+            var applicationDbContext = await TestHelper.GetSqliteApplicationDbContext(connection);
+
+            var tag = new Tag { TagId = "TagId1", Name = "First", Color = "#111111", UserId = SeedUserId1 };
+            var startDate = DateTimeOffset.UtcNow;
+            var task = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagPreserve",
+                Name = "Task",
+                UserId = SeedUserId1,
+                StartDate = startDate,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = startDate.AddHours(1),
+                Tags = new List<Tag> { tag }
+            };
+
+            applicationDbContext.Tags.Add(tag);
+            applicationDbContext.TrackedTasks.Add(task);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext, SeedUserId1);
+
+            var update = new UpdateTrackedTaskDto
+            {
+                TaskId = task.TaskId,
+                Name = task.Name,
+                StartDate = startDate,
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(update);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var saved = await applicationDbContext.TrackedTasks.Include(t => t.Tags)
+                .FirstOrDefaultAsync(t => t.TaskId == task.TaskId);
+            Assert.NotNull(saved);
+            Assert.Single(saved!.Tags);
+            Assert.Equal(tag.TagId, saved.Tags.First().TagId);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_Response_Includes_Project()
+        {
+            await using var connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+            var applicationDbContext = await TestHelper.GetSqliteApplicationDbContext(connection);
+
+            var project = new Project { ProjectId = "ProjectUpdateResponse1", Name = "Project 1", UserId = SeedUserId1 };
+            var startDate = DateTimeOffset.UtcNow;
+            var task = new TrackedTask
+            {
+                TaskId = "TrackedTaskUpdateResponse1",
+                Name = "Task",
+                UserId = SeedUserId1,
+                ProjectId = project.ProjectId,
+                StartDate = startDate,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = startDate.AddHours(1),
+            };
+
+            applicationDbContext.Projects.Add(project);
+            applicationDbContext.TrackedTasks.Add(task);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext, SeedUserId1);
+
+            var update = new UpdateTrackedTaskDto
+            {
+                TaskId = task.TaskId,
+                Name = "Task Updated",
+                StartDate = startDate,
+                ProjectId = project.ProjectId
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(update);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+
+            var dto = okResult!.Value as TrackedTaskDto;
+            Assert.NotNull(dto);
+            Assert.Equal(project.ProjectId, dto!.ProjectId);
+            Assert.NotNull(dto.Project);
+            Assert.Equal(project.ProjectId, dto.Project!.ProjectId);
+            Assert.Equal(project.Name, dto.Project.Name);
+        }
+
+        [Fact]
         public async Task Update_TrackedTask_Another_User_Test()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateAuthTest");
@@ -393,6 +621,166 @@ namespace Timinute.Server.Tests.Controllers
             Assert.NotNull(tasks);
             Assert.Single(tasks!);
             Assert.Equal("TrackedTaskId1", tasks!.First().TaskId);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_TagId_Returns_Matching_Tasks()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchTagMatch");
+
+            var tag = new Tag { TagId = "TagId1", Name = "Work", Color = "#111111", UserId = "ApplicationUser1" };
+            var otherTag = new Tag { TagId = "TagId2", Name = "Other", Color = "#222222", UserId = "ApplicationUser1" };
+            var start = DateTimeOffset.UtcNow;
+            var task1 = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearch1",
+                Name = "Tagged",
+                UserId = "ApplicationUser1",
+                StartDate = start,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(1),
+                Tags = new List<Tag> { tag }
+            };
+            var task2 = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearch2",
+                Name = "Other",
+                UserId = "ApplicationUser1",
+                StartDate = start.AddHours(2),
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(3),
+                Tags = new List<Tag> { otherTag }
+            };
+
+            applicationDbContext.Tags.AddRange(tag, otherTag);
+            applicationDbContext.TrackedTasks.AddRange(task1, task2);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, null, new List<string> { tag.TagId });
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Single(tasks!);
+            Assert.Equal(task1.TaskId, tasks.First().TaskId);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_TagId_Excludes_Untagged_Tasks()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchTagExclude");
+
+            var tag = new Tag { TagId = "TagId1", Name = "Work", Color = "#111111", UserId = "ApplicationUser1" };
+            var start = DateTimeOffset.UtcNow;
+            var taggedTask = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearch3",
+                Name = "Tagged",
+                UserId = "ApplicationUser1",
+                StartDate = start,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(1),
+                Tags = new List<Tag> { tag }
+            };
+            var untaggedTask = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearch4",
+                Name = "Untagged",
+                UserId = "ApplicationUser1",
+                StartDate = start.AddHours(2),
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(3)
+            };
+
+            applicationDbContext.Tags.Add(tag);
+            applicationDbContext.TrackedTasks.AddRange(taggedTask, untaggedTask);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, null, new List<string> { tag.TagId });
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Single(tasks!);
+            Assert.DoesNotContain(tasks, t => t.TaskId == untaggedTask.TaskId);
+        }
+
+        [Fact]
+        public async Task Search_Tasks_By_Multiple_TagIds_Uses_Or_Semantics()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchTagOr");
+
+            var tag1 = new Tag { TagId = "TagId1", Name = "Work", Color = "#111111", UserId = "ApplicationUser1" };
+            var tag2 = new Tag { TagId = "TagId2", Name = "Personal", Color = "#222222", UserId = "ApplicationUser1" };
+            var start = DateTimeOffset.UtcNow;
+
+            var task1 = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearchOr1",
+                Name = "Task1",
+                UserId = "ApplicationUser1",
+                StartDate = start,
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(1),
+                Tags = new List<Tag> { tag1 }
+            };
+
+            var task2 = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearchOr2",
+                Name = "Task2",
+                UserId = "ApplicationUser1",
+                StartDate = start.AddHours(2),
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(3),
+                Tags = new List<Tag> { tag2 }
+            };
+
+            var task3 = new TrackedTask
+            {
+                TaskId = "TrackedTaskTagSearchOr3",
+                Name = "Task3",
+                UserId = "ApplicationUser1",
+                StartDate = start.AddHours(4),
+                Duration = TimeSpan.FromHours(1),
+                EndDate = start.AddHours(5)
+            };
+
+            applicationDbContext.Tags.AddRange(tag1, tag2);
+            applicationDbContext.TrackedTasks.AddRange(task1, task2, task3);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            TrackedTaskController controller = await CreateController(applicationDbContext);
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            var actionResult = await controller.SearchTrackedTasks(
+                pagingParams,
+                null,
+                null,
+                null,
+                null,
+                new List<string> { tag1.TagId, tag2.TagId });
+
+            Assert.NotNull(actionResult);
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            var list = tasks!.ToList();
+            Assert.Equal(2, list.Count);
+            Assert.Contains(list, t => t.TaskId == task1.TaskId);
+            Assert.Contains(list, t => t.TaskId == task2.TaskId);
+            Assert.DoesNotContain(list, t => t.TaskId == task3.TaskId);
         }
 
         [Fact]
@@ -545,7 +933,7 @@ namespace Timinute.Server.Tests.Controllers
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
                 .Build();
 
-            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration)
+            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration, applicationDbContext)
             {
                 ControllerContext = new ControllerContext
                 {

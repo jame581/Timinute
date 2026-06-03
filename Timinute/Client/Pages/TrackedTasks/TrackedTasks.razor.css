@@ -49,6 +49,38 @@
     color: var(--text-dim);
 }
 
+.aurora-tt-filter__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.aurora-tt-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid color-mix(in srgb, var(--tag-color) 40%, transparent);
+    background: transparent;
+    color: var(--tag-color);
+    border-radius: var(--r-pill);
+    padding: 4px 10px;
+    font: 500 12px var(--font-sans);
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.aurora-tt-tag-chip.is-active {
+    background: color-mix(in srgb, var(--tag-color) 20%, transparent);
+    font-weight: 600;
+}
+
+.aurora-tt-tag-chip__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+}
+
 .aurora-tt-loading {
     color: var(--text-mu);
     text-align: center;
@@ -177,6 +209,10 @@
     }
 
     .aurora-tt-filter > .aurora-btn--ghost {
+        display: none;
+    }
+
+    .aurora-tt-filter__tags {
         display: none;
     }
 

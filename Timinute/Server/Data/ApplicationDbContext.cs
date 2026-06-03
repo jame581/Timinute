@@ -17,6 +17,7 @@ namespace Timinute.Server.Data
 
         public DbSet<TrackedTask> TrackedTasks { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
+        public DbSet<Tag> Tags { get; set; } = null!;
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -58,10 +59,23 @@ namespace Timinute.Server.Data
             builder.Entity<Project>().HasKey(t => t.ProjectId);
 
             builder.Entity<Project>()
+                .Property(x => x.Name)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            builder.Entity<Project>()
                 .HasQueryFilter(p => p.DeletedAt == null);
 
             builder.Entity<Project>()
                 .HasIndex(p => p.DeletedAt);
+
+            builder.Entity<Project>()
+                .HasIndex(p => p.UserId);
+
+            builder.Entity<Project>()
+                .HasIndex(p => new { p.UserId, p.Name })
+                .HasFilter("[DeletedAt] IS NULL")
+                .IsUnique();
 
             builder.Entity<TrackedTask>()
                 .Property(x => x.TaskId)
@@ -88,6 +102,15 @@ namespace Timinute.Server.Data
             builder.Entity<TrackedTask>()
                 .HasIndex(t => t.DeletedAt);
 
+            builder.Entity<TrackedTask>()
+                .HasIndex(t => t.UserId);
+
+            builder.Entity<TrackedTask>()
+                .HasIndex(t => t.ProjectId);
+
+            builder.Entity<TrackedTask>()
+                .HasIndex(t => new { t.UserId, t.StartDate });
+
             // Setup relationship
 
             builder.Entity<TrackedTask>()
@@ -106,6 +129,32 @@ namespace Timinute.Server.Data
                 .WithMany(u => u.Projects)
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Tag entity
+            builder.Entity<Tag>().HasKey(t => t.TagId);
+            builder.Entity<Tag>()
+                .Property(t => t.TagId).ValueGeneratedOnAdd().IsRequired();
+            builder.Entity<Tag>()
+                .Property(t => t.Name).HasMaxLength(30).IsRequired();
+            builder.Entity<Tag>()
+                .Property(t => t.Color).HasMaxLength(7).IsRequired();
+            builder.Entity<Tag>()
+                .HasIndex(t => new { t.UserId, t.Name }).IsUnique();
+            builder.Entity<Tag>()
+                .HasOne(t => t.User)
+                .WithMany(u => u.Tags)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Many-to-many: TrackedTask <-> Tag via implicit TaskTag join table
+            builder.Entity<TrackedTask>()
+                .HasMany(t => t.Tags)
+                .WithMany(tag => tag.TrackedTasks)
+                .UsingEntity("TaskTag",
+                    l => l.HasOne(typeof(Tag)).WithMany()
+                           .HasForeignKey("TagId").OnDelete(DeleteBehavior.Cascade),
+                    r => r.HasOne(typeof(TrackedTask)).WithMany()
+                           .HasForeignKey("TaskId").OnDelete(DeleteBehavior.Cascade));
 
             FillDataToDB(builder);
         }
