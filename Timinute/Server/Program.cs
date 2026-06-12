@@ -125,7 +125,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     // ENV because the container talks to a proxy on a private docker network.
     if (builder.Configuration.GetValue("ForwardedHeaders:AllowAnyProxy", false))
     {
-        options.KnownIPNetworks.Clear();
+        options.KnownNetworks.Clear();
         options.KnownProxies.Clear();
     }
 });
