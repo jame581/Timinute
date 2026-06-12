@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-05-22 — v2.2 release scope defined; P1 follow-ups merged (PRs #44, #45)._
+_Last reviewed: 2026-06-12 — v2.2 released on master (PR #47, tag `v2.2`)._
 
 ## Current Feature Set
 
@@ -32,31 +32,6 @@ _Last reviewed: 2026-05-22 — v2.2 release scope defined; P1 follow-ups merged 
 - **Accessibility:** `prefers-reduced-motion` honored on the `aurora-pulse` animation + boot/auth shells, `aria-current="page"` on active nav, `:focus-visible` outlines on interactive elements, `aria-modal` + Escape-to-close on the mobile sheet, `role="status" aria-live="polite"` on the auth in-flight shells.
 
 ---
-
-## Planned — v2.2
-
-v2.2 bundles everything already merged to `develop` since v2.1 — Docker distribution (PR #43) and the P1 review follow-ups (PRs #44, #45), see *Recently shipped (post-v2.1)* below — with one new feature and a tech-debt sweep.
-
-### Feature
-
-| Feature | Description | Complexity |
-|---------|-------------|------------|
-| Tags / Labels | Tag entity, many-to-many to `TrackedTask`, UI for tagging tasks + filter by tag. The Aurora design shows tag pills (`focus`, `backend`) on the time tracker, currently hardcoded. Unblocks the P2 external-ticket and AI-categorization items. | M |
-
-### Tech debt to clear
-
-Promoted from the *Tech debt* table below — see there for full notes:
-
-- Build & Test workflow not registered
-- `Server/Helpers/Constants.cs` growing large — split per domain
-- Request/response logging middleware
-- DB indexes on `UserId` / `ProjectId`
-- Composite indexes for common analytics queries
-- Unique constraint: project names per user
-- API versioning for future breaking changes
-- Server-side validation tests as integration tests
-
-Per *How this doc is maintained*, Tags / Labels gets a spec in `docs/superpowers/specs/` before implementation starts.
 
 ## Pending — P1 (Should-Have)
 
@@ -98,14 +73,14 @@ Status reviewed 2026-05-22.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Build & Test workflow not registered | → v2.2 | `.github/workflows/build_test.yml` is on master since `c57fa82` (PR #37) but `gh workflow list` doesn't show it as active and `gh run list --workflow=build_test.yml` returns 0 runs ever. CI on PRs only runs CodeQL. Investigate: YAML parse issue, or needs a `workflow_dispatch` to bootstrap registration. |
-| Constants class growing large — split per domain | → v2.2 | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
-| Request/response logging middleware | → v2.2 | Useful before production; not in critical path |
-| DB indexes on UserId, ProjectId | → v2.2 | Repository queries filter by these on every endpoint |
-| Composite indexes for common analytics queries | → v2.2 | Dashboard hits `GetTrackedTasks` per session |
-| Unique constraint: project names per user | → v2.2 | DB-level constraint + 409 handling on duplicate create |
-| API versioning for future breaking changes | → v2.2 | None of the API is published yet, so this is preparatory |
-| Server-side validation tests as integration tests | → v2.2 | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
+| Build & Test workflow not registered | open | `.github/workflows/build_test.yml` is on master since `c57fa82` (PR #37) but `gh workflow list` doesn't show it as active and `gh run list --workflow=build_test.yml` returns 0 runs ever. CI on PRs only runs CodeQL. Investigate: YAML parse issue, or needs a `workflow_dispatch` to bootstrap registration. |
+| Constants class growing large — split per domain | open | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
+| Request/response logging middleware | open | Useful before production; not in critical path |
+| DB indexes on UserId, ProjectId | ✅ done | Shipped in v2.2 (`TrackedTask.UserId`, `TrackedTask.ProjectId`, `Project.UserId`) |
+| Composite indexes for common analytics queries | ✅ done | Shipped in v2.2 (`TrackedTask(UserId, StartDate)`) |
+| Unique constraint: project names per user | ✅ done | Shipped in v2.2 (filtered unique index + 409 handling) |
+| API versioning for future breaking changes | open | None of the API is published yet, so this is preparatory |
+| Server-side validation tests as integration tests | open | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
 | Unified `UserProfileService` to dedupe `GET /User/me` | ✅ done | Shipped in PR #44 — `UserProfileService` owns a cached `GET /User/me`; ThemeService, Profile, and Dashboard now route through it (one read per session). |
 | Extract common DataGrid logic | ✅ moot | Aurora replaced `RadzenDataGrid` with custom row layouts; no shared grid logic remains |
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
@@ -120,10 +95,12 @@ Status reviewed 2026-05-22.
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
 
-## Recently shipped (post-v2.1, develop)
+## Recently shipped (v2.2, 2026-06-12)
 
 | Feature | PRs |
 |---------|-----|
+| v2.2 bundle release merge (`develop` → `master`) and release tag | #47 + `v2.2` |
+| Tags / Labels + tech-debt sweep (DB indexes, project-name uniqueness, DTO validation/message polish, paging regression fix) | #46 + post-merge review follow-ups |
 | Docker distribution — multi-stage image on `aspnet:10.0`, `docker-compose.yml` bundling SQL Server 2025, GHCR multi-arch (`linux/amd64` + `linux/arm64`) publish on `v*` tag and `develop` push, `docs/DOCKER.md` self-host guide. Includes production-hardening fixes surfaced during smoke: `ForwardedHeaders` moved to first in pipeline, Duende `KeyPath` set via `IdentityServerOptions` (not `KeyManagementOptions`), `SameSite=Lax` cookie policy, persistent ASP.NET data protection keys, all Docker-specific defaults pushed into `Dockerfile` `ENV` (not baked into `Program.cs`). | #43 |
 | P1 review follow-ups bundle — `StartDate` made non-nullable on the TrackedTask Create/Update DTOs (with a `NonDefaultDateTimeOffsetAttribute` presence guard), `UserController.GetMe` aggregates project/task counts (`CountAsync` — server-side `COUNT`) and total tracked time (`SumAsync`) via new `IRepository<T>` methods, OS-color-scheme-change notification wired from `theme-bootstrap.js` into `ThemeService` (`RegisterOsChangeListenerAsync` + `[JSInvokable] NotifyResolvedThemeChangedAsync`), and a new `UserProfileService` caching `/User/me` so a session makes one read instead of 3-4. | #44 |
 | P1 post-merge follow-up — fixes the `GET /User/me` 500 shipped by #44 (`SumAsync` no longer attempts an untranslatable SQL `SUM` over `TimeSpan.Ticks`; it materializes the projected column and sums in memory). Adds the `Timinute.Client.Tests` project (`UserProfileService` + `ThemeService` coverage) and `RepositoryAggregationSqliteTest` — a SQLite-backed test that catches SQL-translation bugs the EF InMemory suite cannot. | #45 |
