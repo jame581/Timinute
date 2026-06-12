@@ -25,6 +25,6 @@ namespace Timinute.Shared.Validators
         }
 
         public override string FormatErrorMessage(string name)
-            => $"The {name} field must be a valid date and time.";
+            => $"The {name} field is required and cannot be the default value.";
     }
 }

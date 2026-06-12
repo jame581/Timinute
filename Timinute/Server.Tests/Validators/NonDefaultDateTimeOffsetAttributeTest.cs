@@ -34,5 +34,13 @@ namespace Timinute.Server.Tests.Validators
             // Pass-through for non-DateTimeOffset inputs; let other attributes catch.
             Assert.True(_attr.IsValid("not a date"));
         }
+
+        [Fact]
+        public void FormatErrorMessage_UsesPresenceWording()
+        {
+            var message = _attr.FormatErrorMessage("StartDate");
+
+            Assert.Equal("The StartDate field is required and cannot be the default value.", message);
+        }
     }
 }

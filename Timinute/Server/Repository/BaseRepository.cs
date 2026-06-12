@@ -69,6 +69,11 @@ namespace Timinute.Server.Repository
                 {
                     query = query.Include(includeProperty.Trim());
                 }
+
+                if (context.Database.IsRelational())
+                {
+                    query = query.AsSplitQuery();
+                }
             }
 
             if (!string.IsNullOrEmpty(parameters.OrderBy) && !string.IsNullOrEmpty(orderBy))

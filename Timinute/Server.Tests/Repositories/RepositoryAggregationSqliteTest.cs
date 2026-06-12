@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Timinute.Server.Data;
 using Timinute.Server.Models;
+using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Xunit;
@@ -110,6 +112,41 @@ namespace Timinute.Server.Tests.Repositories
 
             Assert.True(victimTicks > 0, "the soft-deleted task must have a non-zero duration for this test to mean anything");
             Assert.Equal(before - victimTicks, after);
+        }
+
+        [Fact]
+        public async Task GetPaged_WithCollectionInclude_UsesStablePagingAndCount()
+        {
+            var repo = new BaseRepository<TrackedTask>(_context);
+
+            var userTasks = await _context.TrackedTasks
+                .AsTracking()
+                .Where(t => t.UserId == SeedUserId1)
+                .OrderBy(t => t.TaskId)
+                .Take(2)
+                .ToListAsync();
+
+            var tagA = new Tag { TagId = "tag-sqlite-a", Name = "tag-sqlite-a", Color = "#111111", UserId = SeedUserId1 };
+            var tagB = new Tag { TagId = "tag-sqlite-b", Name = "tag-sqlite-b", Color = "#222222", UserId = SeedUserId1 };
+            _context.Tags.AddRange(tagA, tagB);
+
+            userTasks[0].Tags = new List<Tag> { tagA, tagB };
+            userTasks[1].Tags = new List<Tag> { tagA };
+            await _context.SaveChangesAsync();
+            _context.ChangeTracker.Clear();
+
+            var page = await repo.GetPaged(
+                new PagingParameters { PageNumber = 1, PageSize = 2 },
+                t => t.UserId == SeedUserId1,
+                orderBy: nameof(TrackedTask.TaskId),
+                includeProperties: nameof(TrackedTask.Tags));
+
+            var ids = page.Select(t => t.TaskId).ToList();
+
+            Assert.Equal(3, page.TotalCount);
+            Assert.Equal(2, page.Count);
+            Assert.Equal(ids.Count, ids.Distinct().Count());
+            Assert.All(page, task => Assert.NotNull(task.Tags));
         }
     }
 }
