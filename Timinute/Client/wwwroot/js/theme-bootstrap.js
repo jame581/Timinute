@@ -9,6 +9,7 @@
 (function () {
     const KEY = 'timinute:theme';
     const root = document.documentElement;
+    let dotnetRef = null;
 
     function resolve(stored) {
         if (stored === 'Dark') return 'dark';
@@ -36,7 +37,13 @@
             mql.addEventListener('change', function () {
                 let cur;
                 try { cur = localStorage.getItem(KEY) || 'System'; } catch { cur = 'System'; }
-                if (cur === 'System') apply('System');
+                if (cur === 'System') {
+                    apply('System');
+                    if (dotnetRef) {
+                        try { dotnetRef.invokeMethodAsync('NotifyResolvedThemeChangedAsync'); }
+                        catch { /* circuit gone */ }
+                    }
+                }
             });
         }
     }
@@ -56,5 +63,12 @@
         getResolved: function () {
             return root.getAttribute('data-theme') || 'light';
         },
+        // Blazor registers a DotNetObjectReference here on first render
+        // (via ThemeService.RegisterOsChangeListenerAsync). When the OS
+        // color scheme changes AND the user is on 'System', the listener
+        // above invokes ThemeService.NotifyResolvedThemeChangedAsync,
+        // which fires the Changed event so the Topbar icon re-renders.
+        register: function (ref) { dotnetRef = ref; },
+        unregister: function () { dotnetRef = null; },
     };
 })();

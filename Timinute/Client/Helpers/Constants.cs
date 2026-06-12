@@ -85,6 +85,25 @@ namespace Timinute.Client.Helpers
                 public static string Purge(string id) => $"{Api}/{id}/purge";
             }
 
+            public static class Tag
+            {
+                public const string Api = "Tag";
+
+                public const string Get = Api;
+
+                public const string GetById = $"{Api}/";
+
+                public const string Create = Api;
+
+                public const string Update = Api;
+
+                public const string Delete = Api;
+
+                public static string ForceDelete(string id) => $"{Api}/{id}?force=true";
+
+                public static string DeleteForce(string id) => ForceDelete(id);
+            }
+
             public static class Analytics
             {
                 public const string Api = "Analytics";

@@ -371,3 +371,6 @@ CLAUDE.md
 
 # Claude Code superpowers runtime state
 .superpowers/
+
+# Docker self-host runtime config (copy of .env.example)
+.env

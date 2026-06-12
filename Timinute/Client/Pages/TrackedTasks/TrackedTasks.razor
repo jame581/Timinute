@@ -3,6 +3,7 @@
 
 @using Timinute.Client.Helpers
 @using Timinute.Client.Models
+@using Timinute.Shared.Dtos.Tag
 @using Timinute.Shared.Dtos.TrackedTask
 @using Timinute.Client.Components.Scheduler
 @using Timinute.Client.Components.TrackedTasks
@@ -41,6 +42,22 @@
             <AuroraIcons Name="download" Size="16" />
             <span>Export</span>
         </AuroraButton>
+
+        @if (AllUserTags.Any())
+        {
+            <div class="aurora-tt-filter__tags">
+                @foreach (var tag in AllUserTags)
+                {
+                    var isActive = ActiveTagIds.Contains(tag.TagId);
+                    <button class="aurora-tt-tag-chip @(isActive ? "is-active" : "")"
+                            style="--tag-color: @tag.Color;"
+                            @onclick="() => ToggleTag(tag.TagId)">
+                        <span class="aurora-tt-tag-chip__dot" style="background: @tag.Color;"></span>
+                        @tag.Name
+                    </button>
+                }
+            </div>
+        }
 
         <div style="flex: 1;"></div>
 
@@ -108,6 +125,8 @@
     private bool IsLoading = true;
     private string FilterText = "";
     private List<TrackedTaskDto> AllTasks = new();
+    private List<TagDto> AllUserTags = new();
+    private List<string> ActiveTagIds = new();
 
     private record DayGroup(string Label, DateTime Date, List<TrackedTaskDto> Tasks, TimeSpan Total);
 
@@ -132,7 +151,8 @@
             {
                 source = source.Where(t =>
                     t.Name.Contains(f, StringComparison.OrdinalIgnoreCase)
-                    || (t.Project?.Name?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false));
+                    || (t.Project?.Name?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || t.Tags.Any(tag => tag.Name.Contains(f, StringComparison.OrdinalIgnoreCase)));
             }
 
             return source
@@ -149,7 +169,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Reload();
+        await Task.WhenAll(Reload(), LoadTags());
     }
 
     private async Task Reload()
@@ -158,7 +178,15 @@
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            AllTasks = await client.GetAllPagedAsync<TrackedTaskDto>(Constants.API.TrackedTask.Get);
+            if (ActiveTagIds.Any())
+            {
+                var query = string.Join("&", ActiveTagIds.Select(id => $"tagIds={Uri.EscapeDataString(id)}"));
+                AllTasks = await client.GetAllPagedAsync<TrackedTaskDto>($"{Constants.API.TrackedTask.Get}/search?{query}");
+            }
+            else
+            {
+                AllTasks = await client.GetAllPagedAsync<TrackedTaskDto>(Constants.API.TrackedTask.Get);
+            }
         }
         catch (Exception ex)
         {
@@ -167,6 +195,34 @@
         }
         IsLoading = false;
         StateHasChanged();
+    }
+
+    private async Task LoadTags()
+    {
+        var client = ClientFactory.CreateClient(Constants.API.ClientName);
+        try
+        {
+            AllUserTags = await client.GetFromJsonAsync<List<TagDto>>(Constants.API.Tag.Get) ?? new();
+        }
+        catch (Exception ex)
+        {
+            AllUserTags = new();
+            Notifier.Notify(Radzen.NotificationSeverity.Warning, "Could not load tag filters", ex.Message, 3000);
+        }
+    }
+
+    private async Task ToggleTag(string tagId)
+    {
+        if (ActiveTagIds.Contains(tagId))
+        {
+            ActiveTagIds.Remove(tagId);
+        }
+        else
+        {
+            ActiveTagIds.Add(tagId);
+        }
+
+        await Reload();
     }
 
     private async Task EditTask(TrackedTaskDto task)
@@ -186,7 +242,8 @@
                 Name = updated.Name,
                 StartDate = updated.StartDate,
                 EndDate = updated.EndDate,
-                ProjectId = updated.ProjectId
+                ProjectId = updated.ProjectId,
+                TagIds = updated.TagIds
             };
             try
             {

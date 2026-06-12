@@ -2,6 +2,7 @@
 using Timinute.Server.Models;
 using Timinute.Shared.Dtos;
 using Timinute.Shared.Dtos.Project;
+using Timinute.Shared.Dtos.Tag;
 using Timinute.Shared.Dtos.TrackedTask;
 
 namespace Timinute.Server
@@ -32,6 +33,13 @@ namespace Timinute.Server
                 // Don't blank out a saved Color when an update arrives without one.
                 // A future "edit name only" flow shouldn't wipe the color picker choice.
                 .ForMember(d => d.Color, o => o.Condition(src => !string.IsNullOrWhiteSpace(src.Color)));
+
+            // Tag model
+            CreateMap<Tag, TagDto>()
+                .ForMember(d => d.TaskCount, o => o.Ignore());
+            CreateMap<TagDto, Tag>()
+                .ForMember(d => d.User, o => o.Ignore())
+                .ForMember(d => d.TrackedTasks, o => o.Ignore());
 
             // Application User model
             CreateMap<ApplicationUser, ApplicationUserDto>();

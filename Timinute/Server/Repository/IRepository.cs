@@ -29,5 +29,32 @@ namespace Timinute.Server.Repository
         /// palette assignment that should not collide with a still-active sibling color.
         /// </summary>
         Task<int> CountAll(Expression<Func<TEntity, bool>>? filter = null);
+
+        /// <summary>
+        /// Asynchronously counts entities matching the optional filter.
+        /// Honors EF global query filters (e.g. soft delete) — use <see cref="CountAll"/>
+        /// when you need the unfiltered (including soft-deleted) count.
+        /// </summary>
+        Task<int> CountAsync(Expression<Func<TEntity, bool>>? filter = null);
+
+        /// <summary>
+        /// Asynchronously sums the projected <see cref="long"/> values for
+        /// entities matching the optional filter. The projection is materialized
+        /// and summed in memory rather than via a server-side SQL <c>SUM</c>:
+        /// the intended selector (<c>TimeSpan.Ticks</c> over a SQL Server
+        /// <c>time</c> column) has no SQL aggregate translation, and EF Core
+        /// cannot client-evaluate an aggregate. The query is still scoped by
+        /// <paramref name="filter"/> and honors EF global query filters
+        /// (e.g. soft delete); only the projected column is transferred.
+        /// Returns 0 for an empty set.
+        /// </summary>
+        /// <remarks>
+        /// The sum is computed client-side, so callers should pass a
+        /// <paramref name="filter"/> that bounds the row set — with no filter,
+        /// every matching row's projected value is loaded into memory.
+        /// </remarks>
+        Task<long> SumAsync(
+            Expression<Func<TEntity, long>> selector,
+            Expression<Func<TEntity, bool>>? filter = null);
     }
 }

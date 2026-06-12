@@ -1,0 +1,272 @@
+@page "/tags"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@using System.Net
+@using System.Net.Http.Json
+@using Timinute.Client.Helpers
+@using Timinute.Shared.Dtos.Tag
+
+@inject IHttpClientFactory ClientFactory
+@inject Radzen.NotificationService Notifier
+@inject Radzen.DialogService DialogService
+
+<PageTitle>Tags</PageTitle>
+
+<div class="aurora-tags-page">
+    <div class="aurora-tags-header">
+        <div>
+            <div class="aurora-tags-title">Tags</div>
+            <div class="aurora-tags-subtitle">Create, color, and manage labels for your tracked tasks.</div>
+        </div>
+        @if (!isCreating)
+        {
+            <AuroraButton Variant="primary" OnClick="OpenCreateRow">
+                <AuroraIcons Name="plus" Size="16" />
+                <span>New tag</span>
+            </AuroraButton>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="aurora-tags-loading">Loading…</div>
+    }
+    else
+    {
+        <AuroraCard NoPad="true">
+            @if (isCreating)
+            {
+                <div class="aurora-tags-row aurora-tags-row--edit">
+                    <input class="aurora-tags-input" type="text" maxlength="30" placeholder="Tag name"
+                           @bind="createName" @bind:event="oninput" />
+                    <input class="aurora-tags-color" type="color" @bind="createColor" />
+                    <span class="aurora-tags-row__count"></span>
+                    <div class="aurora-tags-row__actions">
+                        <AuroraButton Variant="primary" Disabled="@string.IsNullOrWhiteSpace(createName)" OnClick="CreateTag">Create</AuroraButton>
+                        <AuroraButton Variant="ghost" OnClick="CancelCreateRow">Cancel</AuroraButton>
+                    </div>
+                </div>
+            }
+
+            @if (tags.Count == 0)
+            {
+                <div class="aurora-tags-empty">No tags yet. Create one to get started.</div>
+            }
+            else
+            {
+                @foreach (var tag in tags)
+                {
+                    if (editingTagId == tag.TagId)
+                    {
+                        <div class="aurora-tags-row aurora-tags-row--edit">
+                            <input class="aurora-tags-input" type="text" maxlength="30" placeholder="Tag name"
+                                   @bind="editName" @bind:event="oninput" />
+                            <input class="aurora-tags-color" type="color" @bind="editColor" />
+                            <span class="aurora-tags-row__count">@tag.TaskCount task@(tag.TaskCount == 1 ? "" : "s")</span>
+                            <div class="aurora-tags-row__actions">
+                                <AuroraButton Variant="primary" Disabled="@string.IsNullOrWhiteSpace(editName)" OnClick="SaveEdit">Save</AuroraButton>
+                                <AuroraButton Variant="ghost" OnClick="CancelEdit">Cancel</AuroraButton>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="aurora-tags-row">
+                            <span class="aurora-tags-pill" style="--tag-color: @tag.Color;">
+                                <span class="aurora-tags-pill__dot" style="background: @tag.Color;"></span>
+                                @tag.Name
+                            </span>
+                            <span class="aurora-tags-row__count">@tag.TaskCount task@(tag.TaskCount == 1 ? "" : "s")</span>
+                            <div class="aurora-tags-row__actions">
+                                <button class="aurora-tags-icon-btn" title="Edit" @onclick="() => OpenEditRow(tag)">
+                                    <AuroraIcons Name="edit" Size="14" />
+                                </button>
+                                <button class="aurora-tags-icon-btn aurora-tags-icon-btn--danger" title="Delete" @onclick="() => ConfirmDelete(tag)">
+                                    <AuroraIcons Name="trash" Size="14" />
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+        </AuroraCard>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<TagDto> tags = new();
+
+    private bool isCreating;
+    private string createName = string.Empty;
+    private string createColor = "#6366F1";
+
+    private string? editingTagId;
+    private string editName = string.Empty;
+    private string editColor = "#6366F1";
+
+    private HttpClient Http => ClientFactory.CreateClient(Constants.API.ClientName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        isLoading = true;
+        try
+        {
+            tags = await Http.GetFromJsonAsync<List<TagDto>>(Constants.API.Tag.Get) ?? new();
+        }
+        catch (Exception ex)
+        {
+            tags = new();
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load tags", ex.Message, 4000);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenCreateRow()
+    {
+        CancelEdit();
+        isCreating = true;
+        createName = string.Empty;
+        createColor = "#6366F1";
+    }
+
+    private void CancelCreateRow()
+    {
+        isCreating = false;
+        createName = string.Empty;
+    }
+
+    private async Task CreateTag()
+    {
+        var name = createName.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                Constants.API.Tag.Create,
+                new CreateTagDto { Name = name, Color = createColor });
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Warning, "Name taken", "A tag with this name already exists.", 3000);
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+            Notifier.Notify(Radzen.NotificationSeverity.Success, "Saved", "Tag created.", 2000);
+            CancelCreateRow();
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Save failed", ex.Message, 4000);
+        }
+    }
+
+    private void OpenEditRow(TagDto tag)
+    {
+        CancelCreateRow();
+        editingTagId = tag.TagId;
+        editName = tag.Name;
+        editColor = tag.Color;
+    }
+
+    private void CancelEdit()
+    {
+        editingTagId = null;
+        editName = string.Empty;
+    }
+
+    private async Task SaveEdit()
+    {
+        if (editingTagId is null)
+        {
+            return;
+        }
+
+        var name = editName.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync(
+                $"{Constants.API.Tag.Update}/{editingTagId}",
+                new UpdateTagDto { TagId = editingTagId, Name = name, Color = editColor });
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Warning, "Name taken", "A tag with this name already exists.", 3000);
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+            Notifier.Notify(Radzen.NotificationSeverity.Success, "Saved", "Tag updated.", 2000);
+            CancelEdit();
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Save failed", ex.Message, 4000);
+        }
+    }
+
+    private async Task ConfirmDelete(TagDto tag)
+    {
+        try
+        {
+            var previewResponse = await Http.DeleteAsync($"{Constants.API.Tag.Delete}/{tag.TagId}");
+            previewResponse.EnsureSuccessStatusCode();
+
+            var preview = await previewResponse.Content.ReadFromJsonAsync<TaskCountResponse>();
+            var taskCount = preview?.TaskCount ?? 0;
+
+            if (taskCount > 0)
+            {
+                var confirm = await DialogService.Confirm(
+                    $"This tag is used on {taskCount} task{(taskCount == 1 ? string.Empty : "s")}. Deleting it will remove the tag from those tasks. Continue?",
+                    "Delete tag",
+                    new Radzen.ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+
+                if (confirm != true)
+                {
+                    return;
+                }
+            }
+
+            var deleteResponse = await Http.DeleteAsync(Constants.API.Tag.ForceDelete(tag.TagId));
+            deleteResponse.EnsureSuccessStatusCode();
+
+            if (editingTagId == tag.TagId)
+            {
+                CancelEdit();
+            }
+
+            Notifier.Notify(Radzen.NotificationSeverity.Success, "Deleted", $"Tag \"{tag.Name}\" deleted.", 2000);
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Delete failed", ex.Message, 4000);
+        }
+    }
+
+    private sealed class TaskCountResponse
+    {
+        public int TaskCount { get; set; }
+    }
+}

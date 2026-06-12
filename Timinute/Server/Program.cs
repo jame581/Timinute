@@ -1,5 +1,8 @@
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +25,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+var dpKeysPath = builder.Configuration["DataProtection:KeyPath"];
+if (!string.IsNullOrEmpty(dpKeysPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dpKeysPath));
+}
 
 // Identity configuration
 IdentitySetup();
@@ -101,7 +111,47 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 // Swagger Configuration
 SwaggerSetup();
 
+// Reverse-proxy support. Docker users terminate TLS upstream; we trust
+// X-Forwarded-* from any source inside the private container network.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+                             | ForwardedHeaders.XForwardedProto
+                             | ForwardedHeaders.XForwardedHost;
+
+    // Only clear the known-proxy trust list when the operator explicitly opts in.
+    // The default ASP.NET Core behavior (loopback-only trust) is safer for
+    // accidentally-internet-exposed deployments; Docker sets this true in its
+    // ENV because the container talks to a proxy on a private docker network.
+    if (builder.Configuration.GetValue("ForwardedHeaders:AllowAnyProxy", false))
+    {
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
+});
+
+// Same-origin auth → SameSite=Lax is correct and works in both HTTP-only
+// (local smoke / dev) and HTTPS-behind-reverse-proxy (production). The
+// default SameSite=None setting on Identity / IdentityServer cookies is
+// dropped silently by browsers when the request is not HTTPS, which breaks
+// the login flow in any non-TLS deployment. Secure flag mirrors the request
+// scheme so it's set in production-https and unset in http-smoke.
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
+    options.Secure = CookieSecurePolicy.SameAsRequest;
+});
+
 var app = builder.Build();
+
+if (app.Configuration.GetValue("DatabaseMigrationOnStartup", false))
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
+         .Database.Migrate();
+}
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -124,7 +174,7 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
+app.UseCookiePolicy();
 app.UseHttpsRedirection();
 
 app.UseResponseCaching();
@@ -226,11 +276,22 @@ void IdentitySetup()
     }
     else
     {
+        var keyPath = builder.Configuration["IdentityServer:KeyManagement:KeyPath"];
+
         // Duende IdentityServer enables automatic key management by default.
-        // Keys are generated, rotated, and persisted to the /keys directory.
-        identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.KeyManagementOptions>(options =>
+        // KeyPath defaults to "keys" relative to CWD; set explicitly via config
+        // for any deployment with a stable persistent directory.
+        // NOTE: We configure IdentityServerOptions (not KeyManagementOptions) because
+        // Duende registers an IPostConfigureOptions<KeyManagementOptions> that copies
+        // values from IdentityServerOptions.KeyManagement.* and would otherwise
+        // overwrite anything we set directly on KeyManagementOptions.
+        identityServerBuilder.Services.Configure<Duende.IdentityServer.Configuration.IdentityServerOptions>(options =>
         {
-            options.Enabled = true;
+            options.KeyManagement.Enabled = true;
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                options.KeyManagement.KeyPath = keyPath;
+            }
         });
     }
 }

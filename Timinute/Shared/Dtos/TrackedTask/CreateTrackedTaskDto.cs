@@ -11,7 +11,8 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public string Name { get; set; } = null!;
 
         [Required]
-        public DateTimeOffset? StartDate { get; set; }
+        [NonDefaultDateTimeOffset]
+        public DateTimeOffset StartDate { get; set; }
 
         [Required]
         [MinDuration]
@@ -20,5 +21,6 @@ namespace Timinute.Shared.Dtos.TrackedTask
         public string? ProjectId { get; set; }
 
         public ProjectDto? Project { get; set; }
+        public List<string> TagIds { get; set; } = new();
     }
 }

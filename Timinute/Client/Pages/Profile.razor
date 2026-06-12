@@ -8,6 +8,7 @@
 @inject NavigationManager Navigation
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
 @inject Timinute.Client.Services.ThemeService ThemeService
+@inject Timinute.Client.Services.UserProfileService UserProfileService
 @inject Radzen.NotificationService NotificationService
 
 <PageTitle>User profile</PageTitle>
@@ -148,18 +149,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try
         {
-            Me = await client.GetFromJsonAsync<UserProfileDto>("User/me");
+            Me = await UserProfileService.GetCurrentAsync();
             if (Me?.Preferences != null)
             {
                 CurrentTheme = Me.Preferences.Theme;
                 DraftWeeklyGoalHours = Me.Preferences.WeeklyGoalHours;
                 DraftWorkdayHoursPerDay = Me.Preferences.WorkdayHoursPerDay;
 
-                // Reuse this GetMe to seed the local theme cache rather than
-                // letting MainLayout fire a duplicate request.
+                // Apply the theme locally; UserProfileService already holds
+                // the cached profile so MainLayout won't re-fetch.
                 await ThemeService.SyncFromServerAsync(Me.Preferences);
             }
         }
@@ -214,6 +214,9 @@
                 WeeklyGoalHours = DraftWeeklyGoalHours,
                 WorkdayHoursPerDay = DraftWorkdayHoursPerDay,
             };
+            // NOTE: invalidate after any mutation that changes /User/me's payload —
+            // keeps Profile/Dashboard/Topbar consistent. ThemeService.SetAsync does
+            // the same after its PUT path.
             var response = await client.PutAsJsonAsync("User/me/preferences", dto);
 
             if (!response.IsSuccessStatusCode)
@@ -227,6 +230,8 @@
                 NotificationService.Notify(Radzen.NotificationSeverity.Error, "Could not save preferences", detail, 4000);
                 return;
             }
+
+            await UserProfileService.InvalidateAsync();
 
             var saved = await response.Content.ReadFromJsonAsync<UserPreferencesDto>();
             if (saved != null)

@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/.vs
+**/.git
+**/node_modules
+docs
+screenshots
+Server.Tests
+*.md
+.github
+.env
+.env.*
+!.env.example

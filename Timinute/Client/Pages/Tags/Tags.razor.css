@@ -1,0 +1,159 @@
+.aurora-tags-page {
+    padding: 20px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--text);
+    font-family: var(--font-sans);
+}
+
+.aurora-tags-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.aurora-tags-title {
+    font: 600 20px var(--font-sans);
+    letter-spacing: -0.3px;
+}
+
+.aurora-tags-subtitle {
+    margin-top: 4px;
+    font: 400 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-tags-loading,
+.aurora-tags-empty {
+    padding: 26px;
+    text-align: center;
+    color: var(--text-mu);
+}
+
+.aurora-tags-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+}
+
+.aurora-tags-row:first-child {
+    border-top: none;
+}
+
+.aurora-tags-row--edit {
+    grid-template-columns: minmax(120px, 1fr) 44px auto auto;
+}
+
+.aurora-tags-pill {
+    --_tag-color: var(--tag-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
+    background: color-mix(in srgb, var(--_tag-color) 14%, transparent);
+    color: var(--_tag-color);
+    border: 1px solid color-mix(in srgb, var(--_tag-color) 34%, transparent);
+    border-radius: var(--r-pill);
+    padding: 4px 10px;
+    font: 500 12px var(--font-sans);
+    white-space: nowrap;
+}
+
+.aurora-tags-pill__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.aurora-tags-row__count {
+    font: 400 12px var(--font-sans);
+    color: var(--text-mu);
+    justify-self: end;
+}
+
+.aurora-tags-row__actions {
+    display: inline-flex;
+    gap: 8px;
+    justify-self: end;
+}
+
+.aurora-tags-input {
+    min-width: 0;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0 11px;
+    font: 400 14px var(--font-sans);
+}
+
+.aurora-tags-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-so);
+}
+
+.aurora-tags-color {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    background: transparent;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.aurora-tags-icon-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-mu);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.aurora-tags-icon-btn:hover {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--text) 30%, var(--border));
+}
+
+.aurora-tags-icon-btn--danger:hover {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 50%, var(--border));
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+@media (max-width: 900px) {
+    .aurora-tags-page {
+        padding: 12px 16px 16px;
+    }
+
+    .aurora-tags-row {
+        grid-template-columns: 1fr;
+        justify-items: start;
+        gap: 8px;
+    }
+
+    .aurora-tags-row--edit {
+        grid-template-columns: 1fr 44px;
+    }
+
+    .aurora-tags-row__count,
+    .aurora-tags-row__actions {
+        justify-self: start;
+    }
+}

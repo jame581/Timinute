@@ -69,6 +69,11 @@ namespace Timinute.Server.Repository
                 {
                     query = query.Include(includeProperty.Trim());
                 }
+
+                if (context.Database.IsRelational())
+                {
+                    query = query.AsSplitQuery();
+                }
             }
 
             if (!string.IsNullOrEmpty(parameters.OrderBy) && !string.IsNullOrEmpty(orderBy))
@@ -240,6 +245,32 @@ namespace Timinute.Server.Repository
             if (filter != null)
                 query = query.Where(filter);
             return await query.CountAsync();
+        }
+
+        public async Task<int> CountAsync(Expression<Func<TEntity, bool>>? filter = null)
+        {
+            IQueryable<TEntity> query = dbSet;
+            if (filter != null)
+                query = query.Where(filter);
+            return await query.CountAsync();
+        }
+
+        public async Task<long> SumAsync(
+            Expression<Func<TEntity, long>> selector,
+            Expression<Func<TEntity, bool>>? filter = null)
+        {
+            IQueryable<TEntity> query = dbSet;
+            if (filter != null)
+                query = query.Where(filter);
+            // The projected values are materialized, then summed in memory.
+            // EF Core can client-evaluate a selector in the final projection
+            // (e.g. TimeSpan.Ticks over a SQL Server `time` column) but NOT
+            // inside a server-side SUM — query.Select(selector).SumAsync()
+            // throws "could not be translated" on any relational provider.
+            // ToListAsync transfers only the projected column for the filtered
+            // rows; Enumerable.Sum returns 0 for an empty set.
+            var values = await query.Select(selector).ToListAsync();
+            return values.Sum();
         }
 
         public async Task<int> PurgeExpired(DateTimeOffset olderThan)

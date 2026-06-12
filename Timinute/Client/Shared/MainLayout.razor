@@ -55,6 +55,11 @@
         // hot reload. The dedupe is cheap (a single bool check after the first hit).
         await Viewport.InitializeAsync();
 
+        // Register the OS-color-scheme-change callback with the JS bootstrap.
+        // RegisterOsChangeListenerAsync is internally idempotent (it short-circuits
+        // once selfRef is set), so calling it every render is cheap.
+        await Theme.RegisterOsChangeListenerAsync();
+
         // One-shot theme sync: pulls the authenticated user's preference from
         // the server and writes it into localStorage so cross-device toggles
         // catch up on the next reload. Only set themeSynced=true on a

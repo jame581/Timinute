@@ -22,5 +22,7 @@ namespace Timinute.Server.Models
         public ICollection<TrackedTask>? TrackedTasks { get; set; }
 
         public ICollection<Project>? Projects { get; set; }
+
+        public ICollection<Tag>? Tags { get; set; }
     }
 }

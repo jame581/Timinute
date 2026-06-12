@@ -128,6 +128,21 @@ namespace Timinute.Server.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TaskTag", b =>
+                {
+                    b.Property<string>("TagId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TaskId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("TagId", "TaskId");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("TaskTag");
+                });
+
             modelBuilder.Entity("Timinute.Server.Models.ApplicationRole", b =>
                 {
                     b.Property<string>("Id")
@@ -326,7 +341,8 @@ namespace Timinute.Server.Data.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -338,7 +354,39 @@ namespace Timinute.Server.Data.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique()
+                        .HasFilter("[DeletedAt] IS NULL");
+
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("Timinute.Server.Models.Tag", b =>
+                {
+                    b.Property<string>("TagId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("TagId");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Tags");
                 });
 
             modelBuilder.Entity("Timinute.Server.Models.TrackedTask", b =>
@@ -377,6 +425,8 @@ namespace Timinute.Server.Data.Migrations
                     b.HasIndex("ProjectId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "StartDate");
 
                     b.ToTable("TrackedTasks");
 
@@ -497,6 +547,21 @@ namespace Timinute.Server.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TaskTag", b =>
+                {
+                    b.HasOne("Timinute.Server.Models.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Timinute.Server.Models.TrackedTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Timinute.Server.Models.ApplicationUser", b =>
                 {
                     b.OwnsOne("Timinute.Server.Models.UserPreferences", "Preferences", b1 =>
@@ -567,6 +632,17 @@ namespace Timinute.Server.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Timinute.Server.Models.Tag", b =>
+                {
+                    b.HasOne("Timinute.Server.Models.ApplicationUser", "User")
+                        .WithMany("Tags")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Timinute.Server.Models.TrackedTask", b =>
                 {
                     b.HasOne("Timinute.Server.Models.Project", "Project")
@@ -588,6 +664,8 @@ namespace Timinute.Server.Data.Migrations
             modelBuilder.Entity("Timinute.Server.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Projects");
+
+                    b.Navigation("Tags");
 
                     b.Navigation("TrackedTasks");
                 });

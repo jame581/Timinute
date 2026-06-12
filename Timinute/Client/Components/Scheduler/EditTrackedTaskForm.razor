@@ -46,6 +46,14 @@
                             TextProperty="Name" ValueProperty="ProjectId" Class="w-100" />
         </div>
     </div>
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Tags" />
+        </div>
+        <div class="col">
+            <TagPicker SelectedTagIds="model.TagIds" SelectedTagIdsChanged="OnTagIdsChanged" />
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-3"></div>
         <div class="col">
@@ -74,11 +82,18 @@
     protected override void OnParametersSet()
     {
         model = TrackedTask;
+        model.TagIds ??= new List<string>();
     }
 
     void OnSubmit(TrackedTask model)
     {
         DialogService.Close(model);
+    }
+
+    private Task OnTagIdsChanged(List<string> tagIds)
+    {
+        model.TagIds = tagIds;
+        return Task.CompletedTask;
     }
 
     async Task OnDeleteClick()

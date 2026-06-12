@@ -11,22 +11,18 @@ namespace Timinute.Client.Services
     // localStorage is a *cache* of the server's value, not the source of
     // truth. SyncFromServerAsync writes the server's preference back into
     // localStorage on app boot so cross-device toggles eventually catch up.
-    public class ThemeService
+    public class ThemeService : IAsyncDisposable, IDisposable
     {
         private readonly IJSRuntime js;
         private readonly IHttpClientFactory clientFactory;
+        private readonly UserProfileService profileService;
+        private DotNetObjectReference<ThemeService>? selfRef;
 
-        // Holds the once-per-session sync Task so multiple callers (MainLayout,
-        // Profile, Dashboard) don't all fire their own GET /User/me. First caller
-        // populates; everyone else awaits the cached task. Profile's overload
-        // (which already has the prefs) populates this with a completed task so
-        // a later MainLayout call is a no-op.
-        private Task<UserPreferencesDto?>? syncTask;
-
-        public ThemeService(IJSRuntime js, IHttpClientFactory clientFactory)
+        public ThemeService(IJSRuntime js, IHttpClientFactory clientFactory, UserProfileService profileService)
         {
             this.js = js;
             this.clientFactory = clientFactory;
+            this.profileService = profileService;
         }
 
         public event Action<ThemePreference>? Changed;
@@ -47,25 +43,30 @@ namespace Timinute.Client.Services
             return ThemePreference.System;
         }
 
-        // Server sync: pulls GetMe and writes the authenticated user's
-        // preference into localStorage so the next reload's bootstrap reads
-        // the up-to-date value. Silently no-ops if unauthenticated or the
-        // call fails — the bootstrap script already applied a default theme.
-        // Idempotent: subsequent callers await the cached task and don't
-        // refire the network request.
-        public Task<UserPreferencesDto?> SyncFromServerAsync()
+        // Server sync: routes through UserProfileService so all callers share
+        // a single cached GET /User/me per session. Silently no-ops if
+        // unauthenticated or the call fails — the bootstrap script already
+        // applied a default theme.
+        public async Task<UserPreferencesDto?> SyncFromServerAsync()
         {
-            return syncTask ??= FetchAndApplyAsync();
+            var profile = await profileService.GetCurrentAsync();
+            if (profile?.Preferences != null)
+            {
+                await ApplyLocalCoreAsync(profile.Preferences.Theme);
+                Changed?.Invoke(profile.Preferences.Theme);
+                return profile.Preferences;
+            }
+            return null;
         }
 
-        // Server sync (overload): used when the caller already has the
-        // server response, e.g. Profile.razor reusing its own GetMe. Also
-        // populates the cache so a subsequent parameterless call (e.g. from
-        // MainLayout) doesn't fire a duplicate GET /User/me.
+        // Server sync (overload): used when the caller already has the prefs
+        // (e.g. Profile.razor reusing its own UserProfileService fetch).
+        // UserProfileService owns the cache now — this just applies locally
+        // and notifies subscribers. The cache is already warm because
+        // Profile's GetCurrentAsync populated it.
         public async Task SyncFromServerAsync(UserPreferencesDto serverPrefs)
         {
-            syncTask ??= Task.FromResult<UserPreferencesDto?>(serverPrefs);
-            await ApplyLocalAsync(serverPrefs.Theme);
+            await ApplyLocalCoreAsync(serverPrefs.Theme);
             Changed?.Invoke(serverPrefs.Theme);
         }
 
@@ -82,28 +83,6 @@ namespace Timinute.Client.Services
         {
             await ApplyLocalCoreAsync(value);
             Changed?.Invoke(value);
-        }
-
-        private async Task<UserPreferencesDto?> FetchAndApplyAsync()
-        {
-            try
-            {
-                var client = clientFactory.CreateClient(Constants.API.ClientName);
-                var profile = await client.GetFromJsonAsync<UserProfileDto>("User/me");
-                if (profile?.Preferences != null)
-                {
-                    await ApplyLocalCoreAsync(profile.Preferences.Theme);
-                    Changed?.Invoke(profile.Preferences.Theme);
-                    return profile.Preferences;
-                }
-            }
-            catch
-            {
-                // Anonymous, network error, or server hiccup — keep cache.
-                // Reset syncTask so a later, post-auth call can retry.
-                syncTask = null;
-            }
-            return null;
         }
 
         // Toggle path: optimistic local update (instant UI), then PUT.
@@ -124,6 +103,7 @@ namespace Timinute.Client.Services
             };
             var response = await client.PutAsJsonAsync("User/me/preferences", dto);
             response.EnsureSuccessStatusCode();
+            await profileService.InvalidateAsync();
         }
 
         // Convenience for callers that don't already have UserPreferencesDto
@@ -154,6 +134,51 @@ namespace Timinute.Client.Services
             }
             catch (JSException) { /* bootstrap script absent — non-fatal */ }
             catch (JSDisconnectedException) { /* circuit gone */ }
+        }
+
+        // Register a callback so theme-bootstrap.js can notify us when
+        // the OS color scheme changes mid-session for a 'System' user.
+        // Idempotent — only the first call hits JS; later calls are no-ops.
+        public async Task RegisterOsChangeListenerAsync()
+        {
+            if (selfRef != null) return;
+            selfRef = DotNetObjectReference.Create(this);
+            try { await js.InvokeVoidAsync("__theme.register", selfRef); }
+            catch (JSException) { selfRef.Dispose(); selfRef = null; /* bootstrap absent */ }
+            catch (JSDisconnectedException) { selfRef.Dispose(); selfRef = null; /* circuit gone */ }
+        }
+
+        // Invoked from theme-bootstrap.js when the OS color scheme changes
+        // AND the user's stored preference is 'System'. The JS bootstrap
+        // has already updated <html data-theme>; we just fire Changed so
+        // Topbar re-renders its sun/moon icon.
+        [JSInvokable]
+        public Task NotifyResolvedThemeChangedAsync()
+        {
+            Changed?.Invoke(ThemePreference.System);
+            return Task.CompletedTask;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (selfRef != null)
+            {
+                try { await js.InvokeVoidAsync("__theme.unregister"); }
+                catch (JSException) { /* bootstrap absent — non-fatal */ }
+                catch (JSDisconnectedException) { /* circuit gone */ }
+            }
+            selfRef?.Dispose();
+            selfRef = null;
+        }
+
+        // Sync fallback for paths that go through IDisposable rather than
+        // IAsyncDisposable. Cannot call JS here (would block or throw on
+        // a disconnected circuit), so the JS-side dotnetRef stays attached
+        // until the next page load. DisposeAsync above is the preferred path.
+        public void Dispose()
+        {
+            selfRef?.Dispose();
+            selfRef = null;
         }
     }
 }
