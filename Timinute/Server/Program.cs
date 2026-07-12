@@ -322,3 +322,7 @@ void SwaggerSetup()
         c.ResolveConflictingActions(apiDescriptors => apiDescriptors.First());
     });
 }
+
+// Exposes the implicit Program class to WebApplicationFactory<Program>
+// in Timinute.Server.Tests integration tests.
+public partial class Program { }
