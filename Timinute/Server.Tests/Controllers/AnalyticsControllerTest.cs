@@ -10,6 +10,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
+using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Analytics;
@@ -305,6 +306,38 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal("_untagged", untagged.TagId);
             Assert.Equal(TimeSpan.FromHours(28), untagged.TotalDuration);
             Assert.Equal(7, untagged.TaskCount);
+        }
+
+        [Fact]
+        public async Task Get_Range_Summary_Excludes_SoftDeleted_Tasks_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SoftDeleteSummary", analyticsTest: true);
+
+            var range = LastMonthRange();
+            var softDeletedTask = new TrackedTask
+            {
+                TaskId = "TrackedTaskId1099",
+                Name = "Soft Deleted Task",
+                UserId = "ApplicationUser1000",
+                StartDate = range.From,
+                EndDate = range.From.AddHours(1),
+                Duration = TimeSpan.FromHours(1),
+                DeletedAt = DateTimeOffset.UtcNow
+            };
+
+            applicationDbContext.TrackedTasks.Add(softDeletedTask);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            var controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.GetRangeSummary(range);
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var summary = Assert.IsAssignableFrom<AnalyticsSummaryDto>(okResult.Value);
+
+            Assert.Equal(7, summary.TaskCount);
+            Assert.Equal(TimeSpan.FromHours(28), summary.TotalDuration);
         }
 
         [Fact]
