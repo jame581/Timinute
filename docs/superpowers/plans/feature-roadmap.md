@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-05-22 — v2.2 release scope defined; P1 follow-ups merged (PRs #44, #45)._
+_Last reviewed: 2026-07-12 — v2.2 shipped (PRs #46, #47); v2.3 scope defined (Enhanced analytics + leftover tech-debt sweep)._
 
 ## Current Feature Set
 
@@ -33,36 +33,30 @@ _Last reviewed: 2026-05-22 — v2.2 release scope defined; P1 follow-ups merged 
 
 ---
 
-## Planned — v2.2
+## Planned — v2.3
 
-v2.2 bundles everything already merged to `develop` since v2.1 — Docker distribution (PR #43) and the P1 review follow-ups (PRs #44, #45), see *Recently shipped (post-v2.1)* below — with one new feature and a tech-debt sweep.
+v2.3 pairs the Enhanced analytics P1 feature with the tech-debt items that were scoped into v2.2 but did not ship (only the DB indexes + unique project-name constraint made it into PR #46).
 
 ### Feature
 
 | Feature | Description | Complexity |
 |---------|-------------|------------|
-| Tags / Labels | Tag entity, many-to-many to `TrackedTask`, UI for tagging tasks + filter by tag. The Aurora design shows tag pills (`focus`, `backend`) on the time tracker, currently hardcoded. Unblocks the P2 external-ticket and AI-categorization items. | M |
+| Enhanced analytics | New `/analytics` page: custom date range + presets, server-side aggregation endpoints (per-day / per-project / per-tag), productivity trend chart vs `WorkdayHoursPerDay` target, per-tag breakdown (first analytics consumer of Tags). Dashboard retrofitted to the aggregate endpoints instead of loading all tasks client-side. | M |
 
-### Tech debt to clear
+### Tech debt to clear (carried over from v2.2)
 
-Promoted from the *Tech debt* table below — see there for full notes:
-
-- Build & Test workflow not registered
+- Build & Test workflow — registered on GitHub but `disabled_manually`; enable + verify a green run
 - `Server/Helpers/Constants.cs` growing large — split per domain
 - Request/response logging middleware
-- DB indexes on `UserId` / `ProjectId`
-- Composite indexes for common analytics queries
-- Unique constraint: project names per user
 - API versioning for future breaking changes
 - Server-side validation tests as integration tests
 
-Per *How this doc is maintained*, Tags / Labels gets a spec in `docs/superpowers/specs/` before implementation starts.
+Per *How this doc is maintained*, Enhanced analytics gets a spec in `docs/superpowers/specs/` before implementation starts.
 
 ## Pending — P1 (Should-Have)
 
 | Feature | Description | Complexity | Notes |
 |---------|-------------|------------|-------|
-| Enhanced analytics | Custom date ranges, daily/weekly summaries, productivity trends, push aggregation server-side. First consumer of `WorkdayHoursPerDay` (stored in v2.1) beyond the Dashboard's "Today vs target" indicator. | M | Dashboard stats currently load all user tasks client-side |
 | Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | Topbar bell is hidden on desktop (visual placeholder only) waiting for this |
 | Time tracking enhancements | Pomodoro timer, time estimates/goals, break tracking | L | None |
 
@@ -82,10 +76,11 @@ Per *How this doc is maintained*, Tags / Labels gets a spec in `docs/superpowers
 ```
 Settings/Preferences ─── Team workspaces (P2)   [Settings cluster shipped in v2.1]
 
-Tags ─┬─ External-ticket integrations (P2)
-      └─ AI categorization (P2)
+Tags ─┬─ External-ticket integrations (P2)      [Tags shipped in v2.2]
+      ├─ AI categorization (P2)
+      └─ Enhanced analytics per-tag breakdown (v2.3)
 
-Enhanced analytics — independent (consumes WorkdayHoursPerDay shipped in v2.1)
+Enhanced analytics — v2.3 (consumes WorkdayHoursPerDay shipped in v2.1)
 Notifications — independent
 Time tracking enhancements — independent
 ```
@@ -94,18 +89,18 @@ Time tracking enhancements — independent
 
 ## Tech debt
 
-Status reviewed 2026-05-22.
+Status reviewed 2026-07-12.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Build & Test workflow not registered | → v2.2 | `.github/workflows/build_test.yml` is on master since `c57fa82` (PR #37) but `gh workflow list` doesn't show it as active and `gh run list --workflow=build_test.yml` returns 0 runs ever. CI on PRs only runs CodeQL. Investigate: YAML parse issue, or needs a `workflow_dispatch` to bootstrap registration. |
-| Constants class growing large — split per domain | → v2.2 | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
-| Request/response logging middleware | → v2.2 | Useful before production; not in critical path |
-| DB indexes on UserId, ProjectId | → v2.2 | Repository queries filter by these on every endpoint |
-| Composite indexes for common analytics queries | → v2.2 | Dashboard hits `GetTrackedTasks` per session |
-| Unique constraint: project names per user | → v2.2 | DB-level constraint + 409 handling on duplicate create |
-| API versioning for future breaking changes | → v2.2 | None of the API is published yet, so this is preparatory |
-| Server-side validation tests as integration tests | → v2.2 | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
+| Build & Test workflow disabled | → v2.3 | Root cause found 2026-07-12: the workflow IS registered on GitHub (id 20059071) but its state is `disabled_manually`. Fix: `gh api -X PUT repos/jame581/Timinute/actions/workflows/20059071/enable`, then verify a run triggers on the next push/PR. CI on PRs currently only runs CodeQL + Copilot review. |
+| Constants class growing large — split per domain | → v2.3 | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
+| Request/response logging middleware | → v2.3 | Useful before production; not in critical path |
+| DB indexes on UserId, ProjectId | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId`, `IX_TrackedTasks_ProjectId`, `IX_Projects_UserId` |
+| Composite indexes for common analytics queries | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId_StartDate` |
+| Unique constraint: project names per user | ✅ done | Shipped in PR #46 (v2.2) — filtered unique `IX_Projects_UserId_Name` (`[DeletedAt] IS NULL`) + 409 handling |
+| API versioning for future breaking changes | → v2.3 | None of the API is published yet, so this is preparatory |
+| Server-side validation tests as integration tests | → v2.3 | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
 | Unified `UserProfileService` to dedupe `GET /User/me` | ✅ done | Shipped in PR #44 — `UserProfileService` owns a cached `GET /User/me`; ThemeService, Profile, and Dashboard now route through it (one read per session). |
 | Extract common DataGrid logic | ✅ moot | Aurora replaced `RadzenDataGrid` with custom row layouts; no shared grid logic remains |
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
@@ -119,6 +114,12 @@ Status reviewed 2026-05-22.
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
+
+## Recently shipped (v2.2, 2026-06-12)
+
+| Feature | PRs |
+|---------|-----|
+| Tags / Labels — user-scoped `Tag` entity, implicit M2M to `TrackedTask` via `TaskTag`, `TagController` CRUD with 409 on duplicate name + force-delete, tag sync on task create/update, tag search filter, `/tags` management page, `TagPicker` component, filter chips on Tracked tasks, bUnit coverage. Tech debt: DB indexes (`UserId`, `ProjectId`, `UserId+StartDate`) + filtered unique `Project(UserId, Name)` constraint with 409 handling. Review hardening: split-query paging for include-heavy queries, whitespace-only tag-name rejection, `KnownIPNetworks` forwarded-header trust. | #46, release #47 |
 
 ## Recently shipped (post-v2.1, develop)
 
