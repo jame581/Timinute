@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-13 — v2.3 implemented (PR #48): Enhanced analytics + tech-debt sweep complete._
+_Last reviewed: 2026-07-13 — v2.3 implemented (PR #48, review follow-ups PR #49): Enhanced analytics + tech-debt sweep complete._
 
 ## Current Feature Set
 
@@ -80,7 +80,7 @@ Status reviewed 2026-07-13.
 | Unique constraint: project names per user | ✅ done | Shipped in PR #46 (v2.2) — filtered unique `IX_Projects_UserId_Name` (`[DeletedAt] IS NULL`) + 409 handling |
 | API versioning for future breaking changes | ✅ done | PR #48 (v2.3) — `Asp.Versioning.Mvc` (`.AddMvc()` required — bare `AddApiVersioning` never attaches to controllers), implicit v1.0, `api-supported-versions` reported; unknown explicit `?api-version=` now 400s (client never sends it) |
 | Server-side validation tests as integration tests | ✅ done | PR #48 (v2.3) — `TiminuteApiFactory` (`WebApplicationFactory<Program>`) + `ValidationIntegrationTest` exercising the `[ApiController]` 422 short-circuit through the real pipeline |
-| ProjectId ownership validation on tracked-task create/update | ✅ done | Found by `ef-repository-reviewer` during v2.3 (pre-existing): foreign `ProjectId` was persisted and leaked the project's Name/Color via `Include(Project)` endpoints. Fixed in PR #48 with tests. Follow-up idea: sweep other cross-entity FKs. |
+| ProjectId ownership validation on tracked-task create/update | ✅ done | Found by `ef-repository-reviewer` during v2.3 (pre-existing): foreign `ProjectId` was persisted and leaked the project's Name/Color via `Include(Project)` endpoints. Fixed in PR #48 with tests. PR #49 hardened the same path: whitespace `ProjectId` normalized to null (was an FK-violation 500), values trimmed (SQL Server trailing-space padding), and the nested `Project` DTO member ignored on inbound maps (client could attach a whole `Project` entity to the insert graph). Cross-entity FK sweep done as part of #49 — `TagIds` and query-string `projectId` paths verified safe. |
 | Unified `UserProfileService` to dedupe `GET /User/me` | ✅ done | Shipped in PR #44 — `UserProfileService` owns a cached `GET /User/me`; ThemeService, Profile, and Dashboard now route through it (one read per session). |
 | Extract common DataGrid logic | ✅ moot | Aurora replaced `RadzenDataGrid` with custom row layouts; no shared grid logic remains |
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
@@ -99,7 +99,7 @@ Status reviewed 2026-07-13.
 
 | Feature | PRs |
 |---------|-----|
-| Enhanced analytics — four range endpoints on `AnalyticsController` (summary / daily / projects / tags; SQL-side user+range filter, in-memory duration sums, `TzOffsetMinutes` local-day bucketing, 422 range validation), new `/analytics` page (presets + validated custom range, trend chart vs `WorkdayHoursPerDay` target, project donut, per-tag bars), client `AnalyticsService` session cache with write-through invalidation handler, Dashboard retrofit (3 small requests replace load-all-tasks). Tech debt: CI re-enable, 422 integration tests, HTTP logging, Constants split, API versioning — see Tech debt table. Plus a `ProjectId` ownership security fix and a SQLite `DateTimeOffset` test-provider converter. | #48 |
+| Enhanced analytics — four range endpoints on `AnalyticsController` (summary / daily / projects / tags; SQL-side user+range filter, in-memory duration sums, `TzOffsetMinutes` local-day bucketing, 422 range validation), new `/analytics` page (presets + validated custom range, trend chart vs `WorkdayHoursPerDay` target, project donut, per-tag bars), client `AnalyticsService` session cache with write-through invalidation handler, Dashboard retrofit (3 small requests replace load-all-tasks). Tech debt: CI re-enable, 422 integration tests, HTTP logging, Constants split, API versioning — see Tech debt table. Plus a `ProjectId` ownership security fix and a SQLite `DateTimeOffset` test-provider converter. Review follow-ups (Copilot + `ef-repository-reviewer`): whitespace/trailing-space `ProjectId` normalization and nested `Project` DTO map ignore. | #48, follow-up #49 |
 
 ## Recently shipped (v2.2, 2026-06-12)
 

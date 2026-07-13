@@ -15,7 +15,9 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 - **Time tracker** with a real-time stopwatch, session-storage persistence across reload, and undo on delete.
 - **Calendar** — desktop week view with a current-time line, mobile day view with a 7-day strip selector. Click an empty cell to add, click an event to edit.
 - **Projects** with user-picked colors, monthly stats, and per-project sparklines.
+- **Tags** — user-scoped labels on tasks with a management page, inline tag picker in the task modals, and filter chips on the task list.
 - **Dashboard** — gradient hero stat card, top-project + last-month tiles, hand-built SVG bar chart and donut, recent activity list.
+- **Analytics** — dedicated page with date presets and a validated custom range: daily/weekly trend chart against your workday target, project donut, and per-tag breakdown, all served by range-scoped aggregate endpoints with client-side caching.
 - **Trash** — 30-day soft-delete recovery for projects and tasks, cascade-restore on Project, background hard-purge service.
 - **Search + filter** — `TrackedTask/search` (date range, project, name, task-count) and `Project/search` (name, min-task-count).
 - **Data export** — CSV and Excel exports for tasks, project summaries, and monthly analytics.
@@ -50,7 +52,7 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 
 ## Tech stack
 
-.NET 10 · Blazor WebAssembly (hosted) · EF Core 10 · SQL Server · Duende IdentityServer · Radzen.Blazor (dialogs/notifications only — design system is custom Aurora) · xUnit + Moq + EF InMemory.
+.NET 10 · Blazor WebAssembly (hosted) · EF Core 10 · SQL Server · Duende IdentityServer · Radzen.Blazor (dialogs/notifications only — design system is custom Aurora) · xUnit + Moq + bUnit (EF InMemory + SQLite test providers).
 
 ## Prerequisites
 
@@ -140,7 +142,8 @@ Timinute/
   Server/         ASP.NET Core Web API + Identity + IdentityServer
   Client/         Blazor WebAssembly SPA (Aurora design system)
   Shared/         DTOs shared between client and server
-  Server.Tests/   xUnit + Moq + EF InMemory
+  Server.Tests/   xUnit + Moq; EF InMemory + SQLite test providers
+  Client.Tests/   bUnit + xUnit + Moq
 docs/superpowers/
   specs/          Per-feature design specs
   plans/          Active plans
