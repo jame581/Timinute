@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-13 — v2.3 implemented (PR #48, review follow-ups PR #49): Enhanced analytics + tech-debt sweep complete._
+_Last reviewed: 2026-07-13 — v2.3 released on master (PR #50, tag `v2.3`): Enhanced analytics + tech-debt sweep, plus Duende 8 / Radzen 11 package updates._
 
 ## Current Feature Set
 
@@ -95,7 +95,7 @@ Status reviewed 2026-07-13.
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
 
-## Recently shipped (v2.3, PR #48)
+## Recently shipped (v2.3, 2026-07-13)
 
 | Feature | PRs |
 |---------|-----|
