@@ -117,12 +117,14 @@ builder.Services.AddControllers(options =>
 
 // Preparatory only (spec v2.3): every existing route keeps working as
 // implicit v1.0; no /v1/ URL segments because client + server ship together.
+// AddMvc() is required to attach versioning to MVC controllers — without it
+// the options above are registered but never enforced or reported.
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
-});
+}).AddMvc();
 
 // DI Configuration
 DependecyInjection();
