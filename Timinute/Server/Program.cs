@@ -2,6 +2,7 @@ using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -66,6 +67,17 @@ builder.Logging.AddConsole();
 builder.Services.AddRazorPages();
 
 builder.Services.AddResponseCaching();
+
+// Request/response line logging for production diagnostics. Off by default;
+// enable with HttpLogging__Enabled=true (Docker env-var friendly). Bodies and
+// auth/cookie headers are deliberately never logged.
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.RequestMethod
+                          | HttpLoggingFields.RequestPath
+                          | HttpLoggingFields.ResponseStatusCode
+                          | HttpLoggingFields.Duration;
+});
 
 builder.Services.AddControllers(options =>
 {
@@ -152,6 +164,11 @@ if (app.Configuration.GetValue("DatabaseMigrationOnStartup", false))
 }
 
 app.UseForwardedHeaders();
+
+if (app.Configuration.GetValue("HttpLogging:Enabled", false))
+{
+    app.UseHttpLogging();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
