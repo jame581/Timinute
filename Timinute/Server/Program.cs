@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
@@ -113,6 +114,15 @@ builder.Services.AddControllers(options =>
             };
         };
     });
+
+// Preparatory only (spec v2.3): every existing route keeps working as
+// implicit v1.0; no /v1/ URL segments because client + server ship together.
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
 
 // DI Configuration
 DependecyInjection();
