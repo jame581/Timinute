@@ -51,7 +51,9 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
     })
-    .AddPolicyScheme("ApplicationDefinedPolicy", "ApplicationDefinedPolicy", options =>
+    // displayName must stay null — schemes with a display name are listed by the
+    // Identity UI as external login providers ("or continue with" buttons).
+    .AddPolicyScheme("ApplicationDefinedPolicy", displayName: null, options =>
     {
         options.ForwardDefaultSelector = context =>
         {
