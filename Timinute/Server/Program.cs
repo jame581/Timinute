@@ -44,8 +44,8 @@ builder.Services.AddAuthentication(options =>
     })
     .AddJwtBearer(options =>
     {
-        options.Authority = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
-        options.Audience = "Timinute.ServerAPI";
+        options.Authority = builder.Configuration["IdentityServer:Authority"] ?? Constants.Api.DefaultAuthority;
+        options.Audience = Constants.Api.ResourceName;
         options.MapInboundClaims = false;
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
@@ -82,7 +82,7 @@ builder.Services.AddHttpLogging(options =>
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
-    options.CacheProfiles.Add("Default120", new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
+    options.CacheProfiles.Add(Constants.CacheProfiles.Default120, new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
 
 
 }).AddJsonOptions(options =>
@@ -244,7 +244,7 @@ void IdentitySetup()
         options.ClaimsIdentity.RoleClaimType = Constants.Claims.Role;
     });
 
-    var configuredUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+    var configuredUrl = builder.Configuration["IdentityServer:Authority"] ?? Constants.Api.DefaultAuthority;
     var authorityUri = new Uri(configuredUrl);
     var baseUrl = authorityUri.GetLeftPart(UriPartial.Authority);
 
@@ -263,13 +263,13 @@ void IdentitySetup()
         })
         .AddInMemoryApiScopes(new List<ApiScope>
         {
-            new ApiScope("Timinute.ServerAPI", "Timinute Server API")
+            new ApiScope(Constants.Api.ResourceName, "Timinute Server API")
         })
         .AddInMemoryApiResources(new List<ApiResource>
         {
-            new ApiResource("Timinute.ServerAPI", "Timinute Server API")
+            new ApiResource(Constants.Api.ResourceName, "Timinute Server API")
             {
-                Scopes = { "Timinute.ServerAPI" }
+                Scopes = { Constants.Api.ResourceName }
             }
         })
         .AddInMemoryClients(new List<Client>
@@ -281,7 +281,7 @@ void IdentitySetup()
                 RequirePkce = true,
                 RequireClientSecret = false,
                 AllowedCorsOrigins = { baseUrl },
-                AllowedScopes = { "openid", "profile", "Timinute.ServerAPI" },
+                AllowedScopes = { "openid", "profile", Constants.Api.ResourceName },
                 RedirectUris = { $"{baseUrl}/authentication/login-callback" },
                 PostLogoutRedirectUris = { $"{baseUrl}/authentication/logout-callback" },
             }

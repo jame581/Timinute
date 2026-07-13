@@ -14,7 +14,7 @@ namespace Timinute.Server.Controllers
 {
     [Authorize]
     [ApiController]
-    [ResponseCache(CacheProfileName = "Default120")]
+    [ResponseCache(CacheProfileName = Constants.CacheProfiles.Default120)]
     [Route("[controller]")]
     public class AnalyticsController : ControllerBase
     {
