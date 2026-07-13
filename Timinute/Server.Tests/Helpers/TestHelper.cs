@@ -61,6 +61,11 @@ namespace Timinute.Server.Tests.Helpers
         /// </para>
         /// The caller owns <paramref name="openConnection"/> and must keep it
         /// open for the database's lifetime, then dispose it.
+        /// <para>
+        /// SQLite stores <see cref="DateTimeOffset"/> via a binary converter whose
+        /// ordering assumes all-UTC values — seed test data with <see cref="TimeSpan.Zero"/>
+        /// offsets only.
+        /// </para>
         /// </summary>
         public static async Task<ApplicationDbContext> GetSqliteApplicationDbContext(SqliteConnection openConnection)
         {

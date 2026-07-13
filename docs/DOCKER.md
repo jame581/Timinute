@@ -45,6 +45,7 @@ All settings flow through ASP.NET Core's hierarchical configuration — environm
 | `ASPNETCORE_URLS`                            | `http://+:8080`           | Listen address inside the container                       |
 | `TrashRetention__Days`                       | `30`                      | Soft-delete retention days before hard-purge              |
 | `TrashRetention__PurgeIntervalHours`         | `24`                      | How often the background purge service runs               |
+| `HttpLogging__Enabled`                       | `false`                   | Log one line per request (method, path, status, duration; never headers/bodies). Diagnostic only — when enabled it also logs every static-asset request, which is noisy on cold WASM loads. |
 
 ### `IdentityServer__Authority` — the most important setting
 

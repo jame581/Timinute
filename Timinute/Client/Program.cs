@@ -10,7 +10,8 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddHttpClient("Timinute.ServerAPI", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
-    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
+    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>()
+    .AddHttpMessageHandler<Timinute.Client.Services.AnalyticsCacheInvalidationHandler>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddRadzenComponents();
@@ -26,6 +27,8 @@ builder.Services.AddScoped<Timinute.Client.Services.ViewportService>();
 builder.Services.AddScoped<Timinute.Client.Services.MobileSheetService>();
 builder.Services.AddScoped<Timinute.Client.Services.UserProfileService>();
 builder.Services.AddScoped<Timinute.Client.Services.ThemeService>();
+builder.Services.AddSingleton<Timinute.Client.Services.AnalyticsService>();
+builder.Services.AddTransient<Timinute.Client.Services.AnalyticsCacheInvalidationHandler>();
 
 builder.Services.AddOidcAuthentication(options =>
 {

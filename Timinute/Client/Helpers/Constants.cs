@@ -1,4 +1,4 @@
-﻿using Radzen;
+using Radzen;
 
 namespace Timinute.Client.Helpers
 {
@@ -107,6 +107,14 @@ namespace Timinute.Client.Helpers
             public static class Analytics
             {
                 public const string Api = "Analytics";
+
+                public const string Summary = $"{Api}/summary";
+
+                public const string Daily = $"{Api}/daily";
+
+                public const string Projects = $"{Api}/projects";
+
+                public const string TagsBreakdown = $"{Api}/tags";
 
                 public const string GetProjectWorkTime = $"{Api}/ProjectWorkTime";
 

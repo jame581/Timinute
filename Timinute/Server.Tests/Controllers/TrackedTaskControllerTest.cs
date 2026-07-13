@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -17,6 +17,7 @@ using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
+using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
 using Timinute.Shared.Dtos.Trash;
 using Xunit;
@@ -532,6 +533,211 @@ namespace Timinute.Server.Tests.Controllers
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
             Assert.NotNull(notFoundResult);
             Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Foreign_ProjectId_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateForeignProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Sneaky Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = "ProjectId2" // belongs to ApplicationUser2
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.Name == "Sneaky Task");
+            Assert.Null(persisted);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_With_Foreign_ProjectId_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateForeignProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1", // owned by ApplicationUser1
+                Name = "Task 1",
+                StartDate = DateTimeOffset.UtcNow,
+                ProjectId = "ProjectId2" // belongs to ApplicationUser2
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(persisted);
+            Assert.Equal("ProjectId1", persisted!.ProjectId); // unchanged, still owned project
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Own_ProjectId_Succeeds_Test()
+        {
+            TrackedTaskController controller = await CreateController(); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Owned Project Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = "ProjectId1" // belongs to ApplicationUser1
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+
+            var created = okResult!.Value as TrackedTaskDto;
+            Assert.NotNull(created);
+            Assert.Equal("ProjectId1", created!.ProjectId);
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Whitespace_ProjectId_Persists_Null_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateWhitespaceProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Whitespace Project Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = "   " // whitespace must not reach the ProjectId FK column
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.Name == "Whitespace Project Task");
+            Assert.NotNull(persisted);
+            Assert.Null(persisted!.ProjectId);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_With_Whitespace_ProjectId_Persists_Null_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateWhitespaceProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1", // owned by ApplicationUser1, currently on ProjectId1
+                Name = "Task 1",
+                StartDate = DateTimeOffset.UtcNow,
+                ProjectId = "   " // whitespace must clear the project, not hit the FK
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(persisted);
+            Assert.Null(persisted!.ProjectId);
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Trailing_Space_ProjectId_Persists_Trimmed_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateTrailingSpaceProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Trailing Space Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = "ProjectId1 " // SQL Server trailing-space padding would match; must be trimmed before persisting
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.Name == "Trailing Space Task");
+            Assert.NotNull(persisted);
+            Assert.Equal("ProjectId1", persisted!.ProjectId);
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Nested_Project_Dto_Is_Ignored_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateNestedProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Nested Project Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = null,
+                Project = new ProjectDto { ProjectId = "InjectedProjectId", Name = "Injected Project" }
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.Name == "Nested Project Task");
+            Assert.NotNull(persisted);
+            Assert.Null(persisted!.ProjectId);
+            Assert.False(await applicationDbContext.Projects.AnyAsync(p => p.ProjectId == "InjectedProjectId"));
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_With_Nested_Project_Dto_Is_Ignored_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateNestedProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1", // owned by ApplicationUser1, currently on ProjectId1
+                Name = "Task 1",
+                StartDate = DateTimeOffset.UtcNow,
+                ProjectId = "ProjectId1",
+                Project = new ProjectDto { ProjectId = "InjectedProjectId", Name = "Injected Project" }
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(persisted);
+            Assert.Equal("ProjectId1", persisted!.ProjectId);
+            Assert.False(await applicationDbContext.Projects.AnyAsync(p => p.ProjectId == "InjectedProjectId"));
         }
 
         [Fact]
