@@ -249,6 +249,14 @@
         Projects = projectsTask.Result ?? new();
         TagRows = tagsTask.Result ?? new();
 
+        // Keep the chart target consistent with the "vs target" tile: both must
+        // derive from the server-computed TargetDuration — the profile fetch can
+        // fail or lag behind a preference change.
+        if (Summary is { WeekdayCount: > 0 })
+        {
+            WorkdayHoursPerDay = (decimal)(Summary.TargetDuration.TotalHours / Summary.WeekdayCount);
+        }
+
         ComputeTrend(from, to);
         DonutSlices = Projects
             .Select(p => new ProjectDonut.ProjectSlice(p.Name, ColorForProject(p), p.TotalDuration.TotalHours))
@@ -308,13 +316,19 @@
 
     private async Task OnCustomFromChanged(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var d)) { CustomFrom = d; await LoadAsync(); }
+        if (TryParseIsoDate(e.Value?.ToString(), out var d)) { CustomFrom = d; await LoadAsync(); }
     }
 
     private async Task OnCustomToChanged(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var d)) { CustomTo = d; await LoadAsync(); }
+        if (TryParseIsoDate(e.Value?.ToString(), out var d)) { CustomTo = d; await LoadAsync(); }
     }
+
+    // <input type="date"> always emits ISO yyyy-MM-dd — parse culture-invariantly
+    // so locales with other date orders can't misparse or reject it.
+    private static bool TryParseIsoDate(string? value, out DateTime date)
+        => DateTime.TryParseExact(value, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out date);
 
     private static string PresetLabel(RangePreset p) => p switch
     {
