@@ -1,6 +1,9 @@
 /* Aurora design tokens — light theme is the default. Dark tokens defined but no toggle in v1. */
 
 :root {
+    /* Render native widgets (select popups, date pickers, scrollbars) to match the theme. */
+    color-scheme: light;
+
     /* Surfaces */
     --bg: #F5F2EC;
     --surface: #FFFFFF;
@@ -61,6 +64,8 @@
 }
 
 [data-theme="dark"] {
+    color-scheme: dark;
+
     --bg: #0F0E1A;
     --surface: #171627;
     --surface-2: #1E1D31;
