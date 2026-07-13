@@ -147,6 +147,10 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
+            // Whitespace means "no project"; trim otherwise — SQL Server's trailing-space padding would
+            // let "ProjectId1 " pass the ownership check and persist untrimmed in the FK column.
+            trackedTask.ProjectId = string.IsNullOrWhiteSpace(trackedTask.ProjectId) ? null : trackedTask.ProjectId.Trim();
+
             if (!await ProjectBelongsToUserAsync(userId, trackedTask.ProjectId))
             {
                 return NotFound("Project not found!");
@@ -281,6 +285,10 @@ namespace Timinute.Server.Controllers
                 logger.LogError("Tracked task was not found");
                 return NotFound("Tracked task not found!");
             }
+
+            // Whitespace means "no project"; trim otherwise — SQL Server's trailing-space padding would
+            // let "ProjectId1 " pass the ownership check and persist untrimmed in the FK column.
+            trackedTask.ProjectId = string.IsNullOrWhiteSpace(trackedTask.ProjectId) ? null : trackedTask.ProjectId.Trim();
 
             if (!await ProjectBelongsToUserAsync(userId, trackedTask.ProjectId))
             {

@@ -24,7 +24,7 @@ namespace Timinute.Client.Services
 
         public event Action? Invalidated;
 
-        // Cache dictionary is small (bounded below) but never allowed to grow
+        // Cache dictionary is bounded above by MaxCacheEntries so it never grows
         // unbounded across a long session.
         private const int MaxCacheEntries = 50;
 
