@@ -1,0 +1,46 @@
+@code {
+    public record DayBar(string Label, double Hours);
+
+    [Parameter] public IList<DayBar> Data { get; set; } = new List<DayBar>();
+    [Parameter] public double TargetHours { get; set; }
+
+    private double Max => System.Math.Max(1, System.Math.Max(
+        Data.Count == 0 ? 0 : Data.Max(d => d.Hours), TargetHours));
+    private double TargetPct => TargetHours <= 0 ? 0 : (TargetHours / Max) * 100;
+    // Thin the x-axis labels when the range is long.
+    private int LabelStep => Data.Count <= 14 ? 1 : (int)System.Math.Ceiling(Data.Count / 12.0);
+    private const int PlotHeight = 220;
+}
+
+<div class="aurora-trend-chart">
+    <div class="aurora-trend-chart__plot" style="height: @(PlotHeight)px;">
+        <div class="aurora-trend-chart__gridlines">
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="aurora-trend-chart__gridline" style="bottom: @((i * 25))%;"></div>
+            }
+        </div>
+        @if (TargetHours > 0)
+        {
+            <div class="aurora-trend-chart__target" style="bottom: @(TargetPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
+                <span class="aurora-trend-chart__target-label">@($"{TargetHours:0.#}h target")</span>
+            </div>
+        }
+        <div class="aurora-trend-chart__bars">
+            @foreach (var d in Data)
+            {
+                var heightPct = (d.Hours / Max) * 100;
+                <div class="aurora-trend-chart__col" title="@($"{d.Label}: {d.Hours:0.#}h")">
+                    <div class="aurora-trend-chart__bar @(d.Hours >= TargetHours && TargetHours > 0 ? "is-over-target" : "")"
+                         style="height: @(heightPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="aurora-trend-chart__labels">
+        @for (int i = 0; i < Data.Count; i++)
+        {
+            <div class="aurora-trend-chart__label">@(i % LabelStep == 0 ? Data[i].Label : "")</div>
+        }
+    </div>
+</div>
