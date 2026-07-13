@@ -15,6 +15,9 @@ namespace Timinute.Shared.Dtos.Analytics
 
         // Client's local UTC offset, used to group per-day buckets by the
         // user's calendar day instead of the UTC day. ±14 h covers all zones.
+        // A single fixed offset is applied across the whole range, so day
+        // bucketing near midnight can shift by an hour across a DST transition
+        // that falls inside the range — accepted design tradeoff.
         [Range(-840, 840, ErrorMessage = "TzOffsetMinutes must be between -840 and 840.")]
         public int TzOffsetMinutes { get; set; }
 

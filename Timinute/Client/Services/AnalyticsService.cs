@@ -24,17 +24,21 @@ namespace Timinute.Client.Services
 
         public event Action? Invalidated;
 
+        // Cache dictionary is small (bounded below) but never allowed to grow
+        // unbounded across a long session.
+        private const int MaxCacheEntries = 50;
+
         public Task<AnalyticsSummaryDto?> GetSummaryAsync(DateTimeOffset from, DateTimeOffset to)
-            => GetCachedAsync<AnalyticsSummaryDto>("summary", from, to);
+            => GetCachedAsync<AnalyticsSummaryDto>(Constants.API.Analytics.Summary, from, to);
 
         public Task<List<DailyAnalyticsDto>?> GetDailyAsync(DateTimeOffset from, DateTimeOffset to)
-            => GetCachedAsync<List<DailyAnalyticsDto>>("daily", from, to);
+            => GetCachedAsync<List<DailyAnalyticsDto>>(Constants.API.Analytics.Daily, from, to);
 
         public Task<List<ProjectAnalyticsDto>?> GetProjectsAsync(DateTimeOffset from, DateTimeOffset to)
-            => GetCachedAsync<List<ProjectAnalyticsDto>>("projects", from, to);
+            => GetCachedAsync<List<ProjectAnalyticsDto>>(Constants.API.Analytics.Projects, from, to);
 
         public Task<List<TagAnalyticsDto>?> GetTagsAsync(DateTimeOffset from, DateTimeOffset to)
-            => GetCachedAsync<List<TagAnalyticsDto>>("tags", from, to);
+            => GetCachedAsync<List<TagAnalyticsDto>>(Constants.API.Analytics.TagsBreakdown, from, to);
 
         public void Invalidate()
         {
@@ -42,12 +46,23 @@ namespace Timinute.Client.Services
             Invalidated?.Invoke();
         }
 
+        // Open-ended ranges pass DateTimeOffset.Now as `to`, which carries
+        // sub-second precision that changes on every call — with tick-precision
+        // "o" formatting in the cache key, that meant every call was a guaranteed
+        // cache miss. Truncating both ends to whole minutes keeps the cache
+        // effective (repeated calls within the same minute hit) while staying
+        // fresh enough for analytics data that doesn't need finer granularity.
+        private static DateTimeOffset TruncateToMinute(DateTimeOffset v)
+            => new DateTimeOffset(v.Year, v.Month, v.Day, v.Hour, v.Minute, 0, v.Offset);
+
         private async Task<T?> GetCachedAsync<T>(string endpoint, DateTimeOffset from, DateTimeOffset to) where T : class
         {
             var tz = (int)DateTimeOffset.Now.Offset.TotalMinutes;
-            var url = $"{Constants.API.Analytics.Api}/{endpoint}" +
-                      $"?From={Uri.EscapeDataString(from.ToString("o"))}" +
-                      $"&To={Uri.EscapeDataString(to.ToString("o"))}" +
+            var truncatedFrom = TruncateToMinute(from);
+            var truncatedTo = TruncateToMinute(to);
+            var url = $"{endpoint}" +
+                      $"?From={Uri.EscapeDataString(truncatedFrom.ToString("o"))}" +
+                      $"&To={Uri.EscapeDataString(truncatedTo.ToString("o"))}" +
                       $"&TzOffsetMinutes={tz}";
 
             if (cache.TryGetValue(url, out var hit))
@@ -61,6 +76,13 @@ namespace Timinute.Client.Services
                 var result = await client.GetFromJsonAsync<T>(url);
                 if (result != null)
                 {
+                    // Belt-and-braces: this cache is meant to stay small (per-session,
+                    // a handful of distinct ranges); if something is churning it up,
+                    // clear rather than let it grow unbounded.
+                    if (cache.Count >= MaxCacheEntries)
+                    {
+                        cache.Clear();
+                    }
                     cache[url] = result;
                 }
                 return result;

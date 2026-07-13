@@ -48,6 +48,21 @@ namespace Timinute.Client.Tests.Services
         }
 
         [Fact]
+        public async Task Same_Minute_Different_Seconds_Served_From_Cache()
+        {
+            // `to` is typically DateTimeOffset.Now, which changes every call at
+            // tick precision — the cache key must truncate to the minute so
+            // near-identical open-ended ranges still hit.
+            var service = CreateService(_ => Task.FromResult(OkJson(new AnalyticsSummaryDto())), out var handler);
+            var baseTo = new DateTimeOffset(2026, 7, 12, 10, 30, 0, TimeSpan.Zero);
+
+            await service.GetSummaryAsync(From, baseTo);
+            await service.GetSummaryAsync(From, baseTo.AddSeconds(10));
+
+            Assert.Equal(1, handler.CallCount);
+        }
+
+        [Fact]
         public async Task Different_Range_Refetches()
         {
             var service = CreateService(_ => Task.FromResult(OkJson(new AnalyticsSummaryDto())), out var handler);

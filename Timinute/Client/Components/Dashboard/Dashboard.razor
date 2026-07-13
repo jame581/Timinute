@@ -165,8 +165,14 @@
 
         try
         {
-            DailyBuckets = await Analytics.GetDailyAsync(sixMonthsBack, now) ?? new();
-            MonthProjects = await Analytics.GetProjectsAsync(startOfMonth, now) ?? new();
+            // Fire both range calls together and await as a group — they're
+            // independent reads, no need to serialize them.
+            var dailyTask = Analytics.GetDailyAsync(sixMonthsBack, now);
+            var projectsTask = Analytics.GetProjectsAsync(startOfMonth, now);
+            await Task.WhenAll(dailyTask, projectsTask);
+
+            DailyBuckets = dailyTask.Result ?? new();
+            MonthProjects = projectsTask.Result ?? new();
         }
         catch
         {
@@ -258,11 +264,18 @@
     private void ComputeDonut()
     {
         DonutSlices = MonthProjects
-            .Select(p => new ProjectDonut.ProjectSlice(p.Name, p.Color ?? "#94A3B8", p.TotalDuration.TotalHours))
+            .Select(p => new ProjectDonut.ProjectSlice(p.Name, ColorForProject(p), p.TotalDuration.TotalHours))
             .Where(s => s.Hours > 0)
             .OrderByDescending(s => s.Hours)
             .ToList();
     }
+
+    // "_none" is the synthetic bucket for tasks without a project — always
+    // the neutral gray. Real, colorless projects fall back to the palette via
+    // ColorService (hashed by ProjectId) instead of a flat gray, so distinct
+    // projects stay visually distinguishable. Must match AnalyticsPage.
+    private string ColorForProject(ProjectAnalyticsDto p)
+        => p.ProjectId == "_none" ? "#94A3B8" : (p.Color ?? ColorService.GetColorById(p.ProjectId));
 
     private void ComputeTopProject()
     {
