@@ -1,10 +1,13 @@
 @attribute [Authorize]
+@using System.Net.Http.Json
 @using Timinute.Shared.Dtos.TrackedTask
 @using Timinute.Shared.Dtos.Dashboard
 @using Timinute.Shared.Dtos.Project
+@using Timinute.Shared.Dtos.Analytics
 @inject IHttpClientFactory ClientFactory
 @inject Timinute.Client.Services.UserProfileService UserProfileService
 @inject Timinute.Client.Services.ProjectColorService ColorService
+@inject Timinute.Client.Services.AnalyticsService Analytics
 
 <div class="aurora-dashboard">
     <!-- Row 1: Hero stats -->
@@ -130,7 +133,8 @@
     private string WeeklyGoal => $"{WeeklyGoalHours:0.#}h";
     private string TodayDisplay => $"{TodayHours:0.#}h / {WorkdayHoursPerDay:0.#}h target";
 
-    private List<TrackedTaskDto> AllUserTasks = new();
+    private List<DailyAnalyticsDto> DailyBuckets = new();      // last 6 calendar months, local days
+    private List<ProjectAnalyticsDto> MonthProjects = new();   // current month
     private List<TrackedTaskDto> RecentTasks = new();
     private List<WeekTimeBarChart.MonthlyHours> MonthlyData = new();
     private List<ProjectDonut.ProjectSlice> DonutSlices = new();
@@ -155,13 +159,29 @@
     {
         var client = ClientFactory.CreateClient(Timinute.Client.Helpers.Constants.API.ClientName);
 
+        var now = DateTimeOffset.Now;
+        var startOfMonth = new DateTimeOffset(new DateTime(now.Year, now.Month, 1), now.Offset);
+        var sixMonthsBack = startOfMonth.AddMonths(-5);
+
         try
         {
-            AllUserTasks = await client.GetAllPagedAsync<TrackedTaskDto>(Timinute.Client.Helpers.Constants.API.TrackedTask.Get);
+            DailyBuckets = await Analytics.GetDailyAsync(sixMonthsBack, now) ?? new();
+            MonthProjects = await Analytics.GetProjectsAsync(startOfMonth, now) ?? new();
         }
         catch
         {
-            AllUserTasks = new();
+            DailyBuckets = new();
+            MonthProjects = new();
+        }
+
+        try
+        {
+            RecentTasks = await client.GetFromJsonAsync<List<TrackedTaskDto>>(
+                $"{Timinute.Client.Helpers.Constants.API.TrackedTask.Get}?PageNumber=1&PageSize=5") ?? new();
+        }
+        catch
+        {
+            RecentTasks = new();
         }
 
         try
@@ -184,39 +204,28 @@
         ComputeDonut();
         ComputeTopProject();
         ComputeLastMonth();
-        RecentTasks = AllUserTasks
-            .OrderByDescending(t => t.StartDate)
-            .Take(5)
-            .ToList();
     }
+
+    private double HoursBetween(DateTime fromInclusive, DateTime toInclusive)
+        => DailyBuckets
+            .Where(d => d.Date.Date >= fromInclusive && d.Date.Date <= toInclusive)
+            .Sum(d => d.TotalDuration.TotalHours);
 
     private void ComputeTodayStats()
     {
-        // Attribution by start time: a session that began yesterday at 23:30
-        // and ended after midnight is *not* counted toward today, even though
-        // most of its duration was today. Conventional choice for time
-        // trackers and matches how the weekly progress bar attributes too.
-        var todayLocal = DateTimeOffset.Now.Date;
-        var todayHours = AllUserTasks
-            .Where(t => t.StartDate.LocalDateTime.Date == todayLocal)
-            .Sum(t => t.Duration.TotalHours);
-        TodayHours = (decimal)todayHours;
+        // Server already attributed sessions to local days via TzOffsetMinutes.
+        var today = DateTimeOffset.Now.Date;
+        TodayHours = (decimal)HoursBetween(today, today);
     }
 
     private void ComputeWeekStats()
     {
         var now = DateTimeOffset.Now;
         var startOfWeek = StartOfWeek(now.Date);
-        var startOfWeekOffset = new DateTimeOffset(startOfWeek, now.Offset);
-        var startOfPrevWeek = startOfWeekOffset.AddDays(-7);
+        var startOfPrevWeek = startOfWeek.AddDays(-7);
 
-        var thisWeekHours = AllUserTasks
-            .Where(t => t.StartDate >= startOfWeekOffset && t.StartDate <= now)
-            .Sum(t => t.Duration.TotalHours);
-
-        var lastWeekHours = AllUserTasks
-            .Where(t => t.StartDate >= startOfPrevWeek && t.StartDate < startOfWeekOffset)
-            .Sum(t => t.Duration.TotalHours);
+        var thisWeekHours = HoursBetween(startOfWeek, now.Date);
+        var lastWeekHours = HoursBetween(startOfPrevWeek, startOfWeek.AddDays(-1));
 
         WeekHoursWhole = (int)System.Math.Floor(thisWeekHours);
         WeekMinutes = (int)System.Math.Round((thisWeekHours - WeekHoursWhole) * 60);
@@ -226,7 +235,7 @@
             WeekDeltaPercent = ((thisWeekHours - lastWeekHours) / lastWeekHours) * 100;
         }
 
-        DaysLeft = System.Math.Max(0, 7 - ((int)(now - startOfWeekOffset).TotalDays + 1));
+        DaysLeft = System.Math.Max(0, 7 - ((int)(now.Date - startOfWeek).TotalDays + 1));
         ProgressPct = (double)System.Math.Clamp(((decimal)thisWeekHours / WeeklyGoalHours) * 100m, 0m, 100m);
     }
 
@@ -237,36 +246,22 @@
         for (int i = 5; i >= 0; i--)
         {
             var month = now.AddMonths(-i);
-            var startOfMonth = new DateTimeOffset(month.Year, month.Month, 1, 0, 0, 0, month.Offset);
-            var startOfNextMonth = startOfMonth.AddMonths(1);
-
-            var hours = AllUserTasks
-                .Where(t => t.StartDate >= startOfMonth && t.StartDate < startOfNextMonth)
-                .Sum(t => t.Duration.TotalHours);
-
-            data.Add(new WeekTimeBarChart.MonthlyHours(month.ToString("MMM", System.Globalization.CultureInfo.InvariantCulture), hours));
+            var first = new DateTime(month.Year, month.Month, 1);
+            var last = first.AddMonths(1).AddDays(-1);
+            data.Add(new WeekTimeBarChart.MonthlyHours(
+                month.ToString("MMM", System.Globalization.CultureInfo.InvariantCulture),
+                HoursBetween(first, last)));
         }
         MonthlyData = data;
     }
 
     private void ComputeDonut()
     {
-        var now = DateTimeOffset.Now;
-        var startOfMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset);
-        var startOfNextMonth = startOfMonth.AddMonths(1);
-
-        var byProject = AllUserTasks
-            .Where(t => t.StartDate >= startOfMonth && t.StartDate < startOfNextMonth)
-            .GroupBy(t => t.ProjectId ?? "_none")
-            .Select(g => new ProjectDonut.ProjectSlice(
-                g.First().Project?.Name ?? "No project",
-                ColorService.GetColor(g.First().Project),
-                g.Sum(t => t.Duration.TotalHours)))
+        DonutSlices = MonthProjects
+            .Select(p => new ProjectDonut.ProjectSlice(p.Name, p.Color ?? "#94A3B8", p.TotalDuration.TotalHours))
             .Where(s => s.Hours > 0)
             .OrderByDescending(s => s.Hours)
             .ToList();
-
-        DonutSlices = byProject;
     }
 
     private void ComputeTopProject()
@@ -293,17 +288,12 @@
     private void ComputeLastMonth()
     {
         var now = DateTimeOffset.Now;
-        var startOfThisMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset);
+        var startOfThisMonth = new DateTime(now.Year, now.Month, 1);
         var startOfLastMonth = startOfThisMonth.AddMonths(-1);
         var startOfTwoBack = startOfThisMonth.AddMonths(-2);
 
-        var lastMonthHours = AllUserTasks
-            .Where(t => t.StartDate >= startOfLastMonth && t.StartDate < startOfThisMonth)
-            .Sum(t => t.Duration.TotalHours);
-
-        var twoBackHours = AllUserTasks
-            .Where(t => t.StartDate >= startOfTwoBack && t.StartDate < startOfLastMonth)
-            .Sum(t => t.Duration.TotalHours);
+        var lastMonthHours = HoursBetween(startOfLastMonth, startOfThisMonth.AddDays(-1));
+        var twoBackHours = HoursBetween(startOfTwoBack, startOfLastMonth.AddDays(-1));
 
         LastMonthHoursWhole = (int)System.Math.Floor(lastMonthHours);
         LastMonthMinutes = (int)System.Math.Round((lastMonthHours - LastMonthHoursWhole) * 60);
