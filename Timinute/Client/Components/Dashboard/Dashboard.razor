@@ -334,10 +334,12 @@
 
     private static string FormatRelativeTime(DateTimeOffset dt)
     {
+        // Server timestamps are UTC-normalized — shift to the browser's zone before rendering.
+        var local = dt.ToLocalTime();
         var now = DateTimeOffset.Now;
-        if (dt.Date == now.Date) return $"Today · {dt:HH:mm}";
-        if (dt.Date == now.Date.AddDays(-1)) return $"Yesterday · {dt:HH:mm}";
-        if ((now - dt).TotalDays < 7) return $"{dt:dddd} · {dt:HH:mm}";
-        return dt.ToString("MMM d · HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+        if (local.Date == now.Date) return $"Today · {local:HH:mm}";
+        if (local.Date == now.Date.AddDays(-1)) return $"Yesterday · {local:HH:mm}";
+        if ((now - local).TotalDays < 7) return $"{local:dddd} · {local:HH:mm}";
+        return local.ToString("MMM d · HH:mm", System.Globalization.CultureInfo.InvariantCulture);
     }
 }
