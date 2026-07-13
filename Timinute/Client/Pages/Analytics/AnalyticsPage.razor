@@ -1,0 +1,334 @@
+@page "/analytics"
+@attribute [Authorize]
+
+@using Timinute.Shared.Dtos.Analytics
+@using Timinute.Client.Components.Analytics
+@using Timinute.Client.Components.Dashboard
+
+@inject Timinute.Client.Services.AnalyticsService Analytics
+@inject Timinute.Client.Services.UserProfileService UserProfile
+@inject Timinute.Client.Services.ProjectColorService ColorService
+
+<PageTitle>Analytics</PageTitle>
+
+<div class="aurora-analytics">
+    <div class="aurora-analytics__header">
+        <h2 class="aurora-analytics__title">Analytics</h2>
+        <div class="aurora-analytics__presets" role="group" aria-label="Date range">
+            @foreach (var preset in Presets)
+            {
+                <button type="button"
+                        class="aurora-analytics__preset @(ActivePreset == preset ? "is-active" : "")"
+                        @onclick="() => SelectPreset(preset)">
+                    @PresetLabel(preset)
+                </button>
+            }
+        </div>
+        @if (ActivePreset == RangePreset.Custom)
+        {
+            <div class="aurora-analytics__custom">
+                <input type="date" value="@CustomFrom.ToString("yyyy-MM-dd")" @onchange="OnCustomFromChanged" />
+                <span>–</span>
+                <input type="date" value="@CustomTo.ToString("yyyy-MM-dd")" @onchange="OnCustomToChanged" />
+            </div>
+        }
+    </div>
+    @if (ActivePreset == RangePreset.Custom && CustomRangeError != null)
+    {
+        <div class="aurora-analytics__custom-error">@CustomRangeError</div>
+    }
+
+    @if (ActivePreset == RangePreset.Custom && CustomRangeError != null)
+    {
+        <AuroraCard>
+            <div class="aurora-analytics__empty">Fix the custom date range above to view analytics.</div>
+        </AuroraCard>
+    }
+    else if (IsLoading)
+    {
+        <div class="aurora-analytics__tiles">
+            @for (int i = 0; i < 5; i++)
+            {
+                <AuroraCard><div class="aurora-analytics__skeleton"></div></AuroraCard>
+            }
+        </div>
+    }
+    else if (Summary == null || Summary.TaskCount == 0)
+    {
+        <AuroraCard>
+            <div class="aurora-analytics__empty">No tracked time in this range.</div>
+        </AuroraCard>
+    }
+    else
+    {
+        <div class="aurora-analytics__tiles">
+            <AuroraCard>
+                <div class="aurora-stat-card__label">Total tracked</div>
+                <div class="aurora-stat-card__big">@FormatHours(Summary.TotalDuration)</div>
+            </AuroraCard>
+            <AuroraCard>
+                <div class="aurora-stat-card__label">Tasks</div>
+                <div class="aurora-stat-card__big">@Summary.TaskCount</div>
+            </AuroraCard>
+            <AuroraCard>
+                <div class="aurora-stat-card__label">Active days</div>
+                <div class="aurora-stat-card__big">@Summary.ActiveDays</div>
+            </AuroraCard>
+            <AuroraCard>
+                <div class="aurora-stat-card__label">Avg / active day</div>
+                <div class="aurora-stat-card__big">@FormatHours(Summary.AveragePerActiveDay)</div>
+            </AuroraCard>
+            <AuroraCard>
+                <div class="aurora-stat-card__label">vs target</div>
+                <div class="aurora-stat-card__big">@TargetPercent%</div>
+                <div class="aurora-stat-card__sub">of @FormatHours(Summary.TargetDuration) (@Summary.WeekdayCount workdays)</div>
+            </AuroraCard>
+        </div>
+
+        <AuroraCard>
+            <div class="aurora-chart-header">
+                <div>
+                    <div class="aurora-chart-header__title">@(UseWeeklyBuckets ? "Weekly trend" : "Daily trend")</div>
+                    <div class="aurora-chart-header__sub">@RangeLabel</div>
+                </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <DailyTrendChart Data="@TrendBars" TargetHours="@TrendTargetHours" />
+            </div>
+        </AuroraCard>
+
+        <div class="aurora-analytics__breakdowns">
+            <AuroraCard>
+                <div class="aurora-chart-header__title">Time per project</div>
+                <div style="margin-top: 16px;">
+                    <ProjectDonut Slices="@DonutSlices" />
+                </div>
+            </AuroraCard>
+
+            <AuroraCard>
+                <div class="aurora-chart-header__title">Time per tag</div>
+                <div class="aurora-analytics__tagbars">
+                    @foreach (var tag in TagRows)
+                    {
+                        var pct = MaxTagHours <= 0 ? 0 : tag.TotalDuration.TotalHours / MaxTagHours * 100;
+                        <div class="aurora-analytics__tagrow">
+                            <span class="aurora-analytics__tagname">
+                                <span class="aurora-analytics__tagdot" style="background: @(tag.Color ?? "var(--text-mu)");"></span>
+                                @tag.Name
+                            </span>
+                            <div class="aurora-analytics__tagbar-track">
+                                <div class="aurora-analytics__tagbar" style="width: @(pct.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%; background: @(tag.Color ?? "var(--text-mu)");"></div>
+                            </div>
+                            <span class="aurora-analytics__taghours aurora-mono">@FormatHours(tag.TotalDuration)</span>
+                        </div>
+                    }
+                </div>
+            </AuroraCard>
+        </div>
+    }
+</div>
+
+@code {
+    private enum RangePreset { ThisWeek, LastWeek, ThisMonth, Last30Days, ThisYear, Custom }
+    private static readonly RangePreset[] Presets =
+        { RangePreset.ThisWeek, RangePreset.LastWeek, RangePreset.ThisMonth, RangePreset.Last30Days, RangePreset.ThisYear, RangePreset.Custom };
+
+    private RangePreset ActivePreset = RangePreset.ThisWeek;
+    private DateTime CustomFrom = DateTime.Today.AddDays(-30);
+    private DateTime CustomTo = DateTime.Today;
+
+    private bool IsLoading = true;
+    private string? CustomRangeError;
+    private AnalyticsSummaryDto? Summary;
+    private List<DailyAnalyticsDto> Daily = new();
+    private List<ProjectAnalyticsDto> Projects = new();
+    private List<TagAnalyticsDto> TagRows = new();
+    private decimal WorkdayHoursPerDay = 8.0m;
+
+    private List<DailyTrendChart.DayBar> TrendBars = new();
+    private List<ProjectDonut.ProjectSlice> DonutSlices = new();
+    private bool UseWeeklyBuckets;
+    private double TrendTargetHours;
+    private double MaxTagHours;
+    private string RangeLabel = "";
+
+    private int TargetPercent => Summary == null || Summary.TargetDuration <= TimeSpan.Zero
+        ? 0
+        : (int)System.Math.Round(Summary.TotalDuration.TotalHours / Summary.TargetDuration.TotalHours * 100);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var me = await UserProfile.GetCurrentAsync();
+            if (me?.Preferences != null) WorkdayHoursPerDay = me.Preferences.WorkdayHoursPerDay;
+        }
+        catch { /* keep 8.0 fallback */ }
+
+        await LoadAsync();
+    }
+
+    private (DateTimeOffset From, DateTimeOffset To) ResolveRange()
+    {
+        var now = DateTimeOffset.Now;
+        var today = now.Date;
+        // ISO week — Monday start, same convention as the Dashboard.
+        int diff = (7 + (int)today.DayOfWeek - (int)DayOfWeek.Monday) % 7;
+        var weekStart = today.AddDays(-diff);
+
+        return ActivePreset switch
+        {
+            RangePreset.ThisWeek => (new DateTimeOffset(weekStart, now.Offset), now),
+            RangePreset.LastWeek => (new DateTimeOffset(weekStart.AddDays(-7), now.Offset),
+                                     new DateTimeOffset(weekStart, now.Offset).AddSeconds(-1)),
+            RangePreset.ThisMonth => (new DateTimeOffset(new DateTime(today.Year, today.Month, 1), now.Offset), now),
+            RangePreset.Last30Days => (new DateTimeOffset(today.AddDays(-29), now.Offset), now),
+            RangePreset.ThisYear => (new DateTimeOffset(new DateTime(today.Year, 1, 1), now.Offset), now),
+            _ => (new DateTimeOffset(CustomFrom, now.Offset),
+                  new DateTimeOffset(CustomTo, now.Offset).AddDays(1).AddSeconds(-1)),
+        };
+    }
+
+    // Custom-range guard: mirrors the server's AnalyticsRangeDto validation
+    // (From <= To, span <= 400 days) so an obviously bad custom range never
+    // reaches the API and never renders the misleading "no tracked time"
+    // empty state — the user sees why instead.
+    private bool IsCustomRangeValid(out string? error)
+    {
+        if (CustomFrom > CustomTo)
+        {
+            error = "Start date must be on or before end date.";
+            return false;
+        }
+
+        // >= because ResolveRange extends CustomTo to end-of-day (+1 day -1s),
+        // so an exactly-400-day pick would exceed the server's 400-day cap.
+        if ((CustomTo - CustomFrom).TotalDays >= 400)
+        {
+            error = "Custom range cannot exceed 400 days.";
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+
+        if (ActivePreset == RangePreset.Custom && !IsCustomRangeValid(out var error))
+        {
+            CustomRangeError = error;
+            RangeLabel = $"{CustomFrom:MMM d} – {CustomTo:MMM d, yyyy}";
+            Summary = null;
+            Daily = new();
+            Projects = new();
+            TagRows = new();
+            TrendBars = new();
+            DonutSlices = new();
+            MaxTagHours = 0;
+            IsLoading = false;
+            return;
+        }
+
+        CustomRangeError = null;
+        var (from, to) = ResolveRange();
+        RangeLabel = $"{from:MMM d} – {to:MMM d, yyyy}";
+
+        // Fire all four range calls together and await them as a group instead
+        // of sequentially — they're independent reads over the same range.
+        var summaryTask = Analytics.GetSummaryAsync(from, to);
+        var dailyTask = Analytics.GetDailyAsync(from, to);
+        var projectsTask = Analytics.GetProjectsAsync(from, to);
+        var tagsTask = Analytics.GetTagsAsync(from, to);
+        await Task.WhenAll(summaryTask, dailyTask, projectsTask, tagsTask);
+
+        Summary = summaryTask.Result;
+        Daily = dailyTask.Result ?? new();
+        Projects = projectsTask.Result ?? new();
+        TagRows = tagsTask.Result ?? new();
+
+        ComputeTrend(from, to);
+        DonutSlices = Projects
+            .Select(p => new ProjectDonut.ProjectSlice(p.Name, ColorForProject(p), p.TotalDuration.TotalHours))
+            .Where(s => s.Hours > 0)
+            .ToList();
+        MaxTagHours = TagRows.Count == 0 ? 0 : TagRows.Max(t => t.TotalDuration.TotalHours);
+
+        IsLoading = false;
+    }
+
+    // "_none" is the synthetic bucket for tasks without a project — always the
+    // neutral gray. Real, colorless projects fall back to the palette via
+    // ColorService (hashed by ProjectId) instead of a flat gray, so distinct
+    // projects stay visually distinguishable. Must match Dashboard.razor.
+    private string ColorForProject(ProjectAnalyticsDto p)
+        => p.ProjectId == "_none" ? "#94A3B8" : (p.Color ?? ColorService.GetColorById(p.ProjectId));
+
+    private void ComputeTrend(DateTimeOffset from, DateTimeOffset to)
+    {
+        var totalDays = (int)(to.Date - from.Date).TotalDays + 1;
+        UseWeeklyBuckets = totalDays > 45;
+
+        var byDate = Daily.ToDictionary(d => d.Date.Date, d => d.TotalDuration.TotalHours);
+
+        if (!UseWeeklyBuckets)
+        {
+            // Zero-fill: one bar per calendar day.
+            TrendBars = Enumerable.Range(0, totalDays)
+                .Select(i => from.Date.AddDays(i))
+                .Select(day => new DailyTrendChart.DayBar(
+                    day.ToString("d.M."),
+                    byDate.TryGetValue(day, out var h) ? h : 0))
+                .ToList();
+            TrendTargetHours = (double)WorkdayHoursPerDay;
+        }
+        else
+        {
+            TrendBars = Enumerable.Range(0, totalDays)
+                .Select(i => from.Date.AddDays(i))
+                .GroupBy(day => day.AddDays(-(((int)day.DayOfWeek + 6) % 7)))   // Monday of that week
+                .Select(week => new DailyTrendChart.DayBar(
+                    week.Key.ToString("d.M."),
+                    week.Sum(day => byDate.TryGetValue(day, out var h) ? h : 0)))
+                .ToList();
+            TrendTargetHours = (double)WorkdayHoursPerDay * 5;
+        }
+    }
+
+    private async Task SelectPreset(RangePreset preset)
+    {
+        ActivePreset = preset;
+        // Always load, including when switching TO Custom — otherwise the
+        // page shows stale data/RangeLabel from the previous preset until the
+        // user also edits a date input.
+        await LoadAsync();
+    }
+
+    private async Task OnCustomFromChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d)) { CustomFrom = d; await LoadAsync(); }
+    }
+
+    private async Task OnCustomToChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d)) { CustomTo = d; await LoadAsync(); }
+    }
+
+    private static string PresetLabel(RangePreset p) => p switch
+    {
+        RangePreset.ThisWeek => "This week",
+        RangePreset.LastWeek => "Last week",
+        RangePreset.ThisMonth => "This month",
+        RangePreset.Last30Days => "Last 30 days",
+        RangePreset.ThisYear => "This year",
+        _ => "Custom",
+    };
+
+    private static string FormatHours(TimeSpan t)
+    {
+        var hours = (int)t.TotalHours;
+        return hours > 0 ? $"{hours}h {t.Minutes:00}m" : $"{t.Minutes}m";
+    }
+}

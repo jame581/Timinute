@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Shared.Dtos;
@@ -157,6 +158,23 @@ namespace Timinute.Server.Data
                            .HasForeignKey("TaskId").OnDelete(DeleteBehavior.Cascade));
 
             FillDataToDB(builder);
+
+            // SQLite (test provider only) cannot translate ordering/range comparisons
+            // on DateTimeOffset columns. Store them as 64-bit binary values there so
+            // range filters (e.g. the analytics endpoints) translate. All persisted
+            // dates are UTC-normalized, so binary encoding preserves ordering.
+            // Production SQL Server is unaffected.
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                foreach (var entityType in builder.Model.GetEntityTypes())
+                {
+                    foreach (var property in entityType.GetProperties()
+                        .Where(p => p.ClrType == typeof(DateTimeOffset) || p.ClrType == typeof(DateTimeOffset?)))
+                    {
+                        property.SetValueConverter(new DateTimeOffsetToBinaryConverter());
+                    }
+                }
+            }
         }
 
         private static void FillDataToDB(ModelBuilder builder)

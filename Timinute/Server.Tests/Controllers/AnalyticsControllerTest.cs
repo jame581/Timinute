@@ -1,16 +1,19 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
+using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Server.Tests.Helpers;
+using Timinute.Shared.Dtos.Analytics;
 using Timinute.Shared.Dtos.Dashboard;
 using Xunit;
 
@@ -201,6 +204,164 @@ namespace Timinute.Server.Tests.Controllers
         }
 
 
+        private static AnalyticsRangeDto LastMonthRange()
+        {
+            var now = DateTimeOffset.UtcNow;
+            var thisMonthFirst = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+            return new AnalyticsRangeDto
+            {
+                From = thisMonthFirst.AddMonths(-1),
+                To = thisMonthFirst.AddSeconds(-1),
+                TzOffsetMinutes = 0
+            };
+        }
+
+        [Fact]
+        public async Task Get_Range_Summary_Test()
+        {
+            var controller = await CreateController();
+
+            var actionResult = await controller.GetRangeSummary(LastMonthRange());
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var summary = Assert.IsAssignableFrom<AnalyticsSummaryDto>(okResult.Value);
+
+            Assert.Equal(TimeSpan.FromHours(28), summary.TotalDuration);
+            Assert.Equal(7, summary.TaskCount);
+            Assert.Equal(1, summary.ActiveDays);           // all 7 tasks start on the same day
+            Assert.Equal(TimeSpan.FromHours(28), summary.AveragePerActiveDay);
+            Assert.True(summary.WeekdayCount >= 20);        // a full month always has ≥20 weekdays
+            Assert.Equal(TimeSpan.FromHours((double)(8.0m * summary.WeekdayCount)), summary.TargetDuration);
+        }
+
+        [Fact]
+        public async Task Get_Daily_Breakdown_Test()
+        {
+            var controller = await CreateController();
+
+            var actionResult = await controller.GetDailyBreakdown(LastMonthRange());
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var days = Assert.IsAssignableFrom<IEnumerable<DailyAnalyticsDto>>(okResult.Value).ToList();
+
+            var day = Assert.Single(days);
+            Assert.Equal(TimeSpan.FromHours(28), day.TotalDuration);
+            Assert.Equal(7, day.TaskCount);
+        }
+
+        [Fact]
+        public async Task Get_Daily_Breakdown_TzOffset_Shifts_Day_Test()
+        {
+            // Tasks start at 00:00 UTC on the 1st; with tz -60 the local day is the
+            // last day of the previous month.
+            var controller = await CreateController();
+            var range = LastMonthRange();
+            range.TzOffsetMinutes = -60;
+
+            var actionResult = await controller.GetDailyBreakdown(range);
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var days = Assert.IsAssignableFrom<IEnumerable<DailyAnalyticsDto>>(okResult.Value).ToList();
+
+            var day = Assert.Single(days);
+            var utcDay = range.From.UtcDateTime.Date;
+            Assert.Equal(utcDay.AddDays(-1), day.Date);
+        }
+
+        [Fact]
+        public async Task Get_Project_Breakdown_Includes_None_Bucket_Test()
+        {
+            var controller = await CreateController();
+
+            var actionResult = await controller.GetProjectBreakdown(LastMonthRange());
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var projects = Assert.IsAssignableFrom<IEnumerable<ProjectAnalyticsDto>>(okResult.Value).ToList();
+
+            // Projects 1001 (3h), 1002 (7h), 1003 (11h) + the no-project task (7h)
+            Assert.Equal(4, projects.Count);
+            Assert.Equal(projects.OrderByDescending(p => p.TotalDuration).Select(p => p.ProjectId), projects.Select(p => p.ProjectId));
+
+            var none = Assert.Single(projects, p => p.ProjectId == "_none");
+            Assert.Equal(TimeSpan.FromHours(7), none.TotalDuration);
+            Assert.Equal("No project", none.Name);
+
+            var p1003 = Assert.Single(projects, p => p.ProjectId == "ProjectId1003");
+            Assert.Equal(TimeSpan.FromHours(11), p1003.TotalDuration);
+            Assert.Equal(2, p1003.TaskCount);
+        }
+
+        [Fact]
+        public async Task Get_Tag_Breakdown_Buckets_Untagged_Test()
+        {
+            // The analytics fixture has no tags, so everything lands in _untagged.
+            var controller = await CreateController();
+
+            var actionResult = await controller.GetTagBreakdown(LastMonthRange());
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var tags = Assert.IsAssignableFrom<IEnumerable<TagAnalyticsDto>>(okResult.Value).ToList();
+
+            var untagged = Assert.Single(tags);
+            Assert.Equal("_untagged", untagged.TagId);
+            Assert.Equal(TimeSpan.FromHours(28), untagged.TotalDuration);
+            Assert.Equal(7, untagged.TaskCount);
+        }
+
+        [Fact]
+        public async Task Get_Range_Summary_Excludes_SoftDeleted_Tasks_Test()
+        {
+            var applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SoftDeleteSummary", analyticsTest: true);
+
+            var range = LastMonthRange();
+            var softDeletedTask = new TrackedTask
+            {
+                TaskId = "TrackedTaskId1099",
+                Name = "Soft Deleted Task",
+                UserId = "ApplicationUser1000",
+                StartDate = range.From,
+                EndDate = range.From.AddHours(1),
+                Duration = TimeSpan.FromHours(1),
+                DeletedAt = DateTimeOffset.UtcNow
+            };
+
+            applicationDbContext.TrackedTasks.Add(softDeletedTask);
+            await applicationDbContext.SaveChangesAsync();
+            applicationDbContext.ChangeTracker.Clear();
+
+            var controller = await CreateController(applicationDbContext);
+
+            var actionResult = await controller.GetRangeSummary(range);
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var summary = Assert.IsAssignableFrom<AnalyticsSummaryDto>(okResult.Value);
+
+            Assert.Equal(7, summary.TaskCount);
+            Assert.Equal(TimeSpan.FromHours(28), summary.TotalDuration);
+        }
+
+        [Fact]
+        public async Task Get_Range_Summary_Other_Users_Data_Excluded_Test()
+        {
+            // ApplicationUser1000's range summary must not include the base fixture's
+            // 2021 tasks (they belong to ApplicationUser1/2/3 anyway) — query a range
+            // covering 2021 and expect zero.
+            var controller = await CreateController();
+            var range = new AnalyticsRangeDto
+            {
+                From = new DateTimeOffset(2021, 9, 1, 0, 0, 0, TimeSpan.Zero),
+                To = new DateTimeOffset(2021, 11, 1, 0, 0, 0, TimeSpan.Zero),
+                TzOffsetMinutes = 0
+            };
+
+            var actionResult = await controller.GetRangeSummary(range);
+
+            var okResult = Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+            var summary = Assert.IsAssignableFrom<AnalyticsSummaryDto>(okResult.Value);
+            Assert.Equal(0, summary.TaskCount);
+            Assert.Equal(TimeSpan.Zero, summary.TotalDuration);
+        }
+
         protected override async Task<AnalyticsController> CreateController(ApplicationDbContext? applicationDbContext = null, string userId = "ApplicationUser1")
         {
             if (applicationDbContext == null)
@@ -216,7 +377,7 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            AnalyticsController controller = new(repositoryFactory, _mapper, _loggerMock.Object)
+            AnalyticsController controller = new(repositoryFactory, _mapper, _loggerMock.Object, applicationDbContext)
             {
                 ControllerContext = new ControllerContext
                 {

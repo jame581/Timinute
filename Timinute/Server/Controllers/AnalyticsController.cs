@@ -1,17 +1,20 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Timinute.Server.Data;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
+using Timinute.Shared.Dtos.Analytics;
 using Timinute.Shared.Dtos.Dashboard;
 
 namespace Timinute.Server.Controllers
 {
     [Authorize]
     [ApiController]
-    [ResponseCache(CacheProfileName = "Default120")]
+    [ResponseCache(CacheProfileName = Constants.CacheProfiles.Default120)]
     [Route("[controller]")]
     public class AnalyticsController : ControllerBase
     {
@@ -19,11 +22,13 @@ namespace Timinute.Server.Controllers
         private readonly IRepository<TrackedTask> trackedTaskRepository;
         private readonly IMapper mapper;
         private readonly ILogger<AnalyticsController> logger;
+        private readonly ApplicationDbContext dbContext;
 
-        public AnalyticsController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<AnalyticsController> logger)
+        public AnalyticsController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<AnalyticsController> logger, ApplicationDbContext dbContext)
         {
             this.mapper = mapper;
             this.logger = logger;
+            this.dbContext = dbContext;
 
             projectRepository = repositoryFactory.GetRepository<Project>();
             trackedTaskRepository = repositoryFactory.GetRepository<TrackedTask>();
@@ -189,6 +194,173 @@ namespace Timinute.Server.Controllers
             };
 
             return Ok(amountWorkTimeLastMonth);
+        }
+
+        // GET: Analytics/summary?From=...&To=...&TzOffsetMinutes=...
+        [HttpGet("summary")]
+        [ResponseCache(NoStore = true)]
+        public async Task<ActionResult<AnalyticsSummaryDto>> GetRangeSummary([FromQuery] AnalyticsRangeDto range)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var offset = TimeSpan.FromMinutes(range.TzOffsetMinutes);
+            var rows = await RangeQuery(userId, range)
+                .Select(t => new { t.StartDate, t.Duration })
+                .ToListAsync();
+
+            var totalTicks = rows.Sum(r => r.Duration.Ticks);
+            var activeDays = rows
+                .GroupBy(r => r.StartDate.ToOffset(offset).Date)
+                .Count();
+
+            var workdayHours = await dbContext.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => u.Preferences.WorkdayHoursPerDay)
+                .FirstOrDefaultAsync();
+            if (workdayHours <= 0) workdayHours = 8.0m;
+
+            var weekdayCount = CountWeekdays(
+                range.From.ToOffset(offset).Date,
+                range.To.ToOffset(offset).Date);
+
+            return Ok(new AnalyticsSummaryDto
+            {
+                TotalDuration = TimeSpan.FromTicks(totalTicks),
+                TaskCount = rows.Count,
+                ActiveDays = activeDays,
+                AveragePerActiveDay = activeDays == 0 ? TimeSpan.Zero : TimeSpan.FromTicks(totalTicks / activeDays),
+                WeekdayCount = weekdayCount,
+                TargetDuration = TimeSpan.FromHours((double)(workdayHours * weekdayCount))
+            });
+        }
+
+        // GET: Analytics/daily
+        [HttpGet("daily")]
+        [ResponseCache(NoStore = true)]
+        public async Task<ActionResult<IEnumerable<DailyAnalyticsDto>>> GetDailyBreakdown([FromQuery] AnalyticsRangeDto range)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var offset = TimeSpan.FromMinutes(range.TzOffsetMinutes);
+            var rows = await RangeQuery(userId, range)
+                .Select(t => new { t.StartDate, t.Duration })
+                .ToListAsync();
+
+            var days = rows
+                .GroupBy(r => r.StartDate.ToOffset(offset).Date)
+                .Select(g => new DailyAnalyticsDto
+                {
+                    Date = g.Key,
+                    TotalDuration = TimeSpan.FromTicks(g.Sum(x => x.Duration.Ticks)),
+                    TaskCount = g.Count()
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            return Ok(days);
+        }
+
+        // GET: Analytics/projects
+        [HttpGet("projects")]
+        [ResponseCache(NoStore = true)]
+        public async Task<ActionResult<IEnumerable<ProjectAnalyticsDto>>> GetProjectBreakdown([FromQuery] AnalyticsRangeDto range)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            // Soft-deleted projects are filtered by the global query filter, so their
+            // navigation resolves to null and those tasks land in the "_none" bucket.
+            var rows = await RangeQuery(userId, range)
+                .Select(t => new
+                {
+                    t.ProjectId,
+                    ProjectName = t.Project != null ? t.Project.Name : null,
+                    ProjectColor = t.Project != null ? t.Project.Color : null,
+                    t.Duration
+                })
+                .ToListAsync();
+
+            var projects = rows
+                .GroupBy(r => r.ProjectName == null ? "_none" : r.ProjectId!)
+                .Select(g => new ProjectAnalyticsDto
+                {
+                    ProjectId = g.Key,
+                    Name = g.First().ProjectName ?? "No project",
+                    Color = g.First().ProjectColor,
+                    TotalDuration = TimeSpan.FromTicks(g.Sum(x => x.Duration.Ticks)),
+                    TaskCount = g.Count()
+                })
+                .OrderByDescending(p => p.TotalDuration)
+                .ToList();
+
+            return Ok(projects);
+        }
+
+        // GET: Analytics/tags
+        [HttpGet("tags")]
+        [ResponseCache(NoStore = true)]
+        public async Task<ActionResult<IEnumerable<TagAnalyticsDto>>> GetTagBreakdown([FromQuery] AnalyticsRangeDto range)
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var rows = await RangeQuery(userId, range)
+                .Select(t => new
+                {
+                    t.Duration,
+                    Tags = t.Tags.Select(tag => new { tag.TagId, tag.Name, tag.Color }).ToList()
+                })
+                .ToListAsync();
+
+            var buckets = new Dictionary<string, TagAnalyticsDto>();
+            foreach (var row in rows)
+            {
+                if (row.Tags.Count == 0)
+                {
+                    Accumulate(buckets, "_untagged", "Untagged", null, row.Duration);
+                    continue;
+                }
+                foreach (var tag in row.Tags)
+                {
+                    Accumulate(buckets, tag.TagId, tag.Name, tag.Color, row.Duration);
+                }
+            }
+
+            return Ok(buckets.Values.OrderByDescending(t => t.TotalDuration).ToList());
+        }
+
+        private IQueryable<TrackedTask> RangeQuery(string userId, AnalyticsRangeDto range)
+        {
+            var fromUtc = range.From.ToUniversalTime();
+            var toUtc = range.To.ToUniversalTime();
+
+            return dbContext.TrackedTasks
+                .AsNoTracking()
+                .Where(t => t.UserId == userId && t.StartDate >= fromUtc && t.StartDate <= toUtc);
+        }
+
+        private static void Accumulate(Dictionary<string, TagAnalyticsDto> buckets, string key, string name, string? color, TimeSpan duration)
+        {
+            if (!buckets.TryGetValue(key, out var dto))
+            {
+                dto = new TagAnalyticsDto { TagId = key, Name = name, Color = color };
+                buckets[key] = dto;
+            }
+            dto.TotalDuration += duration;
+            dto.TaskCount++;
+        }
+
+        private static int CountWeekdays(DateTime fromDate, DateTime toDate)
+        {
+            var count = 0;
+            for (var day = fromDate; day <= toDate; day = day.AddDays(1))
+            {
+                if (day.DayOfWeek != DayOfWeek.Saturday && day.DayOfWeek != DayOfWeek.Sunday) count++;
+            }
+            return count;
         }
 
         private (string, double) FindTopProjectLastMonth(IEnumerable<TrackedTask> trackedTasks)

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -532,6 +532,87 @@ namespace Timinute.Server.Tests.Controllers
             var notFoundResult = actionResult.Result as NotFoundObjectResult;
             Assert.NotNull(notFoundResult);
             Assert.Equal("Tracked task not found!", notFoundResult!.Value);
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Foreign_ProjectId_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "CreateForeignProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Sneaky Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = "ProjectId2" // belongs to ApplicationUser2
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.Name == "Sneaky Task");
+            Assert.Null(persisted);
+        }
+
+        [Fact]
+        public async Task Update_TrackedTask_With_Foreign_ProjectId_Returns_NotFound_Test()
+        {
+            ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "UpdateForeignProject");
+            TrackedTaskController controller = await CreateController(applicationDbContext); // ApplicationUser1
+
+            var trackedTaskToUpdate = new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1", // owned by ApplicationUser1
+                Name = "Task 1",
+                StartDate = DateTimeOffset.UtcNow,
+                ProjectId = "ProjectId2" // belongs to ApplicationUser2
+            };
+
+            var actionResult = await controller.UpdateTrackedTask(trackedTaskToUpdate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<NotFoundObjectResult>(actionResult.Result);
+
+            var notFoundResult = actionResult.Result as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.Equal("Project not found!", notFoundResult!.Value);
+
+            var persisted = await applicationDbContext.TrackedTasks.FirstOrDefaultAsync(t => t.TaskId == "TrackedTaskId1");
+            Assert.NotNull(persisted);
+            Assert.Equal("ProjectId1", persisted!.ProjectId); // unchanged, still owned project
+        }
+
+        [Fact]
+        public async Task Create_TrackedTask_With_Own_ProjectId_Succeeds_Test()
+        {
+            TrackedTaskController controller = await CreateController(); // ApplicationUser1
+
+            var trackedTaskToCreate = new CreateTrackedTaskDto
+            {
+                Name = "Owned Project Task",
+                StartDate = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromHours(1),
+                ProjectId = "ProjectId1" // belongs to ApplicationUser1
+            };
+
+            var actionResult = await controller.CreateTrackedTask(trackedTaskToCreate);
+
+            Assert.NotNull(actionResult);
+            Assert.IsAssignableFrom<OkObjectResult>(actionResult.Result);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            Assert.NotNull(okResult);
+
+            var created = okResult!.Value as TrackedTaskDto;
+            Assert.NotNull(created);
+            Assert.Equal("ProjectId1", created!.ProjectId);
         }
 
         [Fact]

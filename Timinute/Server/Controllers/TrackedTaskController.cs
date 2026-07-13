@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -147,6 +147,11 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
+            if (!await ProjectBelongsToUserAsync(userId, trackedTask.ProjectId))
+            {
+                return NotFound("Project not found!");
+            }
+
             var newTrackedTask = mapper.Map<TrackedTask>(trackedTask);
             newTrackedTask.UserId = userId;
             newTrackedTask.StartDate = trackedTask.StartDate.ToUniversalTime();
@@ -277,6 +282,11 @@ namespace Timinute.Server.Controllers
                 return NotFound("Tracked task not found!");
             }
 
+            if (!await ProjectBelongsToUserAsync(userId, trackedTask.ProjectId))
+            {
+                return NotFound("Project not found!");
+            }
+
             var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
             updatedTrackedTask.StartDate = updatedTrackedTask.StartDate.ToUniversalTime();
 
@@ -317,6 +327,16 @@ namespace Timinute.Server.Controllers
             }
 
             return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTaskEntity));
+        }
+
+        private async Task<bool> ProjectBelongsToUserAsync(string userId, string? projectId)
+        {
+            if (string.IsNullOrWhiteSpace(projectId))
+            {
+                return true;
+            }
+
+            return await dbContext.Projects.AnyAsync(p => p.ProjectId == projectId && p.UserId == userId);
         }
 
         private async Task<List<Tag>> ResolveTagsAsync(string userId, IEnumerable<string>? tagIds)

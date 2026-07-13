@@ -1,7 +1,9 @@
+using Asp.Versioning;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -43,8 +45,8 @@ builder.Services.AddAuthentication(options =>
     })
     .AddJwtBearer(options =>
     {
-        options.Authority = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
-        options.Audience = "Timinute.ServerAPI";
+        options.Authority = builder.Configuration["IdentityServer:Authority"] ?? Constants.Api.DefaultAuthority;
+        options.Audience = Constants.Api.ResourceName;
         options.MapInboundClaims = false;
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
@@ -67,10 +69,21 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddResponseCaching();
 
+// Request/response line logging for production diagnostics. Off by default;
+// enable with HttpLogging__Enabled=true (Docker env-var friendly). Bodies and
+// auth/cookie headers are deliberately never logged.
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.RequestMethod
+                          | HttpLoggingFields.RequestPath
+                          | HttpLoggingFields.ResponseStatusCode
+                          | HttpLoggingFields.Duration;
+});
+
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
-    options.CacheProfiles.Add("Default120", new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
+    options.CacheProfiles.Add(Constants.CacheProfiles.Default120, new CacheProfile() { Duration = 120, Location = ResponseCacheLocation.Client });
 
 
 }).AddJsonOptions(options =>
@@ -101,6 +114,17 @@ builder.Services.AddControllers(options =>
             };
         };
     });
+
+// Preparatory only (spec v2.3): every existing route keeps working as
+// implicit v1.0; no /v1/ URL segments because client + server ship together.
+// AddMvc() is required to attach versioning to MVC controllers — without it
+// the options above are registered but never enforced or reported.
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+}).AddMvc();
 
 // DI Configuration
 DependecyInjection();
@@ -152,6 +176,11 @@ if (app.Configuration.GetValue("DatabaseMigrationOnStartup", false))
 }
 
 app.UseForwardedHeaders();
+
+if (app.Configuration.GetValue("HttpLogging:Enabled", false))
+{
+    app.UseHttpLogging();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -227,7 +256,7 @@ void IdentitySetup()
         options.ClaimsIdentity.RoleClaimType = Constants.Claims.Role;
     });
 
-    var configuredUrl = builder.Configuration["IdentityServer:Authority"] ?? "https://localhost:7047";
+    var configuredUrl = builder.Configuration["IdentityServer:Authority"] ?? Constants.Api.DefaultAuthority;
     var authorityUri = new Uri(configuredUrl);
     var baseUrl = authorityUri.GetLeftPart(UriPartial.Authority);
 
@@ -246,13 +275,13 @@ void IdentitySetup()
         })
         .AddInMemoryApiScopes(new List<ApiScope>
         {
-            new ApiScope("Timinute.ServerAPI", "Timinute Server API")
+            new ApiScope(Constants.Api.ResourceName, "Timinute Server API")
         })
         .AddInMemoryApiResources(new List<ApiResource>
         {
-            new ApiResource("Timinute.ServerAPI", "Timinute Server API")
+            new ApiResource(Constants.Api.ResourceName, "Timinute Server API")
             {
-                Scopes = { "Timinute.ServerAPI" }
+                Scopes = { Constants.Api.ResourceName }
             }
         })
         .AddInMemoryClients(new List<Client>
@@ -264,7 +293,7 @@ void IdentitySetup()
                 RequirePkce = true,
                 RequireClientSecret = false,
                 AllowedCorsOrigins = { baseUrl },
-                AllowedScopes = { "openid", "profile", "Timinute.ServerAPI" },
+                AllowedScopes = { "openid", "profile", Constants.Api.ResourceName },
                 RedirectUris = { $"{baseUrl}/authentication/login-callback" },
                 PostLogoutRedirectUris = { $"{baseUrl}/authentication/logout-callback" },
             }
@@ -322,3 +351,7 @@ void SwaggerSetup()
         c.ResolveConflictingActions(apiDescriptors => apiDescriptors.First());
     });
 }
+
+// Exposes the implicit Program class to WebApplicationFactory<Program>
+// in Timinute.Server.Tests integration tests.
+public partial class Program { }
