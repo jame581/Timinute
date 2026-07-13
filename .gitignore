@@ -365,8 +365,9 @@ FodyWeavers.xsd
 **/keys/
 tempkey.jwk
 
-# Claude Code
+# Claude Code — all Claude tooling/context stays local to the machine
 .claude/
+.claude.local.md
 CLAUDE.md
 .mcp.json
 
