@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Timinute.Server.Models;
 using Timinute.Shared.Dtos;
 using Timinute.Shared.Dtos.Project;
@@ -16,10 +16,14 @@ namespace Timinute.Server
             CreateMap<TrackedTaskDto, TrackedTask>();
 
             CreateMap<TrackedTask, CreateTrackedTaskDto>();
-            CreateMap<CreateTrackedTaskDto, TrackedTask>();
+            CreateMap<CreateTrackedTaskDto, TrackedTask>()
+                // Project is linked via the ownership-checked ProjectId only; mapping the nested
+                // DTO would attach a client-supplied Project entity to the insert graph.
+                .ForMember(d => d.Project, o => o.Ignore());
 
             CreateMap<TrackedTask, UpdateTrackedTaskDto>();
-            CreateMap<UpdateTrackedTaskDto, TrackedTask>();
+            CreateMap<UpdateTrackedTaskDto, TrackedTask>()
+                .ForMember(d => d.Project, o => o.Ignore());
 
             // Project model
             CreateMap<Project, ProjectDto>();
