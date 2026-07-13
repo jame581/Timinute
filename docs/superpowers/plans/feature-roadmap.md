@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-12 — v2.2 shipped (PRs #46, #47); v2.3 scope defined (Enhanced analytics + leftover tech-debt sweep)._
+_Last reviewed: 2026-07-13 — v2.3 implemented (PR #48): Enhanced analytics + tech-debt sweep complete._
 
 ## Current Feature Set
 
@@ -33,26 +33,6 @@ _Last reviewed: 2026-07-12 — v2.2 shipped (PRs #46, #47); v2.3 scope defined (
 
 ---
 
-## Planned — v2.3
-
-v2.3 pairs the Enhanced analytics P1 feature with the tech-debt items that were scoped into v2.2 but did not ship (only the DB indexes + unique project-name constraint made it into PR #46).
-
-### Feature
-
-| Feature | Description | Complexity |
-|---------|-------------|------------|
-| Enhanced analytics | New `/analytics` page: custom date range + presets, server-side aggregation endpoints (per-day / per-project / per-tag), productivity trend chart vs `WorkdayHoursPerDay` target, per-tag breakdown (first analytics consumer of Tags). Dashboard retrofitted to the aggregate endpoints instead of loading all tasks client-side. | M |
-
-### Tech debt to clear (carried over from v2.2)
-
-- Build & Test workflow — registered on GitHub but `disabled_manually`; enable + verify a green run
-- `Server/Helpers/Constants.cs` growing large — split per domain
-- Request/response logging middleware
-- API versioning for future breaking changes
-- Server-side validation tests as integration tests
-
-Per *How this doc is maintained*, Enhanced analytics gets a spec in `docs/superpowers/specs/` before implementation starts.
-
 ## Pending — P1 (Should-Have)
 
 | Feature | Description | Complexity | Notes |
@@ -77,10 +57,9 @@ Per *How this doc is maintained*, Enhanced analytics gets a spec in `docs/superp
 Settings/Preferences ─── Team workspaces (P2)   [Settings cluster shipped in v2.1]
 
 Tags ─┬─ External-ticket integrations (P2)      [Tags shipped in v2.2]
-      ├─ AI categorization (P2)
-      └─ Enhanced analytics per-tag breakdown (v2.3)
+      └─ AI categorization (P2)
 
-Enhanced analytics — v2.3 (consumes WorkdayHoursPerDay shipped in v2.1)
+Enhanced analytics — shipped in v2.3 (PR #48)
 Notifications — independent
 Time tracking enhancements — independent
 ```
@@ -89,18 +68,19 @@ Time tracking enhancements — independent
 
 ## Tech debt
 
-Status reviewed 2026-07-12.
+Status reviewed 2026-07-13.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Build & Test workflow disabled | → v2.3 | Root cause found 2026-07-12: the workflow IS registered on GitHub (id 20059071) but its state is `disabled_manually`. Fix: `gh api -X PUT repos/jame581/Timinute/actions/workflows/20059071/enable`, then verify a run triggers on the next push/PR. CI on PRs currently only runs CodeQL + Copilot review. |
-| Constants class growing large — split per domain | → v2.3 | `Server/Helpers/Constants.cs` mixes role + claim + magic strings |
-| Request/response logging middleware | → v2.3 | Useful before production; not in critical path |
+| Build & Test workflow disabled | ✅ done | Was registered but `disabled_manually`; re-enabled 2026-07-12 (id 20059071). PR #48 is the green-run acceptance check. |
+| Constants class growing large — split per domain | ✅ done | PR #48 (v2.3) — partial-class split (`Constants.Roles/Claims/Api`) + auth magic strings (`Timinute.ServerAPI`, authority fallback, `Default120`) consolidated |
+| Request/response logging middleware | ✅ done | PR #48 (v2.3) — built-in `AddHttpLogging` (method/path/status/duration, never headers/bodies), off by default, `HttpLogging__Enabled` env-var gated |
 | DB indexes on UserId, ProjectId | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId`, `IX_TrackedTasks_ProjectId`, `IX_Projects_UserId` |
 | Composite indexes for common analytics queries | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId_StartDate` |
 | Unique constraint: project names per user | ✅ done | Shipped in PR #46 (v2.2) — filtered unique `IX_Projects_UserId_Name` (`[DeletedAt] IS NULL`) + 409 handling |
-| API versioning for future breaking changes | → v2.3 | None of the API is published yet, so this is preparatory |
-| Server-side validation tests as integration tests | → v2.3 | Current `UpdatePreferences_*OutOfRange*` tests inject `ModelState` errors directly; `[ApiController]` short-circuit path with the global 422 `InvalidModelStateResponseFactory` is not exercised. Raised by Copilot on PR #40 #6/#7. |
+| API versioning for future breaking changes | ✅ done | PR #48 (v2.3) — `Asp.Versioning.Mvc` (`.AddMvc()` required — bare `AddApiVersioning` never attaches to controllers), implicit v1.0, `api-supported-versions` reported; unknown explicit `?api-version=` now 400s (client never sends it) |
+| Server-side validation tests as integration tests | ✅ done | PR #48 (v2.3) — `TiminuteApiFactory` (`WebApplicationFactory<Program>`) + `ValidationIntegrationTest` exercising the `[ApiController]` 422 short-circuit through the real pipeline |
+| ProjectId ownership validation on tracked-task create/update | ✅ done | Found by `ef-repository-reviewer` during v2.3 (pre-existing): foreign `ProjectId` was persisted and leaked the project's Name/Color via `Include(Project)` endpoints. Fixed in PR #48 with tests. Follow-up idea: sweep other cross-entity FKs. |
 | Unified `UserProfileService` to dedupe `GET /User/me` | ✅ done | Shipped in PR #44 — `UserProfileService` owns a cached `GET /User/me`; ThemeService, Profile, and Dashboard now route through it (one read per session). |
 | Extract common DataGrid logic | ✅ moot | Aurora replaced `RadzenDataGrid` with custom row layouts; no shared grid logic remains |
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
@@ -114,6 +94,12 @@ Status reviewed 2026-07-12.
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
+
+## Recently shipped (v2.3, PR #48)
+
+| Feature | PRs |
+|---------|-----|
+| Enhanced analytics — four range endpoints on `AnalyticsController` (summary / daily / projects / tags; SQL-side user+range filter, in-memory duration sums, `TzOffsetMinutes` local-day bucketing, 422 range validation), new `/analytics` page (presets + validated custom range, trend chart vs `WorkdayHoursPerDay` target, project donut, per-tag bars), client `AnalyticsService` session cache with write-through invalidation handler, Dashboard retrofit (3 small requests replace load-all-tasks). Tech debt: CI re-enable, 422 integration tests, HTTP logging, Constants split, API versioning — see Tech debt table. Plus a `ProjectId` ownership security fix and a SQLite `DateTimeOffset` test-provider converter. | #48 |
 
 ## Recently shipped (v2.2, 2026-06-12)
 
