@@ -201,7 +201,9 @@
             return false;
         }
 
-        if ((CustomTo - CustomFrom).TotalDays > 400)
+        // >= because ResolveRange extends CustomTo to end-of-day (+1 day -1s),
+        // so an exactly-400-day pick would exceed the server's 400-day cap.
+        if ((CustomTo - CustomFrom).TotalDays >= 400)
         {
             error = "Custom range cannot exceed 400 days.";
             return false;
