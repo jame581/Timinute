@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-13 — v2.3 released on master (PR #50, tag `v2.3`): Enhanced analytics + tech-debt sweep, plus Duende 8 / Radzen 11 package updates._
+_Last reviewed: 2026-07-14 — v2.3 released on master (PR #50, tag `v2.3`): Enhanced analytics + tech-debt sweep, plus Duende 8 / Radzen 11 package updates._
 
 ## Current Feature Set
 
@@ -94,6 +94,12 @@ Status reviewed 2026-07-13.
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
+
+## Recently shipped (v2.3.1, 2026-07-14)
+
+| Feature | PRs |
+|---------|-----|
+| Security patch — closed all 12 open CodeQL alerts with **zero suppressions**. Deleted the unreachable `ExternalLogin` Identity page (no external provider is registered, so it could never be reached — #23, #24). Deleted `wwwroot/lib`, 2.2 MB of vendored JS that nothing referenced but that *was* published and served — a 2017-era jquery-validation 1.17.0 was reachable at `/lib/...` in production (#3–#7). Log calls now emit the entity ID from the ownership-scoped DB lookup rather than the raw route parameter, breaking the taint path (#18–#22). `returnUrl` is sanitized on GET via a shared `ReturnUrlSanitizer` instead of only at `LocalRedirect` time (#25, #26). Added baseline security headers (`X-Content-Type-Options`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`) and Dependabot for NuGet + Actions. CSP deferred: it interacts with Blazor's OIDC silent-renew iframe. | TBD |
 
 ## Recently shipped (v2.3, 2026-07-13)
 
