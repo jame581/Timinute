@@ -40,6 +40,26 @@ namespace Timinute.Server.Tests.Integration
             Assert.Equal(expected, values!.Single());
         }
 
+        // Pins the middleware-order claim in Program.cs ("runs before the static-file
+        // and Blazor-framework middleware so it covers those responses too"). "/" isn't
+        // routed by MVC/Razor Pages, so a 200 here proves the request was served by
+        // MapFallbackToFile("index.html") via the static-file pipeline (confirmed by the
+        // ETag/Accept-Ranges response headers that only that middleware sets) and that
+        // the security-header middleware still ran ahead of it.
+        [Theory]
+        [InlineData("X-Content-Type-Options", "nosniff")]
+        [InlineData("X-Frame-Options", "SAMEORIGIN")]
+        [InlineData("Referrer-Policy", "strict-origin-when-cross-origin")]
+        public async Task FallbackFile_Response_Carries_Baseline_Security_Header(string header, string expected)
+        {
+            var response = await client.GetAsync("/");
+
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+            Assert.True(response.Headers.TryGetValues("ETag", out _), "expected the static-file middleware to have handled this request (no ETag header present)");
+            Assert.True(response.Headers.TryGetValues(header, out var values), $"{header} was not set");
+            Assert.Equal(expected, values!.Single());
+        }
+
         // Regression guard, not a style preference. Blazor WASM's OIDC stack renews the
         // access token silently by loading the authorize endpoint in a hidden same-origin
         // iframe. X-Frame-Options: DENY blocks same-origin framing as well as cross-origin,
