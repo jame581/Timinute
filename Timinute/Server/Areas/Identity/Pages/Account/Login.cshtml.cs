@@ -85,6 +85,9 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
+            // Keep the rendered property in sync so a failed login redisplays
+            // the page without dropping returnUrl from the Sign-up link.
+            ReturnUrl = returnUrl;
 
             if (ModelState.IsValid)
             {

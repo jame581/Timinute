@@ -88,12 +88,16 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(bool rememberMe, string returnUrl = null)
         {
+            // Sanitize and expose returnUrl before the validation early-return so a
+            // failed code entry redisplays the page without dropping it from the
+            // form action and recovery-code link.
+            returnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
+            ReturnUrl = returnUrl;
+
             if (!ModelState.IsValid)
             {
                 return Page();
             }
-
-            returnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
 
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
