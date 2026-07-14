@@ -47,19 +47,6 @@
             Already have an account? <a asp-page="./Login" style="margin-left: 6px;">Log in</a>
         </div>
     </form>
-
-    @if ((Model.ExternalLogins?.Count ?? 0) > 0)
-    {
-        <div class="aurora-id-card__external">
-            <div class="aurora-id-card__external-label">Or sign up with</div>
-            <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-                @foreach (var provider in Model.ExternalLogins)
-                {
-                    <button type="submit" class="btn" name="provider" value="@provider.Name" title="Sign up with @provider.DisplayName">@provider.DisplayName</button>
-                }
-            </form>
-        </div>
-    }
 </div>
 
 @section Scripts {
