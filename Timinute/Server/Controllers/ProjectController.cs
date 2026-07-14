@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -231,7 +231,7 @@ namespace Timinute.Server.Controllers
 
             await projectRepository.Restore(id);
 
-            logger.LogInformation("Project with Id {ProjectId} restored along with {TaskCount} tasks.", id, siblingTasks.Count);
+            logger.LogInformation("Project with Id {ProjectId} restored along with {TaskCount} tasks.", deleted.ProjectId, siblingTasks.Count);
             return NoContent();
         }
 
@@ -281,7 +281,7 @@ namespace Timinute.Server.Controllers
 
             await projectRepository.Delete(id);
 
-            logger.LogInformation("Project with Id {ProjectId} was purged.", id);
+            logger.LogInformation("Project with Id {ProjectId} was purged.", deleted.ProjectId);
             return NoContent();
         }
 
