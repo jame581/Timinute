@@ -205,6 +205,27 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// Baseline security headers on every response. This runs before the static-file
+// and Blazor-framework middleware so it covers those responses too.
+//
+// X-Frame-Options is SAMEORIGIN, NOT DENY: Blazor WASM's OIDC stack renews the
+// access token silently by loading the authorize endpoint in a hidden same-origin
+// iframe. DENY blocks same-origin framing as well, which would break token renewal
+// and log users out on expiry. SAMEORIGIN still stops cross-origin clickjacking.
+//
+// Content-Security-Policy is deliberately absent — it needs wasm-unsafe-eval for
+// Blazor and its frame-src/frame-ancestors interact with that same silent-renew
+// iframe. It needs its own testing pass; see the v2.3.1 spec.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "SAMEORIGIN";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
+
 app.UseCookiePolicy();
 app.UseHttpsRedirection();
 
