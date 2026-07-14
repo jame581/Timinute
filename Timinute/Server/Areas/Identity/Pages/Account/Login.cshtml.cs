@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 
 namespace Timinute.Server.Areas.Identity.Pages.Account
@@ -71,19 +72,19 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
             public bool RememberMe { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public void OnGet(string returnUrl = null)
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
             }
 
-            ReturnUrl = Url.Content("~/");
+            ReturnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            returnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
 
             if (ModelState.IsValid)
             {

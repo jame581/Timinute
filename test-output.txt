@@ -1,0 +1,16 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Timinute.Shared -> D:\Projects\WebApps\Timinute\Timinute\Shared\bin\Debug\net10.0\Timinute.Shared.dll
+  Timinute.Client -> D:\Projects\WebApps\Timinute\Timinute\Client\bin\Debug\net10.0\Timinute.Client.dll
+  Timinute.Client (Blazor output) -> D:\Projects\WebApps\Timinute\Timinute\Client\bin\Debug\net10.0\wwwroot
+  Timinute.Server -> D:\Projects\WebApps\Timinute\Timinute\Server\bin\Debug\net10.0\Timinute.Server.dll
+  Timinute.Client.Tests -> D:\Projects\WebApps\Timinute\Timinute\Client.Tests\bin\Debug\net10.0\Timinute.Client.Tests.dll
+Test run for D:\Projects\WebApps\Timinute\Timinute\Client.Tests\bin\Debug\net10.0\Timinute.Client.Tests.dll (.NETCoreApp,Version=v10.0)
+  Timinute.Server.Tests -> D:\Projects\WebApps\Timinute\Timinute\Server.Tests\bin\Debug\net10.0\Timinute.Server.Tests.dll
+Test run for D:\Projects\WebApps\Timinute\Timinute\Server.Tests\bin\Debug\net10.0\Timinute.Server.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    27, Skipped:     0, Total:    27, Duration: 529 ms - Timinute.Client.Tests.dll (net10.0)
+
+Passed!  - Failed:     0, Passed:   167, Skipped:     0, Total:   167, Duration: 4 s - Timinute.Server.Tests.dll (net10.0)

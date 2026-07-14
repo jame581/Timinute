@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 
 namespace Timinute.Server.Areas.Identity.Pages.Account
@@ -79,7 +80,7 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
                 throw new InvalidOperationException($"Unable to load two-factor authentication user.");
             }
 
-            ReturnUrl = returnUrl;
+            ReturnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
             RememberMe = rememberMe;
 
             return Page();
@@ -92,7 +93,7 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
                 return Page();
             }
 
-            returnUrl = returnUrl ?? Url.Content("~/");
+            returnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
 
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
