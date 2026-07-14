@@ -102,12 +102,12 @@ namespace Timinute.Server.Areas.Identity.Pages.Account
 
         public void OnGet(string returnUrl = null)
         {
-            ReturnUrl = returnUrl;
+            ReturnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            returnUrl = ReturnUrlSanitizer.Sanitize(Url, returnUrl);
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
