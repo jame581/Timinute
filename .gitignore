@@ -370,11 +370,8 @@ tempkey.jwk
 # Claude Code — all Claude tooling/context stays local to the machine
 .claude/
 .claude.local.md
-CLAUDE.md
 .mcp.json
 
-# Claude Code superpowers runtime state
-.superpowers/
 
 # Docker self-host runtime config (copy of .env.example)
 .env
