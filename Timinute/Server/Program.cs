@@ -218,10 +218,6 @@ app.UseForwardedHeaders();
 
 app.UseMiddleware<Timinute.Server.Middleware.CorrelationIdMiddleware>();
 
-// One structured event per request (method, path, status, elapsed ms), enriched
-// with CorrelationId from LogContext. Bodies/headers are never logged.
-app.UseSerilogRequestLogging();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -271,6 +267,30 @@ app.UseResponseCaching();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+
+// One structured event per request (method, path, status, elapsed ms), enriched
+// with CorrelationId from LogContext. Bodies/headers are never logged. Placed after
+// the static-file middleware so static/framework asset hits short-circuit before
+// reaching it (cutting always-on asset log noise on cold Blazor WASM loads); it stays
+// inside CorrelationIdMiddleware so the CorrelationId LogContext still wraps it.
+app.UseSerilogRequestLogging(options =>
+{
+    // Never log the query string. Password-reset / email-confirmation links and the
+    // OIDC login-callback carry secrets in the query string, so leaking the query into
+    // the console (docker logs) or file sink is an account-takeover vector.
+    //
+    // Serilog derives the RequestPath property — used in BOTH the rendered message and
+    // the structured JSON — from a single value: IHttpRequestFeature.Path (the path
+    // WITHOUT the query) when IncludeQueryInRequestPath is false, or the raw target
+    // (path + query) when true. It defaults to false, but we pin it explicitly so a
+    // future flip can never silently start writing those tokens to logs.
+    //
+    // NOTE: overwriting "RequestPath" via EnrichDiagnosticContext does NOT work on
+    // Serilog.AspNetCore 10.0.0 — the built-in RequestPath property is appended after
+    // the diagnostic-context properties and wins the LogEvent last-writer merge, so a
+    // Set("RequestPath", ...) is silently discarded. This option is the real control.
+    options.IncludeQueryInRequestPath = false;
+});
 
 app.UseRouting();
 

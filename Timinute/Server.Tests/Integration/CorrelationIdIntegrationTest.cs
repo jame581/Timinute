@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Timinute.Server.Tests.Integration
 {
+    [Collection("Integration")]
     public class CorrelationIdIntegrationTest : IClassFixture<TiminuteApiFactory>
     {
         private readonly HttpClient client;
