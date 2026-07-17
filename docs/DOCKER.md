@@ -285,3 +285,52 @@ docker compose up -d
 ```
 
 All users will need to log in again after this.
+
+## Logs
+
+Timinute logs with [Serilog](https://serilog.net/). There are two independent paths.
+
+### Console (always on) — `docker logs`
+
+Every log line is written to the container's stdout. Outside Development it is emitted
+as **compact JSON** (one object per line), so `docker logs` and any log scraper
+(Loki, Fluent Bit, Datadog) can parse the fields directly.
+
+```bash
+docker logs -f timinute            # follow live
+docker logs --tail 100 timinute    # last 100 lines
+docker compose logs -f timinute    # via compose
+```
+
+No volume or configuration is required — this is all most deployments need.
+
+### Rolling file (opt-in)
+
+To also write daily rolling log files to disk, enable the file sink and mount a volume
+so the files survive container recreation:
+
+```yaml
+services:
+  timinute:
+    environment:
+      - Serilog__File__Enabled=true
+      - Serilog__File__Path=/logs/timinute-.log
+      - Serilog__File__RetainedFileCountLimit=14
+    volumes:
+      - timinute-logs:/logs
+volumes:
+  timinute-logs:
+```
+
+Read them with `docker exec timinute ls /logs`. Without a mounted volume the files live
+in the container's ephemeral filesystem and disappear when the container is recreated.
+
+### Log levels
+
+Levels: `Debug` < `Information` < `Warning` < `Error`. Production defaults to an
+`Information` floor. Override globally or per namespace via env var:
+
+```bash
+Serilog__MinimumLevel__Default=Warning
+Serilog__MinimumLevel__Override__Microsoft.AspNetCore=Error
+```
