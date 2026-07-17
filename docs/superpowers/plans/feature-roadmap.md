@@ -74,7 +74,7 @@ Status reviewed 2026-07-13.
 |------|--------|-------|
 | Build & Test workflow disabled | ✅ done | Was registered but `disabled_manually`; re-enabled 2026-07-12 (id 20059071). PR #48 is the green-run acceptance check. |
 | Constants class growing large — split per domain | ✅ done | PR #48 (v2.3) — partial-class split (`Constants.Roles/Claims/Api`) + auth magic strings (`Timinute.ServerAPI`, authority fallback, `Default120`) consolidated |
-| Request/response logging middleware | ✅ done | PR #48 (v2.3) — built-in `AddHttpLogging` (method/path/status/duration, never headers/bodies), off by default, `HttpLogging__Enabled` env-var gated v2.4 replaced AddHttpLogging with Serilog (UseSerilogRequestLogging) + per-request correlation id; console (JSON in prod) always on, rolling file sink opt-in. |
+| Request/response logging middleware | ✅ done | PR #48 (v2.3) — built-in `AddHttpLogging` (method/path/status/duration, never headers/bodies), off by default, `HttpLogging__Enabled` env-var gated. **v2.4:** replaced AddHttpLogging with Serilog (UseSerilogRequestLogging) + per-request correlation id; console (JSON in prod) always on, rolling file sink opt-in. |
 | DB indexes on UserId, ProjectId | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId`, `IX_TrackedTasks_ProjectId`, `IX_Projects_UserId` |
 | Composite indexes for common analytics queries | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId_StartDate` |
 | Unique constraint: project names per user | ✅ done | Shipped in PR #46 (v2.2) — filtered unique `IX_Projects_UserId_Name` (`[DeletedAt] IS NULL`) + 409 handling |

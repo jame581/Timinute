@@ -54,5 +54,19 @@ namespace Timinute.Server.Tests.Integration
             Assert.NotEqual(invalidValue, value);
             Assert.Matches(new Regex("^[0-9a-f]{32}$"), value);
         }
+
+        [Fact]
+        public async Task Response_Ignores_Inbound_CorrelationId_With_Invalid_Characters_And_Generates_Fresh_One()
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/");
+            var invalidValue = "bad value!"; // contains characters outside [A-Za-z0-9._-]
+            request.Headers.TryAddWithoutValidation("X-Correlation-Id", invalidValue);
+
+            var response = await client.SendAsync(request);
+
+            var value = System.Linq.Enumerable.Single(response.Headers.GetValues("X-Correlation-Id"));
+            Assert.NotEqual(invalidValue, value);
+            Assert.Matches(new Regex("^[0-9a-f]{32}$"), value);
+        }
     }
 }

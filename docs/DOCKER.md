@@ -45,7 +45,10 @@ All settings flow through ASP.NET Core's hierarchical configuration — environm
 | `ASPNETCORE_URLS`                            | `http://+:8080`           | Listen address inside the container                       |
 | `TrashRetention__Days`                       | `30`                      | Soft-delete retention days before hard-purge              |
 | `TrashRetention__PurgeIntervalHours`         | `24`                      | How often the background purge service runs               |
-| `HttpLogging__Enabled`                       | `false`                   | Log one line per request (method, path, status, duration; never headers/bodies). Diagnostic only — when enabled it also logs every static-asset request, which is noisy on cold WASM loads. |
+| `Serilog__File__Enabled`                     | `false`                   | Write daily-rolling compact-JSON log files to `Serilog__File__Path`. Off by default; console logs (`docker logs`) are always on. See the [Logs](#logs) section. |
+| `Serilog__File__Path`                        | `/logs/timinute-.log`     | File-sink path — mount a volume here to persist logs. Only used when `Serilog__File__Enabled=true`. |
+| `Serilog__File__RetainedFileCountLimit`      | `14`                      | Number of rolled daily log files to retain. |
+| `Serilog__MinimumLevel__Default`             | `Information`             | Global minimum log level: `Debug` < `Information` < `Warning` < `Error`. Development defaults to `Debug`. |
 
 ### `IdentityServer__Authority` — the most important setting
 
