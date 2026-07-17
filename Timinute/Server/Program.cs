@@ -23,6 +23,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Local-dev convenience: let MSSQL_SA_PASSWORD (the same var the container and
+// docker-compose use) drive the app's SA password too, so one variable unifies
+// everything. Guarded to the built-in dev default only — an explicit connection
+// override (production) or the compose string (already password-substituted) has a
+// different password and is left untouched.
+var saPassword = Environment.GetEnvironmentVariable("MSSQL_SA_PASSWORD");
+if (!string.IsNullOrEmpty(saPassword) && !string.IsNullOrEmpty(connectionString))
+{
+    var csb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
+    if (csb.Password == "TiminuteAdmin.")
+    {
+        csb.Password = saPassword;
+        connectionString = csb.ConnectionString;
+    }
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 

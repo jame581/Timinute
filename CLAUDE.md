@@ -31,6 +31,9 @@ dotnet run --project Timinute/Server/Timinute.Server.csproj
 # Local infra (from repo root)
 .\scripts\SetupDockerSql.ps1     # SQL Server 2025 container on port 44555
 .\scripts\MigrateDatabase.ps1    # apply EF Core migrations
+# One env var, MSSQL_SA_PASSWORD, drives the SA password for the container, the app,
+# and docker-compose; unset -> defaults to TiminuteAdmin. (see appsettings.json).
+# Program.cs only substitutes it when the connection string still carries that default.
 
 # New migration (run from scripts/ — paths are relative to it)
 .\scripts\AddMigration.ps1 -name MigrationName

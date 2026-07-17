@@ -25,7 +25,7 @@ description: Use when a change to Timinute needs to be confirmed working in the 
 - Exercise **every entry point** of the changed component — shared dialogs/components are typically reachable from more than one page (e.g. the task edit dialog opens from both `/trackedtasks` and `/scheduler`, with separate result-handling code at each call site).
 - Prove persistence, not client state: after saving, hard-refresh (Ctrl+F5) and confirm values survived. For DB-level certainty:
   ```powershell
-  docker exec timinute.sql.server /opt/mssql-tools18/bin/sqlcmd -U sa -P "TiminuteAdmin." -No -Q "<query>" -d Timinute
+  docker exec timinute.sql.server /opt/mssql-tools18/bin/sqlcmd -U sa -P "$($env:MSSQL_SA_PASSWORD ?? 'TiminuteAdmin.')" -No -Q "<query>" -d Timinute
   ```
 - Also hit the negative paths (validation messages block save) and, for deletes, the undo toast → restore.
 

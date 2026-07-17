@@ -79,6 +79,8 @@ dotnet run --project Timinute/Server/Timinute.Server.csproj
 
 Default URLs: <https://localhost:7047> / <http://localhost:5047>. Swagger lives at `/swagger`.
 
+> **DB password:** a single environment variable, `MSSQL_SA_PASSWORD`, drives the SQL Server SA password everywhere — the local dev container (`SetupDockerSql.ps1`), the app, and docker-compose. Leave it unset and everything defaults to `TiminuteAdmin.` (as shipped in `appsettings.json`). Set it to use your own password; if you change it after the container already exists, re-run `SetupDockerSql.ps1` to recreate the container on the new password.
+
 Seeded test users (passwords are intentionally trivial — local dev only):
 
 | Email | Role |
