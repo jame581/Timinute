@@ -3,7 +3,6 @@ using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -120,17 +119,6 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddResponseCaching();
 
-// Request/response line logging for production diagnostics. Off by default;
-// enable with HttpLogging__Enabled=true (Docker env-var friendly). Bodies and
-// auth/cookie headers are deliberately never logged.
-builder.Services.AddHttpLogging(options =>
-{
-    options.LoggingFields = HttpLoggingFields.RequestMethod
-                          | HttpLoggingFields.RequestPath
-                          | HttpLoggingFields.ResponseStatusCode
-                          | HttpLoggingFields.Duration;
-});
-
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
@@ -230,10 +218,9 @@ app.UseForwardedHeaders();
 
 app.UseMiddleware<Timinute.Server.Middleware.CorrelationIdMiddleware>();
 
-if (app.Configuration.GetValue("HttpLogging:Enabled", false))
-{
-    app.UseHttpLogging();
-}
+// One structured event per request (method, path, status, elapsed ms), enriched
+// with CorrelationId from LogContext. Bodies/headers are never logged.
+app.UseSerilogRequestLogging();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
