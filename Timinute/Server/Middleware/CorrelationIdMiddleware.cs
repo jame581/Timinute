@@ -9,6 +9,7 @@ namespace Timinute.Server.Middleware
     public sealed partial class CorrelationIdMiddleware
     {
         public const string HeaderName = "X-Correlation-Id";
+        private const string LogPropertyName = "CorrelationId";
         private readonly RequestDelegate next;
 
         public CorrelationIdMiddleware(RequestDelegate next) => this.next = next;
@@ -16,9 +17,17 @@ namespace Timinute.Server.Middleware
         public async Task Invoke(HttpContext context)
         {
             var correlationId = ResolveCorrelationId(context);
-            context.Response.Headers[HeaderName] = correlationId;
 
-            using (LogContext.PushProperty("CorrelationId", correlationId))
+            // Apply via OnStarting (fires just before headers are sent) rather than
+            // setting the header directly, so the value survives Response.Clear()
+            // called by UseExceptionHandler when re-executing to the error page.
+            context.Response.OnStarting(() =>
+            {
+                context.Response.Headers[HeaderName] = correlationId;
+                return Task.CompletedTask;
+            });
+
+            using (LogContext.PushProperty(LogPropertyName, correlationId))
             {
                 await next(context);
             }

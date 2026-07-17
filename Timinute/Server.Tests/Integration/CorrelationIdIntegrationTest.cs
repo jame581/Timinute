@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using System;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -38,6 +39,20 @@ namespace Timinute.Server.Tests.Integration
 
             var value = System.Linq.Enumerable.Single(response.Headers.GetValues("X-Correlation-Id"));
             Assert.Equal("abc-123_DEF", value);
+        }
+
+        [Fact]
+        public async Task Response_Ignores_Invalid_Inbound_CorrelationId_And_Generates_Fresh_One()
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/");
+            var invalidValue = new string('a', 65); // over the 64-char limit
+            request.Headers.TryAddWithoutValidation("X-Correlation-Id", invalidValue);
+
+            var response = await client.SendAsync(request);
+
+            var value = System.Linq.Enumerable.Single(response.Headers.GetValues("X-Correlation-Id"));
+            Assert.NotEqual(invalidValue, value);
+            Assert.Matches(new Regex("^[0-9a-f]{32}$"), value);
         }
     }
 }
