@@ -228,6 +228,8 @@ if (app.Configuration.GetValue("DatabaseMigrationOnStartup", false))
 
 app.UseForwardedHeaders();
 
+app.UseMiddleware<Timinute.Server.Middleware.CorrelationIdMiddleware>();
+
 if (app.Configuration.GetValue("HttpLogging:Enabled", false))
 {
     app.UseHttpLogging();
