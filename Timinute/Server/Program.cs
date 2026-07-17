@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using Serilog;
+using Serilog.Formatting.Compact;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Timinute.Server;
@@ -82,7 +84,37 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Logging.AddConsole();
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext();
+
+    // Console: human-readable in Development, compact JSON everywhere else
+    // (one JSON object per line — captured by Docker's json-file driver).
+    if (context.HostingEnvironment.IsDevelopment())
+    {
+        loggerConfiguration.WriteTo.Console();
+    }
+    else
+    {
+        loggerConfiguration.WriteTo.Console(new CompactJsonFormatter());
+    }
+
+    // Rolling file sink — opt-in via Serilog:File:Enabled (Docker env-var friendly).
+    if (context.Configuration.GetValue("Serilog:File:Enabled", false))
+    {
+        var path = context.Configuration.GetValue<string>("Serilog:File:Path") ?? "/logs/timinute-.log";
+        var retained = context.Configuration.GetValue("Serilog:File:RetainedFileCountLimit", 14);
+        loggerConfiguration.WriteTo.File(
+            new CompactJsonFormatter(),
+            path,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: retained,
+            fileSizeLimitBytes: 50 * 1024 * 1024,
+            rollOnFileSizeLimit: true);
+    }
+});
 
 builder.Services.AddRazorPages();
 
