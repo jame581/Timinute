@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"$env:CLAUDE_PROJECT_DIR\\.claude\\hooks\\block-secret-edits.ps1\"",
+            "timeout": 15,
+            "statusMessage": "Checking protected files"
+          },
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"$env:CLAUDE_PROJECT_DIR\\.claude\\hooks\\guard-ef-snapshot.ps1\"",
+            "timeout": 15,
+            "statusMessage": "Checking EF-generated files"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"$env:CLAUDE_PROJECT_DIR\\.claude\\hooks\\format-cs.ps1\"",
+            "timeout": 90,
+            "statusMessage": "Running dotnet format"
+          }
+        ]
+      }
+    ]
+  }
+}
