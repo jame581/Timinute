@@ -1,0 +1,267 @@
+@page "/settings/tokens"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@using Timinute.Client.Helpers
+@using Timinute.Shared.Dtos.Pat
+
+@inject Timinute.Client.Services.TokenService TokenApi
+@inject Radzen.NotificationService Notifier
+@inject Radzen.DialogService DialogService
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>API Tokens</PageTitle>
+
+<div class="aurora-tokens-page">
+    <div class="aurora-tokens-header">
+        <div>
+            <div class="aurora-tokens-title">API Tokens</div>
+            <div class="aurora-tokens-subtitle">Create a personal access token to connect an AI assistant to your Timinute data over MCP.</div>
+        </div>
+        @if (!isCreating && newToken is null)
+        {
+            <AuroraButton Variant="primary" OnClick="OpenCreateRow">
+                <AuroraIcons Name="plus" Size="16" />
+                <span>New token</span>
+            </AuroraButton>
+        }
+    </div>
+
+    @if (newToken is not null)
+    {
+        <div class="aurora-token-reveal" role="status">
+            <div class="aurora-token-reveal__title">
+                <AuroraIcons Name="key" Size="16" />
+                <span>Copy your token now — it won't be shown again.</span>
+            </div>
+            <div class="aurora-token-reveal__row">
+                <code class="aurora-token-reveal__value aurora-mono">@newToken.Token</code>
+                <AuroraButton Variant="soft" OnClick="@(() => CopyAsync(newToken.Token))">
+                    @(copied ? "Copied!" : "Copy")
+                </AuroraButton>
+            </div>
+            <div class="aurora-token-reveal__footer">
+                <AuroraButton Variant="ghost" OnClick="DismissReveal">Done</AuroraButton>
+            </div>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="aurora-tokens-loading">Loading…</div>
+    }
+    else
+    {
+        <AuroraCard NoPad="true">
+            @if (isCreating)
+            {
+                <div class="aurora-tokens-row aurora-tokens-row--edit">
+                    <input class="aurora-tokens-input" type="text" maxlength="100"
+                           placeholder="Token name (e.g. Claude Desktop)"
+                           @bind="createName" @bind:event="oninput" />
+                    <select class="aurora-tokens-select" aria-label="Token scope" @bind="createScope">
+                        <option value="read">Read only</option>
+                        <option value="read_write">Read &amp; write</option>
+                    </select>
+                    <select class="aurora-tokens-select" aria-label="Token expiry" @bind="createExpiry">
+                        <option value="none">No expiry</option>
+                        <option value="30">Expires in 30 days</option>
+                        <option value="90">Expires in 90 days</option>
+                        <option value="365">Expires in 1 year</option>
+                    </select>
+                    <div class="aurora-tokens-row__actions">
+                        <AuroraButton Variant="primary" Disabled="@(string.IsNullOrWhiteSpace(createName) || creating)" OnClick="CreateAsync">
+                            @(creating ? "Creating…" : "Create token")
+                        </AuroraButton>
+                        <AuroraButton Variant="ghost" Disabled="@creating" OnClick="CancelCreateRow">Cancel</AuroraButton>
+                    </div>
+                </div>
+            }
+
+            @if (list.Count == 0 && !isCreating)
+            {
+                <div class="aurora-tokens-empty">No tokens yet. Create one to connect an AI assistant.</div>
+            }
+            else
+            {
+                @foreach (var t in list)
+                {
+                    <div class="aurora-tokens-row">
+                        <div class="aurora-tokens-row__main">
+                            <div class="aurora-tokens-row__name">@t.Name</div>
+                            <div class="aurora-tokens-row__meta">
+                                <span class="aurora-mono">tmn_pat_@(t.Prefix)…</span>
+                                <span aria-hidden="true">·</span>
+                                <span>Created @t.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                                <span aria-hidden="true">·</span>
+                                <span>@FormatLastUsed(t)</span>
+                                @if (t.ExpiresAt.HasValue)
+                                {
+                                    <span aria-hidden="true">·</span>
+                                    <span>Expires @t.ExpiresAt.Value.ToLocalTime().ToString("MMM d, yyyy")</span>
+                                }
+                            </div>
+                        </div>
+                        <span class="aurora-tokens-pill @(t.Scope == "read_write" ? "is-readwrite" : "")">
+                            @(t.Scope == "read_write" ? "Read & write" : "Read only")
+                        </span>
+                        <div class="aurora-tokens-row__actions">
+                            <AuroraButton Variant="ghost" Class="aurora-tokens-row__danger" OnClick="@(() => RevokeAsync(t))">Revoke</AuroraButton>
+                        </div>
+                    </div>
+                }
+            }
+        </AuroraCard>
+    }
+
+    <p class="aurora-tokens-help">
+        Point your MCP client at <code class="aurora-mono">@BaseUri/mcp</code> and paste the token as a Bearer credential.
+        Review what your AI assistant did on the <a href="/settings/ai-activity">AI activity</a> page.
+    </p>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<PersonalAccessTokenDto> list = new();
+
+    private bool isCreating;
+    private bool creating;
+    private string createName = string.Empty;
+    private string createScope = "read";
+    private string createExpiry = "none";
+
+    private CreatedPatDto? newToken;
+    private bool copied;
+
+    private string BaseUri => Navigation.BaseUri.TrimEnd('/');
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    private async Task Reload()
+    {
+        isLoading = true;
+        try
+        {
+            list = await TokenApi.ListAsync();
+        }
+        catch (Exception ex)
+        {
+            list = new();
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load tokens", ex.Message, 4000);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenCreateRow()
+    {
+        isCreating = true;
+        createName = string.Empty;
+        createScope = "read";
+        createExpiry = "none";
+    }
+
+    private void CancelCreateRow()
+    {
+        isCreating = false;
+        createName = string.Empty;
+    }
+
+    private async Task CreateAsync()
+    {
+        var name = createName.Trim();
+        if (string.IsNullOrEmpty(name) || creating)
+        {
+            return;
+        }
+
+        creating = true;
+        try
+        {
+            var dto = new CreatePatDto
+            {
+                Name = name,
+                Scope = createScope,
+                ExpiresAt = ResolveExpiry(createExpiry)
+            };
+
+            var created = await TokenApi.CreateAsync(dto);
+            if (created is not null)
+            {
+                newToken = created;
+                copied = false;
+                CancelCreateRow();
+                await Reload();
+            }
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not create token", ex.Message, 4000);
+        }
+        finally
+        {
+            creating = false;
+        }
+    }
+
+    private static DateTimeOffset? ResolveExpiry(string choice) => choice switch
+    {
+        "30" => DateTimeOffset.UtcNow.AddDays(30),
+        "90" => DateTimeOffset.UtcNow.AddDays(90),
+        "365" => DateTimeOffset.UtcNow.AddDays(365),
+        _ => null
+    };
+
+    private async Task RevokeAsync(PersonalAccessTokenDto t)
+    {
+        var confirm = await DialogService.Confirm(
+            $"Revoke token '{t.Name}'? Any AI assistant using it will lose access immediately.",
+            "Revoke token",
+            new Radzen.ConfirmOptions { OkButtonText = "Revoke", CancelButtonText = "Cancel" });
+
+        if (confirm != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await TokenApi.RevokeAsync(t.Id);
+            Notifier.Notify(Radzen.NotificationSeverity.Success, "Token revoked", $"\"{t.Name}\" no longer has access.", 2500);
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Revoke failed", ex.Message, 4000);
+        }
+    }
+
+    private void DismissReveal()
+    {
+        newToken = null;
+        copied = false;
+    }
+
+    private async Task CopyAsync(string text)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            copied = true;
+        }
+        catch (Exception)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Warning, "Could not copy", "Select and copy the token manually.", 4000);
+        }
+    }
+
+    // LastUsedAt/CreatedAt/ExpiresAt all come back from the API as UTC
+    // DateTimeOffsets - ToLocalTime() before formatting or the value shown
+    // is off by the user's timezone offset (see CLAUDE.md's client rules).
+    private static string FormatLastUsed(PersonalAccessTokenDto t)
+        => t.LastUsedAt.HasValue
+            ? $"Last used {t.LastUsedAt.Value.ToLocalTime():MMM d, yyyy}"
+            : "Never used";
+}
