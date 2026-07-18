@@ -7,6 +7,7 @@ using Timinute.Server.Data;
 using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Shared.Dtos.Analytics;
 using Timinute.Shared.Dtos.Dashboard;
 
@@ -23,12 +24,18 @@ namespace Timinute.Server.Controllers
         private readonly IMapper mapper;
         private readonly ILogger<AnalyticsController> logger;
         private readonly ApplicationDbContext dbContext;
+        private readonly IAnalyticsAppService analyticsAppService;
 
-        public AnalyticsController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<AnalyticsController> logger, ApplicationDbContext dbContext)
+        // analyticsAppService is optional so existing unit tests can construct the
+        // controller with the pre-extraction signature; when omitted it is built from the
+        // same DbContext the controller already receives. Production DI supplies the
+        // registered scoped instance.
+        public AnalyticsController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<AnalyticsController> logger, ApplicationDbContext dbContext, IAnalyticsAppService? analyticsAppService = null)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.dbContext = dbContext;
+            this.analyticsAppService = analyticsAppService ?? new AnalyticsAppService(dbContext);
 
             projectRepository = repositoryFactory.GetRepository<Project>();
             trackedTaskRepository = repositoryFactory.GetRepository<TrackedTask>();
@@ -204,36 +211,8 @@ namespace Timinute.Server.Controllers
             var userId = User.FindFirstValue(Constants.Claims.UserId);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var offset = TimeSpan.FromMinutes(range.TzOffsetMinutes);
-            var rows = await RangeQuery(userId, range)
-                .Select(t => new { t.StartDate, t.Duration })
-                .ToListAsync();
-
-            var totalTicks = rows.Sum(r => r.Duration.Ticks);
-            var activeDays = rows
-                .GroupBy(r => r.StartDate.ToOffset(offset).Date)
-                .Count();
-
-            var workdayHours = await dbContext.Users
-                .AsNoTracking()
-                .Where(u => u.Id == userId)
-                .Select(u => u.Preferences.WorkdayHoursPerDay)
-                .FirstOrDefaultAsync();
-            if (workdayHours <= 0) workdayHours = 8.0m;
-
-            var weekdayCount = CountWeekdays(
-                range.From.ToOffset(offset).Date,
-                range.To.ToOffset(offset).Date);
-
-            return Ok(new AnalyticsSummaryDto
-            {
-                TotalDuration = TimeSpan.FromTicks(totalTicks),
-                TaskCount = rows.Count,
-                ActiveDays = activeDays,
-                AveragePerActiveDay = activeDays == 0 ? TimeSpan.Zero : TimeSpan.FromTicks(totalTicks / activeDays),
-                WeekdayCount = weekdayCount,
-                TargetDuration = TimeSpan.FromHours((double)(workdayHours * weekdayCount))
-            });
+            var summary = await analyticsAppService.SummaryAsync(userId, range.From, range.To, range.TzOffsetMinutes);
+            return Ok(summary);
         }
 
         // GET: Analytics/daily
@@ -351,16 +330,6 @@ namespace Timinute.Server.Controllers
             }
             dto.TotalDuration += duration;
             dto.TaskCount++;
-        }
-
-        private static int CountWeekdays(DateTime fromDate, DateTime toDate)
-        {
-            var count = 0;
-            for (var day = fromDate; day <= toDate; day = day.AddDays(1))
-            {
-                if (day.DayOfWeek != DayOfWeek.Saturday && day.DayOfWeek != DayOfWeek.Sunday) count++;
-            }
-            return count;
         }
 
         private (string, double) FindTopProjectLastMonth(IEnumerable<TrackedTask> trackedTasks)

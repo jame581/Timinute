@@ -11,6 +11,7 @@ using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.TrackedTask;
 using Timinute.Shared.Dtos.Trash;
@@ -27,14 +28,18 @@ namespace Timinute.Server.Controllers
         private readonly IMapper mapper;
         private readonly ILogger<TrackedTaskController> logger;
         private readonly IConfiguration configuration;
-        private readonly ApplicationDbContext dbContext;
+        private readonly ITimeEntryAppService timeEntryAppService;
 
-        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration, ApplicationDbContext dbContext)
+        // timeEntryAppService is optional so existing unit tests can construct the
+        // controller with the pre-extraction signature; when omitted it is built from the
+        // same factory + mapper + DbContext the controller already receives. Production DI
+        // supplies the registered scoped instance.
+        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration, ApplicationDbContext dbContext, ITimeEntryAppService? timeEntryAppService = null)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.configuration = configuration;
-            this.dbContext = dbContext;
+            this.timeEntryAppService = timeEntryAppService ?? new TimeEntryAppService(repositoryFactory, mapper, dbContext);
 
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }
@@ -87,17 +92,12 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-            var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
-            var normalizedTagIds = NormalizeTagIds(tagIds);
+            // Share the exact filter definition (and its input normalization) with the
+            // service's SearchAsync so the paged controller path and the MCP path can't drift.
+            var predicate = TimeEntryAppService.BuildSearchPredicate(userId, from, to, projectId, search, tagIds);
 
             var pagedTrackedTaskList = await taskRepository.GetPaged(pagingParameters,
-                t => t.UserId == userId
-                    && (from == null || t.StartDate >= from.Value.ToUniversalTime())
-                    && (to == null || t.StartDate <= to.Value.ToUniversalTime())
-                    && (normalizedProjectId == null || t.ProjectId == normalizedProjectId)
-                    && (normalizedSearch == null || t.Name.Contains(normalizedSearch))
-                    && (normalizedTagIds == null || t.Tags.Any(tag => normalizedTagIds.Contains(tag.TagId))),
+                predicate,
                 orderBy: $"{nameof(TrackedTask.StartDate)} desc",
                 includeProperties: $"{nameof(TrackedTask.Project)},{nameof(TrackedTask.Tags)}");
 
@@ -147,23 +147,15 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            // Whitespace means "no project"; trim otherwise — SQL Server's trailing-space padding would
-            // let "ProjectId1 " pass the ownership check and persist untrimmed in the FK column.
-            trackedTask.ProjectId = string.IsNullOrWhiteSpace(trackedTask.ProjectId) ? null : trackedTask.ProjectId.Trim();
-
-            if (!await ProjectBelongsToUserAsync(userId, trackedTask.ProjectId))
+            try
+            {
+                var created = await timeEntryAppService.LogAsync(userId, trackedTask);
+                return Ok(created);
+            }
+            catch (ProjectOwnershipException)
             {
                 return NotFound("Project not found!");
             }
-
-            var newTrackedTask = mapper.Map<TrackedTask>(trackedTask);
-            newTrackedTask.UserId = userId;
-            newTrackedTask.StartDate = trackedTask.StartDate.ToUniversalTime();
-            newTrackedTask.EndDate = newTrackedTask.StartDate + newTrackedTask.Duration;
-            newTrackedTask.Tags = await ResolveTagsAsync(userId, trackedTask.TagIds);
-
-            await taskRepository.Insert(newTrackedTask);
-            return Ok(mapper.Map<TrackedTaskDto>(newTrackedTask));
         }
 
         // DELETE: api/TrackedTask
@@ -177,16 +169,13 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var trackedTaskToDelete = await taskRepository.GetByIdInclude(t => t.TaskId == id && t.UserId == userId);
-            if (trackedTaskToDelete == null)
+            if (!await timeEntryAppService.DeleteAsync(userId, id))
             {
                 logger.LogError("Tracked task was not found");
                 return NotFound("Tracked task not found!");
             }
 
-            await taskRepository.SoftDelete(id);
-
-            logger.LogInformation("Tracked task with Id {TaskId} was soft-deleted.", trackedTaskToDelete.TaskId);
+            logger.LogInformation("Tracked task with Id {TaskId} was soft-deleted.", id);
             return NoContent();
 
         }
@@ -275,106 +264,26 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var foundTrackedTask = await dbContext.TrackedTasks
-                .Include(t => t.Tags)
-                .AsTracking()
-                .FirstOrDefaultAsync(t => t.TaskId == trackedTask.TaskId && t.UserId == userId);
-
-            if (foundTrackedTask == null)
+            try
             {
-                logger.LogError("Tracked task was not found");
-                return NotFound("Tracked task not found!");
+                var updated = await timeEntryAppService.UpdateAsync(userId, trackedTask.TaskId, trackedTask);
+
+                if (updated == null)
+                {
+                    logger.LogError("Tracked task was not found");
+                    return NotFound("Tracked task not found!");
+                }
+
+                return Ok(updated);
             }
-
-            // Whitespace means "no project"; trim otherwise — SQL Server's trailing-space padding would
-            // let "ProjectId1 " pass the ownership check and persist untrimmed in the FK column.
-            trackedTask.ProjectId = string.IsNullOrWhiteSpace(trackedTask.ProjectId) ? null : trackedTask.ProjectId.Trim();
-
-            if (!await ProjectBelongsToUserAsync(userId, trackedTask.ProjectId))
+            catch (ProjectOwnershipException)
             {
                 return NotFound("Project not found!");
             }
-
-            var updatedTrackedTask = mapper.Map(trackedTask, foundTrackedTask);
-            updatedTrackedTask.StartDate = updatedTrackedTask.StartDate.ToUniversalTime();
-
-            if (updatedTrackedTask.EndDate.HasValue)
+            catch (InvalidTimeRangeException ex)
             {
-                updatedTrackedTask.EndDate = updatedTrackedTask.EndDate.Value.ToUniversalTime();
-
-                if (updatedTrackedTask.EndDate.Value <= updatedTrackedTask.StartDate)
-                {
-                    return BadRequest("End date must be strictly after start date.");
-                }
-
-                updatedTrackedTask.Duration = updatedTrackedTask.EndDate.Value - updatedTrackedTask.StartDate;
+                return BadRequest(ex.Message);
             }
-
-            if (trackedTask.TagIds != null)
-            {
-                var resolvedTags = await ResolveTagsAsync(userId, trackedTask.TagIds);
-                updatedTrackedTask.Tags.Clear();
-                foreach (var tag in resolvedTags)
-                {
-                    updatedTrackedTask.Tags.Add(tag);
-                }
-            }
-
-            await dbContext.SaveChangesAsync();
-            var updatedTrackedTaskEntity = await dbContext.TrackedTasks
-                .AsNoTracking()
-                .Include(t => t.Project)
-                .Include(t => t.Tags)
-                .Where(t => t.TaskId == updatedTrackedTask.TaskId && t.UserId == userId)
-                .SingleOrDefaultAsync();
-
-            if (updatedTrackedTaskEntity == null)
-            {
-                logger.LogError("Tracked task was not found after update");
-                return NotFound("Tracked task not found!");
-            }
-
-            return Ok(mapper.Map<TrackedTaskDto>(updatedTrackedTaskEntity));
-        }
-
-        private async Task<bool> ProjectBelongsToUserAsync(string userId, string? projectId)
-        {
-            if (string.IsNullOrWhiteSpace(projectId))
-            {
-                return true;
-            }
-
-            return await dbContext.Projects.AnyAsync(p => p.ProjectId == projectId && p.UserId == userId);
-        }
-
-        private async Task<List<Tag>> ResolveTagsAsync(string userId, IEnumerable<string>? tagIds)
-        {
-            var normalizedTagIds = NormalizeTagIds(tagIds);
-            if (normalizedTagIds == null)
-            {
-                return new List<Tag>();
-            }
-
-            return await dbContext.Tags
-                .AsTracking()
-                .Where(tag => tag.UserId == userId && normalizedTagIds.Contains(tag.TagId))
-                .ToListAsync();
-        }
-
-        private static List<string>? NormalizeTagIds(IEnumerable<string>? tagIds)
-        {
-            if (tagIds == null)
-            {
-                return null;
-            }
-
-            var normalized = tagIds
-                .Where(id => !string.IsNullOrWhiteSpace(id))
-                .Select(id => id.Trim())
-                .Distinct()
-                .ToList();
-
-            return normalized.Count == 0 ? null : normalized;
         }
     }
 }
