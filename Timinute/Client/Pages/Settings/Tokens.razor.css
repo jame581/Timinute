@@ -162,11 +162,10 @@
     font: 400 14px var(--font-sans);
 }
 
-.aurora-tokens-input:focus,
-.aurora-tokens-select:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-so);
+.aurora-tokens-input:focus-visible,
+.aurora-tokens-select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .aurora-tokens-help {

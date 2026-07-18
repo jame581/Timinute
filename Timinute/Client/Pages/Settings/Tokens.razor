@@ -1,5 +1,5 @@
 @page "/settings/tokens"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@attribute [Authorize]
 
 @using Timinute.Client.Helpers
 @using Timinute.Shared.Dtos.Pat
@@ -35,7 +35,7 @@
                 <span>Copy your token now — it won't be shown again.</span>
             </div>
             <div class="aurora-token-reveal__row">
-                <code class="aurora-token-reveal__value aurora-mono">@newToken.Token</code>
+                <code class="aurora-token-reveal__value aurora-mono" tabindex="0" aria-label="Token value, scroll to view">@newToken.Token</code>
                 <AuroraButton Variant="soft" OnClick="@(() => CopyAsync(newToken.Token))">
                     @(copied ? "Copied!" : "Copy")
                 </AuroraButton>
@@ -58,6 +58,7 @@
                 <div class="aurora-tokens-row aurora-tokens-row--edit">
                     <input class="aurora-tokens-input" type="text" maxlength="100"
                            placeholder="Token name (e.g. Claude Desktop)"
+                           aria-label="Token name"
                            @bind="createName" @bind:event="oninput" />
                     <select class="aurora-tokens-select" aria-label="Token scope" @bind="createScope">
                         <option value="read">Read only</option>
@@ -194,6 +195,10 @@
                 copied = false;
                 CancelCreateRow();
                 await Reload();
+            }
+            else
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not create token", "The server returned an empty response.", 4000);
             }
         }
         catch (Exception ex)
