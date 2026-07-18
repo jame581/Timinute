@@ -19,6 +19,7 @@ using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Server.Services;
+using Timinute.Server.Services.Pat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -412,6 +413,7 @@ void DependecyInjection()
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
     builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
     builder.Services.AddSingleton<IExportService, ExportService>();
+    builder.Services.AddSingleton<IPatTokenService, PatTokenService>();
     builder.Services.AddHostedService<TrashPurgeService>();
 }
 
