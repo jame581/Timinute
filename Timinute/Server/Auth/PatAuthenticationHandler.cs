@@ -1,0 +1,84 @@
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Timinute.Server.Data;
+using Timinute.Server.Helpers;
+using Timinute.Server.Models;
+using Timinute.Server.Services.Pat;
+
+namespace Timinute.Server.Auth
+{
+    // Validates tmn_pat_… bearer tokens against PersonalAccessTokens. Registered as an
+    // authentication scheme but deliberately left out of the ApplicationDefinedPolicy
+    // ForwardDefaultSelector in Program.cs — PATs authenticate only where an endpoint
+    // explicitly opts in (the /mcp endpoint, via RequireAuthorization), never on the
+    // general Bearer→JwtBearer path used by REST controllers.
+    public sealed class PatAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    {
+        public const string SchemeName = "Pat";
+
+        private readonly ApplicationDbContext db;
+        private readonly IPatTokenService tokens;
+
+        public PatAuthenticationHandler(
+            IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger,
+            UrlEncoder encoder, ApplicationDbContext db, IPatTokenService tokens)
+            : base(options, logger, encoder)
+        {
+            this.db = db;
+            this.tokens = tokens;
+        }
+
+        protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+        {
+            string? authorization = Request.Headers.Authorization;
+            if (string.IsNullOrWhiteSpace(authorization) ||
+                !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return AuthenticateResult.NoResult();
+
+            var raw = authorization.Substring("Bearer ".Length).Trim();
+            if (!raw.StartsWith(IPatTokenService.TokenPrefix, StringComparison.Ordinal))
+                return AuthenticateResult.NoResult();
+
+            var body = raw.Substring(IPatTokenService.TokenPrefix.Length);
+            if (body.Length < 8)
+                return AuthenticateResult.Fail("Malformed token.");
+
+            var prefix = body.Substring(0, 8);
+            var hash = tokens.Hash(raw);
+
+            var candidates = await db.PersonalAccessTokens
+                .Where(t => t.Prefix == prefix).ToListAsync();
+
+            var now = DateTimeOffset.UtcNow;
+            var match = candidates.FirstOrDefault(t =>
+                tokens.FixedTimeEquals(t.TokenHash, hash)
+                && t.RevokedAt == null
+                && (t.ExpiresAt == null || t.ExpiresAt > now));
+
+            if (match is null)
+                return AuthenticateResult.Fail("Invalid token.");
+
+            // Best-effort last-used stamp; must never fail the request.
+            try
+            {
+                match.LastUsedAt = now;
+                await db.SaveChangesAsync();
+            }
+            catch { /* non-fatal */ }
+
+            var scope = match.Scopes == PatScope.ReadWrite ? "read_write" : "read";
+            var identity = new ClaimsIdentity(new[]
+            {
+                new Claim(Constants.Claims.UserId, match.UserId),
+                new Claim(Constants.Claims.Scope, scope),
+                new Claim("pat_id", match.Id),
+            }, SchemeName);
+
+            return AuthenticateResult.Success(
+                new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));
+        }
+    }
+}

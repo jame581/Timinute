@@ -70,6 +70,11 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
     })
+    // Registered but deliberately NOT wired into ForwardDefaultSelector below — PATs
+    // authenticate only where an endpoint explicitly requests this scheme (the future
+    // /mcp endpoint), never on the general Bearer→JwtBearer path REST controllers use.
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, Timinute.Server.Auth.PatAuthenticationHandler>(
+        Timinute.Server.Auth.PatAuthenticationHandler.SchemeName, displayName: null, _ => { })
     // displayName must stay null — schemes with a display name are listed by the
     // Identity UI as external login providers ("or continue with" buttons).
     .AddPolicyScheme("ApplicationDefinedPolicy", displayName: null, options =>
