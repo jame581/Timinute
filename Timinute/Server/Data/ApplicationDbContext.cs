@@ -19,6 +19,7 @@ namespace Timinute.Server.Data
         public DbSet<TrackedTask> TrackedTasks { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<Tag> Tags { get; set; } = null!;
+        public DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; } = null!;
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -156,6 +157,17 @@ namespace Timinute.Server.Data
                            .HasForeignKey("TagId").OnDelete(DeleteBehavior.Cascade),
                     r => r.HasOne(typeof(TrackedTask)).WithMany()
                            .HasForeignKey("TaskId").OnDelete(DeleteBehavior.Cascade));
+
+            // PersonalAccessToken entity
+            builder.Entity<PersonalAccessToken>().HasKey(t => t.Id);
+            builder.Entity<PersonalAccessToken>().Property(t => t.Name).HasMaxLength(100).IsRequired();
+            builder.Entity<PersonalAccessToken>().Property(t => t.TokenHash).HasMaxLength(64).IsRequired();
+            builder.Entity<PersonalAccessToken>().Property(t => t.Prefix).HasMaxLength(16).IsRequired();
+            builder.Entity<PersonalAccessToken>().Property(t => t.Scopes).HasConversion<string>().HasMaxLength(16).IsRequired();
+            builder.Entity<PersonalAccessToken>().HasIndex(t => t.Prefix);
+            builder.Entity<PersonalAccessToken>().HasIndex(t => t.UserId);
+            builder.Entity<PersonalAccessToken>()
+                .HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
 
             FillDataToDB(builder);
 
