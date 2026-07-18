@@ -65,7 +65,11 @@ namespace Timinute.Server.Controllers
                 Prefix = prefix,
                 Scopes = dto.Scope == "read_write" ? PatScope.ReadWrite : PatScope.Read,
                 CreatedAt = DateTimeOffset.UtcNow,
-                ExpiresAt = dto.ExpiresAt
+                // Normalize to UTC (Offset == TimeSpan.Zero) before persisting: the SQLite
+                // DateTimeOffsetToBinaryConverter's ordering is only correct for zero-offset
+                // values, so a client-supplied non-UTC ExpiresAt would sort/compare incorrectly
+                // in any future SQL-side range query.
+                ExpiresAt = dto.ExpiresAt?.ToUniversalTime()
             };
 
             await repository.Insert(newToken);

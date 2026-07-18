@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
@@ -83,6 +84,26 @@ namespace Timinute.Server.Tests.Integration
             Assert.DoesNotContain(expectedHash, rawBody, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("tokenhash", rawBody, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("\"token\"", rawBody, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task Create_Normalizes_NonUtc_ExpiresAt_To_Utc()
+        {
+            var nonUtcExpiry = new DateTimeOffset(2027, 1, 1, 12, 0, 0, TimeSpan.FromHours(2));
+
+            var created = await (await client.PostAsJsonAsync("/Pat", new CreatePatDto
+            {
+                Name = "expiring",
+                Scope = "read",
+                ExpiresAt = nonUtcExpiry
+            })).Content.ReadFromJsonAsync<CreatedPatDto>();
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var persisted = await db.PersonalAccessTokens.SingleAsync(t => t.Id == created!.Id);
+
+            Assert.Equal(TimeSpan.Zero, persisted.ExpiresAt!.Value.Offset);
+            Assert.Equal(nonUtcExpiry, persisted.ExpiresAt.Value); // same instant, regardless of offset
         }
 
         [Fact]
