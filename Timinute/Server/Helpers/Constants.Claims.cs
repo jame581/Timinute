@@ -9,6 +9,7 @@ namespace Timinute.Server.Helpers
             public const string Fullname = "FullName";
             public const string Role = "Role";
             public const string Scope = "pat_scope";
+            public const string PatId = "pat_id";
         }
     }
 }

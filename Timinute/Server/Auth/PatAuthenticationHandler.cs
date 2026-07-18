@@ -33,7 +33,8 @@ namespace Timinute.Server.Auth
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            string? authorization = Request.Headers.Authorization;
+            // TrimStart to mirror the ForwardDefaultSelector's own header check in Program.cs.
+            var authorization = Request.Headers.Authorization.ToString().TrimStart();
             if (string.IsNullOrWhiteSpace(authorization) ||
                 !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 return AuthenticateResult.NoResult();
@@ -49,7 +50,11 @@ namespace Timinute.Server.Auth
             var prefix = body.Substring(0, 8);
             var hash = tokens.Hash(raw);
 
+            // AsNoTracking: this handler must never leave PAT entities tracked on the
+            // shared, request-scoped ApplicationDbContext — repositories and controllers
+            // reuse the same instance for the rest of the request.
             var candidates = await db.PersonalAccessTokens
+                .AsNoTracking()
                 .Where(t => t.Prefix == prefix).ToListAsync();
 
             var now = DateTimeOffset.UtcNow;
@@ -61,24 +66,43 @@ namespace Timinute.Server.Auth
             if (match is null)
                 return AuthenticateResult.Fail("Invalid token.");
 
-            // Best-effort last-used stamp; must never fail the request.
-            try
-            {
-                match.LastUsedAt = now;
-                await db.SaveChangesAsync();
-            }
-            catch { /* non-fatal */ }
+            await TryStampLastUsedAsync(match.Id, now);
 
             var scope = match.Scopes == PatScope.ReadWrite ? "read_write" : "read";
             var identity = new ClaimsIdentity(new[]
             {
                 new Claim(Constants.Claims.UserId, match.UserId),
                 new Claim(Constants.Claims.Scope, scope),
-                new Claim("pat_id", match.Id),
+                new Claim(Constants.Claims.PatId, match.Id),
             }, SchemeName);
 
             return AuthenticateResult.Success(
                 new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));
+        }
+
+        // Best-effort LastUsedAt stamp: must never fail the request, and must never leave
+        // any PersonalAccessToken entity tracked on the shared context afterwards — a
+        // failed SaveChanges here must not cause an unrelated later SaveChanges in the same
+        // request to re-attempt this write. A keyed stub (rather than the AsNoTracking
+        // `match` instance) is attached so only LastUsedAt is marked modified; it is always
+        // detached in `finally`, success or failure.
+        private async Task TryStampLastUsedAsync(string id, DateTimeOffset now)
+        {
+            var stub = new PersonalAccessToken { Id = id };
+            try
+            {
+                db.PersonalAccessTokens.Attach(stub);
+                stub.LastUsedAt = now;
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to update PAT LastUsedAt.");
+            }
+            finally
+            {
+                db.Entry(stub).State = EntityState.Detached;
+            }
         }
     }
 }

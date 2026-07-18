@@ -19,9 +19,9 @@ namespace Timinute.Server.Tests.Auth
 {
     public class PatAuthenticationHandlerTest
     {
-        private static ApplicationDbContext NewDb() =>
+        private static ApplicationDbContext NewDb(string? dbName = null) =>
             new(new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+                .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString()).Options);
 
         private static async Task<AuthenticateResult> Authenticate(ApplicationDbContext db, string? bearer)
         {
@@ -64,15 +64,65 @@ namespace Timinute.Server.Tests.Auth
         [Fact]
         public async Task Valid_Token_Authenticates_With_UserId_And_Scope()
         {
-            var db = NewDb();
+            var dbName = Guid.NewGuid().ToString();
             var svc = new PatTokenService();
-            var token = await SeedToken(db, svc, PatScope.ReadWrite);
+            string token;
+            using (var seedDb = NewDb(dbName))
+            {
+                token = await SeedToken(seedDb, svc, PatScope.ReadWrite);
+            }
 
-            var result = await Authenticate(db, token);
+            // A fresh context for authentication, sharing only the underlying store — this
+            // mirrors production, where the PAT is created in an earlier, already-completed
+            // HTTP request and authentication runs in a new request-scoped DbContext.
+            using var authDb = NewDb(dbName);
+            var result = await Authenticate(authDb, token);
 
             Assert.True(result.Succeeded);
             Assert.Equal("user-1", result.Principal!.FindFirstValue(Constants.Claims.UserId));
             Assert.Equal("read_write", result.Principal!.FindFirstValue(Constants.Claims.Scope));
+            Assert.False(string.IsNullOrEmpty(result.Principal!.FindFirstValue(Constants.Claims.PatId)));
+        }
+
+        [Fact]
+        public async Task Valid_Token_Leaves_No_Tracked_State_And_Stamps_LastUsedAt()
+        {
+            var dbName = Guid.NewGuid().ToString();
+            var svc = new PatTokenService();
+            string token;
+            using (var seedDb = NewDb(dbName))
+            {
+                token = await SeedToken(seedDb, svc, PatScope.Read);
+            }
+
+            using var authDb = NewDb(dbName);
+            var result = await Authenticate(authDb, token);
+            Assert.True(result.Succeeded);
+
+            // The shared, request-scoped context must carry no PAT tracked state once the
+            // handler returns — otherwise an unrelated later SaveChanges in the same request
+            // could re-attempt (and fail on) this write.
+            Assert.Empty(authDb.ChangeTracker.Entries<PersonalAccessToken>());
+
+            // The stamp itself must have actually landed, and must not have clobbered any of
+            // the token's other columns (guards against a naive attach-stub implementation
+            // that overwrites the whole row with default values).
+            var persisted = await authDb.PersonalAccessTokens.AsNoTracking().SingleAsync();
+            Assert.NotNull(persisted.LastUsedAt);
+            Assert.Equal("user-1", persisted.UserId);
+            Assert.Equal("t", persisted.Name);
+            Assert.Equal(PatScope.Read, persisted.Scopes);
+        }
+
+        [Fact]
+        public async Task Failed_Authentication_Leaves_No_Tracked_State()
+        {
+            var db = NewDb();
+
+            var result = await Authenticate(db, "tmn_pat_deadbeefdeadbeef");
+
+            Assert.False(result.Succeeded);
+            Assert.Empty(db.ChangeTracker.Entries<PersonalAccessToken>());
         }
 
         [Fact]
