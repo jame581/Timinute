@@ -1,7 +1,6 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31710.8
+# Visual Studio Version 18
+VisualStudioVersion = 18.8.12009.203 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timinute.Server", "Timinute\Server\Timinute.Server.csproj", "{7D65ECD3-E739-4AB6-8ACF-CED064FB8471}"
 EndProject
@@ -12,6 +11,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timinute.Server.Tests", "Timinute\Server.Tests\Timinute.Server.Tests.csproj", "{5C90CF28-06DD-4CC7-8F53-A75F6B355E05}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timinute.Client.Tests", "Timinute\Client.Tests\Timinute.Client.Tests.csproj", "{8FA93846-E238-4066-A6E4-57E6BE296E07}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AAF18EDB-D4E0-4026-9EAE-07F785D03DE1}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+		docs\DOCKER.md = docs\DOCKER.md
+		Dockerfile = Dockerfile
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

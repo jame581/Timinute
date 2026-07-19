@@ -12,6 +12,7 @@ using Timinute.Server.Controllers;
 using Timinute.Server.Data;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Analytics;
 using Timinute.Shared.Dtos.Dashboard;
@@ -377,7 +378,8 @@ namespace Timinute.Server.Tests.Controllers
                                         }
             ));
 
-            AnalyticsController controller = new(repositoryFactory, _mapper, _loggerMock.Object, applicationDbContext)
+            AnalyticsController controller = new(repositoryFactory, _mapper, _loggerMock.Object, applicationDbContext,
+                new AnalyticsAppService(applicationDbContext))
             {
                 ControllerContext = new ControllerContext
                 {

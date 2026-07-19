@@ -16,6 +16,7 @@ using Timinute.Server.Data;
 using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
@@ -830,6 +831,23 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Search_Tasks_By_Name_Is_Case_Insensitive()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            // Lower-cased query must still match the seeded "Task 1" - the shared predicate
+            // lower-cases both sides so the match is case-insensitive on every provider.
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, "task 1");
+
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Single(tasks!);
+            Assert.Equal("TrackedTaskId1", tasks!.First().TaskId);
+        }
+
+        [Fact]
         public async Task Search_Tasks_By_TagId_Returns_Matching_Tasks()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchTagMatch");
@@ -1139,7 +1157,8 @@ namespace Timinute.Server.Tests.Controllers
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
                 .Build();
 
-            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration, applicationDbContext)
+            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration, applicationDbContext,
+                new TimeEntryAppService(repositoryFactory, _mapper, applicationDbContext))
             {
                 ControllerContext = new ControllerContext
                 {

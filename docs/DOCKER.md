@@ -45,7 +45,13 @@ All settings flow through ASP.NET Core's hierarchical configuration — environm
 | `ASPNETCORE_URLS`                            | `http://+:8080`           | Listen address inside the container                       |
 | `TrashRetention__Days`                       | `30`                      | Soft-delete retention days before hard-purge              |
 | `TrashRetention__PurgeIntervalHours`         | `24`                      | How often the background purge service runs               |
-| `HttpLogging__Enabled`                       | `false`                   | Log one line per request (method, path, status, duration; never headers/bodies). Diagnostic only — when enabled it also logs every static-asset request, which is noisy on cold WASM loads. |
+| `Serilog__File__Enabled`                     | `false`                   | Write daily-rolling compact-JSON log files to `Serilog__File__Path`. Off by default; console logs (`docker logs`) are always on. See the [Logs](#logs) section. |
+| `Serilog__File__Path`                        | `/logs/timinute-.log`     | File-sink path — mount a volume here to persist logs. Only used when `Serilog__File__Enabled=true`. |
+| `Serilog__File__RetainedFileCountLimit`      | `14`                      | Number of rolled daily log files to retain. |
+| `Serilog__MinimumLevel__Default`             | `Information`             | Global minimum log level: `Debug` < `Information` < `Warning` < `Error`. Development defaults to `Debug`. |
+| `Mcp__Enabled`                                | `true`                    | Enables the MCP server at `/mcp`. Set `false` to remove both the MCP services and the endpoint entirely — requests to `/mcp` then fall through to the SPA fallback (`index.html`). See [MCP server](#mcp-server). |
+| `Mcp__ActivityRetention__Days`                | `90`                      | How many days of AI-activity audit rows (`/settings/ai-activity`) to retain before hard-purge. |
+| `Mcp__ActivityRetention__PurgeIntervalHours`  | `24`                      | How often the background purge service checks for expired AI-activity rows. |
 
 ### `IdentityServer__Authority` — the most important setting
 
@@ -158,6 +164,33 @@ labels:
 ```
 
 Traefik sets forwarded headers automatically when using its standard HTTPS entrypoint.
+
+## MCP server
+
+Timinute exposes a [Model Context Protocol](https://modelcontextprotocol.io/) server at `/mcp` so an AI assistant can read (and, with the right token scope, write) a user's own time-tracking data. Full user-facing walkthrough: [`docs/MCP.md`](MCP.md). Operational notes for self-hosters:
+
+**Enable/disable.** Gated by `Mcp__Enabled` (default `true`). Setting `Mcp__Enabled=false` removes the MCP DI registrations (tools, activity sink, interceptor) and the `/mcp` route entirely — a request to `/mcp` then falls through to the SPA fallback (`index.html`) instead of hitting an endpoint. This is a full off-switch, not just an auth gate.
+
+**Auth model.** `/mcp` accepts only `Authorization: Bearer tmn_pat_…` — the personal-access-token scheme. The Identity cookie and the JWT bearer scheme used everywhere else in the app are both rejected there; conversely, a PAT is rejected everywhere except `/mcp` (including the REST API and the web login). Tokens are minted by the user at `/settings/tokens` and carry a `read` or `read_write` scope. Every request re-validates the token against the database, so revoking a token from that page takes effect on the token's very next request — there is no caching window.
+
+**Transport.** The server runs in stateless Streamable HTTP mode: no session affinity is needed to scale `/mcp` across multiple replicas. Your reverse proxy must:
+- forward the `Authorization` header through to the app (most proxies do this by default; double-check if yours strips headers), and
+- not buffer `text/event-stream` responses. For nginx, add `proxy_buffering off;` on the `/mcp` location:
+
+```nginx
+location /mcp {
+    proxy_pass         http://timinute-app:8080;
+    proxy_set_header   Host               $host;
+    proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto  $scheme;
+    proxy_set_header   X-Forwarded-Host   $host;
+    proxy_buffering    off;
+}
+```
+
+**401 challenge.** An unauthenticated or invalid request to `/mcp` gets back a bare `WWW-Authenticate: Bearer` challenge (RFC 9110) — there is no OAuth discovery metadata behind it. MCP clients must be configured with a static bearer header (the PAT); an OAuth-based connection flow will not work against this server.
+
+**TLS strongly recommended.** The bearer token travels on every request. On an HTTP-only deployment, PATs cross the wire in cleartext — put a TLS-terminating reverse proxy in front of any internet-facing instance (see [Reverse proxy](#reverse-proxy) above).
 
 ## External SQL Server
 
@@ -285,3 +318,52 @@ docker compose up -d
 ```
 
 All users will need to log in again after this.
+
+## Logs
+
+Timinute logs with [Serilog](https://serilog.net/). There are two independent paths.
+
+### Console (always on) — `docker logs`
+
+Every log line is written to the container's stdout. Outside Development it is emitted
+as **compact JSON** (one object per line), so `docker logs` and any log scraper
+(Loki, Fluent Bit, Datadog) can parse the fields directly.
+
+```bash
+docker logs -f timinute            # follow live
+docker logs --tail 100 timinute    # last 100 lines
+docker compose logs -f timinute    # via compose
+```
+
+No volume or configuration is required — this is all most deployments need.
+
+### Rolling file (opt-in)
+
+To also write daily rolling log files to disk, enable the file sink and mount a volume
+so the files survive container recreation:
+
+```yaml
+services:
+  timinute:
+    environment:
+      - Serilog__File__Enabled=true
+      - Serilog__File__Path=/logs/timinute-.log
+      - Serilog__File__RetainedFileCountLimit=14
+    volumes:
+      - timinute-logs:/logs
+volumes:
+  timinute-logs:
+```
+
+Read them with `docker exec timinute ls /logs`. Without a mounted volume the files live
+in the container's ephemeral filesystem and disappear when the container is recreated.
+
+### Log levels
+
+Levels: `Debug` < `Information` < `Warning` < `Error`. Production defaults to an
+`Information` floor. Override globally or per namespace via env var:
+
+```bash
+Serilog__MinimumLevel__Default=Warning
+Serilog__MinimumLevel__Override__Microsoft.AspNetCore=Error
+```

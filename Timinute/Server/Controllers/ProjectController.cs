@@ -8,6 +8,7 @@ using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Shared.Dtos.Paging;
 using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.Trash;
@@ -19,22 +20,19 @@ namespace Timinute.Server.Controllers
     [Route("[controller]")]
     public class ProjectController : ControllerBase
     {
-        private static readonly string[] ProjectPalette =
-        {
-            "#6366F1", "#F59E0B", "#10B981", "#EC4899", "#94A3B8"
-        };
-
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<TrackedTask> taskRepository;
         private readonly IMapper mapper;
         private readonly ILogger<ProjectController> logger;
         private readonly IConfiguration configuration;
+        private readonly IProjectAppService projectAppService;
 
-        public ProjectController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<ProjectController> logger, IConfiguration configuration)
+        public ProjectController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<ProjectController> logger, IConfiguration configuration, IProjectAppService projectAppService)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.configuration = configuration;
+            this.projectAppService = projectAppService;
 
             projectRepository = repositoryFactory.GetRepository<Project>();
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
@@ -139,27 +137,23 @@ namespace Timinute.Server.Controllers
                 return Unauthorized();
             }
 
-            var newProject = mapper.Map<Project>(project);
-            newProject.UserId = userId;
-
-            if (string.IsNullOrWhiteSpace(newProject.Color))
-            {
-                // Count *all* the user's projects including soft-deleted, so the round-robin
-                // index keeps advancing past deletions and we don't collide on the palette.
-                var existingCount = await projectRepository.CountAll(p => p.UserId == userId);
-                newProject.Color = ProjectPalette[existingCount % ProjectPalette.Length];
-            }
-
             try
             {
-                await projectRepository.Insert(newProject);
+                var created = await projectAppService.CreateAsync(userId, project);
+                return Ok(created);
             }
-            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            catch (AppValidationException ex)
+            {
+                // Safety net: [ApiController] already validated the body with a 422 before this
+                // action ran, so REST requests never reach here — this only fires if the DTO
+                // contract and the model-validation pipeline ever diverge.
+                return UnprocessableEntity(new { message = ex.Message });
+            }
+            catch (ProjectNameConflictException ex)
             {
                 logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);
                 return Conflict(new { message = "A project with this name already exists." });
             }
-            return Ok(mapper.Map<ProjectDto>(newProject));
         }
 
         // DELETE: api/Project
@@ -315,21 +309,13 @@ namespace Timinute.Server.Controllers
             {
                 await projectRepository.Update(updatedProject);
             }
-            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueConstraintViolation(ex))
             {
                 logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);
                 return Conflict(new { message = "A project with this name already exists." });
             }
 
             return Ok(mapper.Map<ProjectDto>(updatedProject));
-        }
-
-        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-        {
-            var message = ex.InnerException?.Message ?? ex.Message;
-            return message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

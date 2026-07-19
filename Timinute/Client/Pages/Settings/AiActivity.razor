@@ -1,0 +1,92 @@
+@page "/settings/ai-activity"
+@attribute [Authorize]
+
+@using Timinute.Shared.Dtos.Mcp
+
+@inject Timinute.Client.Services.McpActivityService ActivityApi
+@inject Radzen.NotificationService Notifier
+
+<PageTitle>AI activity</PageTitle>
+
+<div class="aurora-activity-page">
+    <div class="aurora-activity-header">
+        <div>
+            <div class="aurora-activity-title">AI activity</div>
+            <div class="aurora-activity-subtitle">Every action an AI assistant took on your data over MCP.</div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="aurora-activity-loading">Loading…</div>
+    }
+    else if (list.Count == 0)
+    {
+        <AuroraCard>
+            <div class="aurora-activity-empty">
+                No AI activity yet. Connect an assistant from the <a href="/settings/tokens">API Tokens</a> page to see its actions show up here.
+            </div>
+        </AuroraCard>
+    }
+    else
+    {
+        <AuroraCard NoPad="true">
+            @foreach (var a in list)
+            {
+                <div class="aurora-activity-row">
+                    <div class="aurora-activity-row__time aurora-mono">@FormatTimestamp(a.Timestamp)</div>
+                    <div class="aurora-activity-row__main">
+                        <div class="aurora-activity-row__tool">
+                            <code class="aurora-mono">@a.Tool</code>
+                        </div>
+                        <div class="aurora-activity-row__summary">@a.Summary</div>
+                        @if (IsFailed(a) && !string.IsNullOrEmpty(a.Detail))
+                        {
+                            <div class="aurora-activity-row__detail">@a.Detail</div>
+                        }
+                    </div>
+                    <span class="aurora-activity-pill @(IsFailed(a) ? "is-failed" : "is-success")">
+                        @a.Result
+                    </span>
+                </div>
+            }
+        </AuroraCard>
+    }
+
+    <p class="aurora-activity-help">
+        Looking for your connected assistants? Manage them on the <a href="/settings/tokens">API Tokens</a> page.
+    </p>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<McpActivityDto> list = new();
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    private async Task Reload()
+    {
+        isLoading = true;
+        try
+        {
+            list = await ActivityApi.ListAsync();
+        }
+        catch (Exception ex)
+        {
+            list = new();
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not load AI activity", ex.Message, 4000);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static bool IsFailed(McpActivityDto a) => string.Equals(a.Result, "Failed", StringComparison.OrdinalIgnoreCase);
+
+    // Timestamp comes back from the API as a UTC DateTimeOffset - ToLocalTime()
+    // before formatting or the value shown is off by the user's timezone offset
+    // (see CLAUDE.md's client rules).
+    private static string FormatTimestamp(DateTimeOffset timestamp)
+        => timestamp.ToLocalTime().ToString("MMM d, yyyy HH:mm");
+}
