@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-19 — v2.4 (`feature/v2.4-logging-mcp`, PR pending): Serilog structured request logging + correlation ids, and an MCP server (7 tools, PAT auth, AI activity audit log) — see below._
+_Last reviewed: 2026-07-19 — v2.4 (`feature/v2.4-logging-mcp`, PR #65): Serilog structured request logging + correlation ids, and an MCP server (7 tools, PAT auth, AI activity audit log) — see below._
 
 ## Current Feature Set
 
@@ -95,7 +95,7 @@ Status reviewed 2026-07-13.
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
 
-## Recently shipped (v2.4, `feature/v2.4-logging-mcp`, PR pending)
+## Recently shipped (v2.4, `feature/v2.4-logging-mcp`, PR #65)
 
 | Feature | PRs |
 |---------|-----|
