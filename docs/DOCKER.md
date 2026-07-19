@@ -49,6 +49,9 @@ All settings flow through ASP.NET Core's hierarchical configuration — environm
 | `Serilog__File__Path`                        | `/logs/timinute-.log`     | File-sink path — mount a volume here to persist logs. Only used when `Serilog__File__Enabled=true`. |
 | `Serilog__File__RetainedFileCountLimit`      | `14`                      | Number of rolled daily log files to retain. |
 | `Serilog__MinimumLevel__Default`             | `Information`             | Global minimum log level: `Debug` < `Information` < `Warning` < `Error`. Development defaults to `Debug`. |
+| `Mcp__Enabled`                                | `true`                    | Enables the MCP server at `/mcp`. Set `false` to remove both the MCP services and the endpoint entirely — requests to `/mcp` then fall through to the SPA fallback (`index.html`). See [MCP server](#mcp-server). |
+| `Mcp__ActivityRetention__Days`                | `90`                      | How many days of AI-activity audit rows (`/settings/ai-activity`) to retain before hard-purge. |
+| `Mcp__ActivityRetention__PurgeIntervalHours`  | `24`                      | How often the background purge service checks for expired AI-activity rows. |
 
 ### `IdentityServer__Authority` — the most important setting
 
@@ -161,6 +164,33 @@ labels:
 ```
 
 Traefik sets forwarded headers automatically when using its standard HTTPS entrypoint.
+
+## MCP server
+
+Timinute exposes a [Model Context Protocol](https://modelcontextprotocol.io/) server at `/mcp` so an AI assistant can read (and, with the right token scope, write) a user's own time-tracking data. Full user-facing walkthrough: [`docs/MCP.md`](MCP.md). Operational notes for self-hosters:
+
+**Enable/disable.** Gated by `Mcp__Enabled` (default `true`). Setting `Mcp__Enabled=false` removes the MCP DI registrations (tools, activity sink, interceptor) and the `/mcp` route entirely — a request to `/mcp` then falls through to the SPA fallback (`index.html`) instead of hitting an endpoint. This is a full off-switch, not just an auth gate.
+
+**Auth model.** `/mcp` accepts only `Authorization: Bearer tmn_pat_…` — the personal-access-token scheme. The Identity cookie and the JWT bearer scheme used everywhere else in the app are both rejected there; conversely, a PAT is rejected everywhere except `/mcp` (including the REST API and the web login). Tokens are minted by the user at `/settings/tokens` and carry a `read` or `read_write` scope. Every request re-validates the token against the database, so revoking a token from that page takes effect on the token's very next request — there is no caching window.
+
+**Transport.** The server runs in stateless Streamable HTTP mode: no session affinity is needed to scale `/mcp` across multiple replicas. Your reverse proxy must:
+- forward the `Authorization` header through to the app (most proxies do this by default; double-check if yours strips headers), and
+- not buffer `text/event-stream` responses. For nginx, add `proxy_buffering off;` on the `/mcp` location:
+
+```nginx
+location /mcp {
+    proxy_pass         http://timinute-app:8080;
+    proxy_set_header   Host               $host;
+    proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto  $scheme;
+    proxy_set_header   X-Forwarded-Host   $host;
+    proxy_buffering    off;
+}
+```
+
+**401 challenge.** An unauthenticated or invalid request to `/mcp` gets back a bare `WWW-Authenticate: Bearer` challenge (RFC 9110) — there is no OAuth discovery metadata behind it. MCP clients must be configured with a static bearer header (the PAT); an OAuth-based connection flow will not work against this server.
+
+**TLS strongly recommended.** The bearer token travels on every request. On an HTTP-only deployment, PATs cross the wire in cleartext — put a TLS-terminating reverse proxy in front of any internet-facing instance (see [Reverse proxy](#reverse-proxy) above).
 
 ## External SQL Server
 

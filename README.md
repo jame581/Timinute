@@ -21,6 +21,7 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 - **Trash** — 30-day soft-delete recovery for projects and tasks, cascade-restore on Project, background hard-purge service.
 - **Search + filter** — `TrackedTask/search` (date range, project, name, task-count) and `Project/search` (name, min-task-count).
 - **Data export** — CSV and Excel exports for tasks, project summaries, and monthly analytics.
+- **AI / MCP** — a Model Context Protocol server at `/mcp` lets an AI assistant read your projects, time entries, and analytics (and, with a read-write token, log time) using a scoped personal access token; every call is recorded to a user-viewable AI activity log.
 - **Identity** — Duende IdentityServer for auth (JWT for the API, cookie for Identity UI), Basic/Admin roles, lockout, registration via Razor Pages.
 - **Mobile responsive** — bottom glass tab bar with FAB, slide-up overflow sheet, full reflow at ≤768px.
 - **Dark mode** — `Light / Dark / System` preference, no flash on reload (synchronous pre-Blazor bootstrap), watches `prefers-color-scheme` for System users. Quick toggle in the desktop topbar.
@@ -100,6 +101,10 @@ docker compose up -d
 ```
 
 The app comes up on `http://localhost:8080`. For real deployments, put a TLS-terminating reverse proxy in front and set `IdentityServer__Authority` to the public https URL. Full self-host guide (reverse proxy, external SQL, backups, upgrades): [`docs/DOCKER.md`](docs/DOCKER.md).
+
+## AI / MCP
+
+Timinute hosts a [Model Context Protocol](https://modelcontextprotocol.io/) server at `/mcp`, so an AI assistant like Claude Code or Claude Desktop can query and (optionally) log your time using a personal access token you create at `/settings/tokens`. Tokens are scoped `read` or `read_write`, shown once at creation, and every tool call is recorded to an AI activity log at `/settings/ai-activity`. See [`docs/MCP.md`](docs/MCP.md) for the connection guide and security notes.
 
 ## Production deployment
 
