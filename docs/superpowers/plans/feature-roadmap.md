@@ -86,6 +86,7 @@ Status reviewed 2026-07-13.
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
 | `:has()` browser-support fragility on landing nav | ✅ done | PR #35 review fix — switched to `[href*="github.com"]` |
 | Per-render `IsActive` / `SelectedDayTasks` allocations | ✅ done | PR #35 review fix |
+| Radzen dialogs not skinned to Aurora (render light/Material) | 🔲 open | Found during v2.4 complex-testing browser pass (2026-07-19). `DialogService`-opened dialogs (e.g. the `New project` dialog, task add/edit modals) render with Radzen's default **Material light** theme — white background, bright-blue `Submit` button — inconsistent with the Aurora dark theme and jarring in dark mode. `MainLayout` sets `<RadzenTheme Theme="material" />` unconditionally. Fix options: switch to a Radzen dark theme synced to the theme toggle, or (preferred) replace remaining `DialogService` dialogs with Aurora-native components as the tokens/AiActivity pages already do. |
 
 ---
 
