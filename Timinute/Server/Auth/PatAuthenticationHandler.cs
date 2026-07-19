@@ -21,14 +21,17 @@ namespace Timinute.Server.Auth
         public const string SchemeName = "Pat";
 
         private readonly ApplicationDbContext db;
+        private readonly IDbContextFactory<ApplicationDbContext> dbFactory;
         private readonly IPatTokenService tokens;
 
         public PatAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger,
-            UrlEncoder encoder, ApplicationDbContext db, IPatTokenService tokens)
+            UrlEncoder encoder, ApplicationDbContext db,
+            IDbContextFactory<ApplicationDbContext> dbFactory, IPatTokenService tokens)
             : base(options, logger, encoder)
         {
             this.db = db;
+            this.dbFactory = dbFactory;
             this.tokens = tokens;
         }
 
@@ -97,28 +100,25 @@ namespace Timinute.Server.Auth
             Response.Headers.WWWAuthenticate = challenge;
         }
 
-        // Best-effort LastUsedAt stamp: must never fail the request, and must never leave
-        // any PersonalAccessToken entity tracked on the shared context afterwards — a
-        // failed SaveChanges here must not cause an unrelated later SaveChanges in the same
-        // request to re-attempt this write. A keyed stub (rather than the AsNoTracking
-        // `match` instance) is attached so only LastUsedAt is marked modified; it is always
-        // detached in `finally`, success or failure.
+        // Best-effort LastUsedAt stamp: must never fail the request. Written through a fresh
+        // factory-created context, NOT the shared request-scoped `db`: this keeps the stamp
+        // fully isolated from the rest of the request — no tracked state leaks onto the shared
+        // context (so no detach dance), and its SaveChanges can't flush unrelated pending
+        // changes on `db`. A keyed stub with only LastUsedAt marked modified avoids reading the
+        // row and avoids clobbering its other columns.
         private async Task TryStampLastUsedAsync(string id, DateTimeOffset now)
         {
-            var stub = new PersonalAccessToken { Id = id };
             try
             {
-                db.PersonalAccessTokens.Attach(stub);
+                await using var stampDb = await dbFactory.CreateDbContextAsync();
+                var stub = new PersonalAccessToken { Id = id };
+                stampDb.PersonalAccessTokens.Attach(stub);
                 stub.LastUsedAt = now;
-                await db.SaveChangesAsync();
+                await stampDb.SaveChangesAsync();
             }
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Failed to update PAT LastUsedAt.");
-            }
-            finally
-            {
-                db.Entry(stub).State = EntityState.Detached;
             }
         }
     }

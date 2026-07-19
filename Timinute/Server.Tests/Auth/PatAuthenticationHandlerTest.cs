@@ -19,11 +19,25 @@ namespace Timinute.Server.Tests.Auth
 {
     public class PatAuthenticationHandlerTest
     {
+        private static string NewDbName() => Guid.NewGuid().ToString();
+
         private static ApplicationDbContext NewDb(string? dbName = null) =>
             new(new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString()).Options);
+                .UseInMemoryDatabase(dbName ?? NewDbName()).Options);
 
-        private static async Task<AuthenticateResult> Authenticate(ApplicationDbContext db, string? bearer)
+        // Factory over a named InMemory store — mirrors production's IDbContextFactory, which the
+        // handler now uses for the isolated LastUsedAt stamp. Pointing it at the same store as the
+        // shared context lets a test observe the stamp landing.
+        private sealed class NamedInMemoryFactory : IDbContextFactory<ApplicationDbContext>
+        {
+            private readonly string dbName;
+            public NamedInMemoryFactory(string dbName) => this.dbName = dbName;
+            public ApplicationDbContext CreateDbContext() =>
+                new(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(dbName).Options);
+        }
+
+        private static async Task<AuthenticateResult> Authenticate(
+            ApplicationDbContext db, string? bearer, string? stampDbName = null)
         {
             var svc = new PatTokenService();
 
@@ -32,8 +46,9 @@ namespace Timinute.Server.Tests.Auth
             var optionsMonitor = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
             optionsMonitor.Setup(x => x.Get(It.IsAny<string>())).Returns(new AuthenticationSchemeOptions());
 
+            var factory = new NamedInMemoryFactory(stampDbName ?? NewDbName());
             var handler = new PatAuthenticationHandler(
-                optionsMonitor.Object, NullLoggerFactory.Instance, UrlEncoder.Default, db, svc);
+                optionsMonitor.Object, NullLoggerFactory.Instance, UrlEncoder.Default, db, factory, svc);
 
             var ctx = new DefaultHttpContext();
             if (bearer != null) ctx.Request.Headers.Authorization = $"Bearer {bearer}";
@@ -96,12 +111,13 @@ namespace Timinute.Server.Tests.Auth
             }
 
             using var authDb = NewDb(dbName);
-            var result = await Authenticate(authDb, token);
+            // Point the stamp factory at the same store so the stamp is observable via authDb.
+            var result = await Authenticate(authDb, token, stampDbName: dbName);
             Assert.True(result.Succeeded);
 
             // The shared, request-scoped context must carry no PAT tracked state once the
-            // handler returns — otherwise an unrelated later SaveChanges in the same request
-            // could re-attempt (and fail on) this write.
+            // handler returns — the stamp is written through a separate factory context, so
+            // nothing leaks onto the shared context.
             Assert.Empty(authDb.ChangeTracker.Entries<PersonalAccessToken>());
 
             // The stamp itself must have actually landed, and must not have clobbered any of
