@@ -5,6 +5,7 @@ using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Server.Services.Pat;
+using Timinute.Shared.Dtos.Mcp;
 using Timinute.Shared.Dtos.Pat;
 
 namespace Timinute.Server.Controllers
@@ -18,12 +19,14 @@ namespace Timinute.Server.Controllers
     public class PatController : ControllerBase
     {
         private readonly IRepository<PersonalAccessToken> repository;
+        private readonly IRepository<McpActivityLog> activityRepository;
         private readonly IPatTokenService tokenService;
         private readonly ILogger<PatController> logger;
 
         public PatController(IRepositoryFactory repositoryFactory, IPatTokenService tokenService, ILogger<PatController> logger)
         {
             repository = repositoryFactory.GetRepository<PersonalAccessToken>();
+            activityRepository = repositoryFactory.GetRepository<McpActivityLog>();
             this.tokenService = tokenService;
             this.logger = logger;
         }
@@ -113,6 +116,44 @@ namespace Timinute.Server.Controllers
             logger.LogInformation("Personal access token {Prefix} revoked for user {UserId}.", token.Prefix, userId);
 
             return NoContent();
+        }
+
+        // GET: /Pat/activity
+        [HttpGet("activity")]
+        public async Task<ActionResult<IEnumerable<McpActivityDto>>> GetActivity()
+        {
+            var userId = User.FindFirstValue(Constants.Claims.UserId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // McpActivityLog has no ISoftDeletable/global query filter, so - like
+            // PersonalAccessToken above - the ownership check here is the only thing
+            // standing between this endpoint and another user's audit trail.
+            // Repository.Get() returns IEnumerable<T>; the newest-first ordering and
+            // 200-row cap are deliberately applied in memory rather than via
+            // GetPaged's SQL-side Skip/Take (spec decision for v1 - see task-9-brief.md).
+            // Unlike the SumAsync/TimeSpan case documented in IRepository.cs, ordering
+            // by Timestamp *would* translate to SQL - this is a scale/simplicity
+            // tradeoff, not a translation limitation. It's bounded by the 90-day
+            // McpActivityLog retention window (Task 10's purge job), so acceptable for
+            // v1; revisit with GetPaged(orderBy: "Timestamp desc") if per-user row
+            // counts ever grow large enough for this to matter.
+            var rows = await activityRepository.Get(a => a.UserId == userId);
+
+            return Ok(rows
+                .OrderByDescending(a => a.Timestamp)
+                .Take(200)
+                .Select(a => new McpActivityDto
+                {
+                    Timestamp = a.Timestamp,
+                    Tool = a.Tool,
+                    Summary = a.Summary,
+                    Result = a.Result.ToString(),
+                    Detail = a.Detail
+                }));
         }
 
         private static PersonalAccessTokenDto ToDto(PersonalAccessToken token) => new()

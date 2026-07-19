@@ -28,6 +28,7 @@ builder.Services.AddScoped<Timinute.Client.Services.MobileSheetService>();
 builder.Services.AddScoped<Timinute.Client.Services.UserProfileService>();
 builder.Services.AddScoped<Timinute.Client.Services.ThemeService>();
 builder.Services.AddScoped<Timinute.Client.Services.TokenService>();
+builder.Services.AddScoped<Timinute.Client.Services.McpActivityService>();
 builder.Services.AddSingleton<Timinute.Client.Services.AnalyticsService>();
 builder.Services.AddTransient<Timinute.Client.Services.AnalyticsCacheInvalidationHandler>();
 
