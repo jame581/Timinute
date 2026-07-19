@@ -54,6 +54,14 @@ namespace Timinute.Server.Services
             // (negative or zero) value moving the cutoff to now/the future, which would purge every row.
             var days = Math.Max(1, retentionDays);
             var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
+
+            // Relational providers delete set-based in a single round trip without materializing rows.
+            // The InMemory provider (unit tests) doesn't support ExecuteDeleteAsync, so fall back to load+remove.
+            if (db.Database.IsRelational())
+            {
+                return await db.McpActivityLogs.Where(a => a.Timestamp < cutoff).ExecuteDeleteAsync(ct);
+            }
+
             var old = await db.McpActivityLogs.Where(a => a.Timestamp < cutoff).ToListAsync(ct);
             db.McpActivityLogs.RemoveRange(old);
             await db.SaveChangesAsync(ct);

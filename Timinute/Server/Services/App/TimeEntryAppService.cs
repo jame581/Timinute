@@ -72,6 +72,10 @@ namespace Timinute.Server.Services.App
             // Lower-cased so the substring match is case-insensitive on every provider,
             // not only under a case-insensitive SQL Server collation (the tool advertises
             // "case-insensitive"; SQLite/ordinal comparisons would otherwise break that promise).
+            // ToLower() is used (not ToLowerInvariant) because EF cannot translate ToLowerInvariant
+            // to SQL — it throws at runtime on relational providers (verified on SQLite). On the SQL
+            // path ToLower() maps to SQL LOWER() (culture-irrelevant, collation-governed); both sides
+            // use the same function so client/InMemory evaluation stays internally consistent.
             var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim().ToLower();
             var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
             var normalizedTagIds = NormalizeTagIds(tagIds);
