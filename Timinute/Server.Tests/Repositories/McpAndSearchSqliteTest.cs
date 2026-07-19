@@ -14,8 +14,8 @@ using Xunit;
 namespace Timinute.Server.Tests.Repositories
 {
     // Proves the two review-driven changes translate to real SQL. InMemory would
-    // client-evaluate ToLowerInvariant() and silently accept ExecuteDeleteAsync being
-    // unsupported; SQLite exercises the relational path and throws if either can't translate.
+    // client-evaluate the search predicate's ToLower() and silently accept ExecuteDeleteAsync
+    // being unsupported; SQLite exercises the relational path and throws if either can't translate.
     public class McpAndSearchSqliteTest
     {
         // HasData seed user (ApplicationDbContext.SeedUserId1) owns "Project A/B/C".
@@ -28,8 +28,8 @@ namespace Timinute.Server.Tests.Repositories
             await connection.OpenAsync();
             var db = await TestHelper.GetSqliteApplicationDbContext(connection);
 
-            // Lower-cased query against the seeded "Project A" — forces ToLowerInvariant() to
-            // translate to SQL; a translation failure throws instead of client-evaluating.
+            // Lower-cased query against the seeded "Project A" — forces the predicate's
+            // ToLower() to translate to SQL; a translation failure throws instead of client-evaluating.
             var predicate = TimeEntryAppService.BuildSearchPredicate(
                 SeedUserId1, from: null, to: null, projectId: null, search: "project a", tagIds: null);
 
