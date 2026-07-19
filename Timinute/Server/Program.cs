@@ -45,6 +45,16 @@ if (!string.IsNullOrEmpty(saPassword) && !string.IsNullOrEmpty(connectionString)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// A DbContext *factory* alongside the scoped AddDbContext above (Task 8). McpActivitySink
+// needs a fresh context per audit write: on a tool's DbUpdateException the request-scoped
+// context is poisoned and can no longer SaveChanges, so the Failed audit row must be written
+// through an independent context. Registered with a Scoped lifetime deliberately: the default
+// Singleton factory would require Singleton DbContextOptions, but AddDbContext already
+// registered them Scoped (TryAdd, first wins) — a Singleton factory would then fail to resolve
+// the scoped options from the root provider. Matching lifetimes keeps both registrations valid.
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString), ServiceLifetime.Scoped);
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var dpKeysPath = builder.Configuration["DataProtection:KeyPath"];
@@ -184,13 +194,33 @@ builder.Services.AddScoped<Timinute.Server.Mcp.McpUserContext>();
 
 if (builder.Configuration.GetValue("Mcp:Enabled", true))
 {
+    // Audit sink + central interceptor (Task 8). Scoped: both resolve from the per-request DI
+    // scope via request.Services inside the filter delegate — never captured at registration
+    // time. Kept inside the Mcp:Enabled gate so a disabled MCP leaves zero trace.
+    builder.Services.AddScoped<Timinute.Server.Mcp.McpActivitySink>();
+    builder.Services.AddScoped<Timinute.Server.Mcp.McpActivityInterceptor>();
+
     builder.Services.AddMcpServer()
         // Pin Stateless=true explicitly: tools + McpUserContext + the app-services resolve
         // from the ASP.NET Core per-request DI scope only in stateless mode. It is the
         // preview package's current default, but pinning it means a version bump can't
         // silently flip it and break per-request scoping (and the PAT principal lookup).
         .WithHttpTransport(o => o.Stateless = true)
-        .WithToolsFromAssembly();
+        .WithToolsFromAssembly()
+        // Central call-tool filter (Task 8): the authoritative write-scope gate (R3) + one
+        // McpActivityLog audit row per call + a correlated Serilog event. Runs for every
+        // tools/call (SDK wraps registered CallToolFilters around DI-tool dispatch). The
+        // interceptor and McpUserContext are scoped, so resolve them from request.Services
+        // (the per-request scope in stateless mode) inside the delegate body — never inject
+        // them into the filter, which is a plain delegate, not a DI-activated type.
+        .WithRequestFilters(rf => rf.AddCallToolFilter(next => (request, cancellationToken) =>
+        {
+            var toolName = request.Params?.Name ?? "unknown";
+            var services = request.Services!;   // per-HTTP-request DI scope (Stateless = true)
+            var interceptor = services.GetRequiredService<Timinute.Server.Mcp.McpActivityInterceptor>();
+
+            return interceptor.RunAsync(toolName, () => next(request, cancellationToken));
+        }));
 }
 
 // Auto Mapper Configurations

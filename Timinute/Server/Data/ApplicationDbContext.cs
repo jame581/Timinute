@@ -20,6 +20,7 @@ namespace Timinute.Server.Data
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<Tag> Tags { get; set; } = null!;
         public DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; } = null!;
+        public DbSet<McpActivityLog> McpActivityLogs { get; set; } = null!;
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -168,6 +169,15 @@ namespace Timinute.Server.Data
             builder.Entity<PersonalAccessToken>().HasIndex(t => t.UserId);
             builder.Entity<PersonalAccessToken>()
                 .HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            // McpActivityLog entity — one audit row per MCP tool call (Task 8). Retained 90 days.
+            builder.Entity<McpActivityLog>().HasKey(t => t.Id);
+            builder.Entity<McpActivityLog>().Property(t => t.Tool).HasMaxLength(64).IsRequired();
+            builder.Entity<McpActivityLog>().Property(t => t.Summary).HasMaxLength(512);
+            builder.Entity<McpActivityLog>().Property(t => t.Detail).HasMaxLength(512);
+            builder.Entity<McpActivityLog>().Property(t => t.Result).HasConversion<string>().HasMaxLength(16);
+            builder.Entity<McpActivityLog>().Property(t => t.TokenId).HasMaxLength(64);
+            builder.Entity<McpActivityLog>().HasIndex(t => new { t.UserId, t.Timestamp });
 
             FillDataToDB(builder);
 
