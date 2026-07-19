@@ -64,6 +64,10 @@ namespace Timinute.Server.Mcp
                     ProjectId = projectId
                 });
             }
+            catch (AppValidationException ex)
+            {
+                throw new McpException(ex.Message);
+            }
             catch (ProjectOwnershipException)
             {
                 throw new McpException("The specified project was not found for this user.");
@@ -97,6 +101,10 @@ namespace Timinute.Server.Mcp
                 }
 
                 return updated;
+            }
+            catch (AppValidationException ex)
+            {
+                throw new McpException(ex.Message);
             }
             catch (ProjectOwnershipException)
             {

@@ -1,4 +1,5 @@
 using System.Linq;
+using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using Timinute.Server.Models;
 
@@ -80,9 +81,24 @@ namespace Timinute.Server.Mcp
 
                 return result;
             }
+            catch (McpException ex)
+            {
+                // McpException carries a deliberately client-facing message (the SDK surfaces it
+                // verbatim to the caller, and domain failures reach here as McpException — e.g. the
+                // AppValidationException a write tool rethrows). Safe to persist as the audit Detail,
+                // which Task 9 made user-visible at /settings/ai-activity.
+                await RecordAsync(toolName, $"{toolName} failed", McpActivityResult.Failed, ex.Message);
+                logger.LogError(ex, "MCP tool {Tool} failed for user {UserId}", toolName, user.UserId);
+                throw;
+            }
             catch (Exception ex)
             {
-                await RecordAsync(toolName, $"{toolName} failed", McpActivityResult.Failed, ex.Message);
+                // Any other exception is an internal fault whose message may leak implementation
+                // detail (and the SDK never shows it to the client anyway — it wraps it as
+                // "An error occurred invoking ..."). Persist a fixed generic Detail and keep the
+                // full exception in the server log only.
+                await RecordAsync(toolName, $"{toolName} failed", McpActivityResult.Failed,
+                    "The tool failed unexpectedly.");
                 logger.LogError(ex, "MCP tool {Tool} failed for user {UserId}", toolName, user.UserId);
                 throw;
             }

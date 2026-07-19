@@ -142,6 +142,13 @@ namespace Timinute.Server.Controllers
                 var created = await projectAppService.CreateAsync(userId, project);
                 return Ok(created);
             }
+            catch (AppValidationException ex)
+            {
+                // Safety net: [ApiController] already validated the body with a 422 before this
+                // action ran, so REST requests never reach here — this only fires if the DTO
+                // contract and the model-validation pipeline ever diverge.
+                return UnprocessableEntity(new { message = ex.Message });
+            }
             catch (ProjectNameConflictException ex)
             {
                 logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);

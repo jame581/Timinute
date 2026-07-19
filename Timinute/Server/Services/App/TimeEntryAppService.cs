@@ -95,6 +95,8 @@ namespace Timinute.Server.Services.App
 
         public async Task<TrackedTaskDto> LogAsync(string userId, CreateTrackedTaskDto dto)
         {
+            DtoValidator.Validate(dto);
+
             // Whitespace means "no project"; trim otherwise — SQL Server's trailing-space padding would
             // let "ProjectId1 " pass the ownership check and persist untrimmed in the FK column.
             dto.ProjectId = string.IsNullOrWhiteSpace(dto.ProjectId) ? null : dto.ProjectId.Trim();
@@ -116,6 +118,8 @@ namespace Timinute.Server.Services.App
 
         public async Task<TrackedTaskDto?> UpdateAsync(string userId, string id, UpdateTrackedTaskDto dto)
         {
+            DtoValidator.Validate(dto);
+
             var foundTrackedTask = await dbContext.TrackedTasks
                 .Include(t => t.Tags)
                 .AsTracking()

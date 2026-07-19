@@ -146,19 +146,44 @@ namespace Timinute.Server.Tests.Mcp
         [Fact]
         public async Task Interceptor_Failing_Tool_Records_One_Failed_Row_And_Rethrows()
         {
+            // A NON-McpException is an internal fault: its raw message must NOT reach the
+            // user-visible Detail column (F3 hardening) — a fixed generic string is stored instead,
+            // while the full exception still propagates for the SDK/log to handle.
             var dbName = Guid.NewGuid().ToString();
             var interceptor = NewInterceptor(NewSink(dbName), UserContext("user-1", canWrite: true, "tok-1"));
 
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 interceptor.RunAsync("log_time",
-                    () => throw new InvalidOperationException("boom")).AsTask());
+                    () => throw new InvalidOperationException("boom with secrets")).AsTask());
 
-            Assert.Equal("boom", ex.Message);
+            Assert.Equal("boom with secrets", ex.Message);
 
             using var db = ReadDb(dbName);
             var row = db.McpActivityLogs.Single();
             Assert.Equal(McpActivityResult.Failed, row.Result);
-            Assert.Equal("boom", row.Detail);
+            Assert.Equal("The tool failed unexpectedly.", row.Detail);
+            Assert.DoesNotContain("secrets", row.Detail);
+        }
+
+        [Fact]
+        public async Task Interceptor_McpException_Persists_Clean_Message_As_Detail()
+        {
+            // An McpException carries a deliberately client-facing message (this is how domain
+            // failures — including the AppValidationException a write tool rethrows — reach the
+            // interceptor). Its message stays readable in the activity log's Detail column.
+            var dbName = Guid.NewGuid().ToString();
+            var interceptor = NewInterceptor(NewSink(dbName), UserContext("user-1", canWrite: true, "tok-1"));
+
+            var ex = await Assert.ThrowsAsync<ModelContextProtocol.McpException>(() =>
+                interceptor.RunAsync("create_project",
+                    () => throw new ModelContextProtocol.McpException("Color must be a hex color in the form #RRGGBB.")).AsTask());
+
+            Assert.Equal("Color must be a hex color in the form #RRGGBB.", ex.Message);
+
+            using var db = ReadDb(dbName);
+            var row = db.McpActivityLogs.Single();
+            Assert.Equal(McpActivityResult.Failed, row.Result);
+            Assert.Equal("Color must be a hex color in the form #RRGGBB.", row.Detail);
         }
 
         [Fact]

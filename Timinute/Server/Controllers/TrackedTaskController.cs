@@ -148,6 +148,12 @@ namespace Timinute.Server.Controllers
                 var created = await timeEntryAppService.LogAsync(userId, trackedTask);
                 return Ok(created);
             }
+            catch (AppValidationException ex)
+            {
+                // Safety net: [ApiController] already validated the body with a 422 before this
+                // action ran, so REST requests never reach here.
+                return UnprocessableEntity(new { message = ex.Message });
+            }
             catch (ProjectOwnershipException)
             {
                 return NotFound("Project not found!");
@@ -271,6 +277,12 @@ namespace Timinute.Server.Controllers
                 }
 
                 return Ok(updated);
+            }
+            catch (AppValidationException ex)
+            {
+                // Safety net: [ApiController] already validated the body with a 422 before this
+                // action ran, so REST requests never reach here.
+                return UnprocessableEntity(new { message = ex.Message });
             }
             catch (ProjectOwnershipException)
             {

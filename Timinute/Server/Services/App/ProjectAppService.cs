@@ -61,6 +61,17 @@ namespace Timinute.Server.Services.App
 
         public async Task<ProjectDto> CreateAsync(string userId, CreateProjectDto dto)
         {
+            // Whitespace-only Color means "no color" — normalize to null before validating so the
+            // #RRGGBB regex isn't tripped by blanks and the palette fallback below still fires.
+            // (In the REST path [ApiController] has already validated the raw body; this only
+            // affects the MCP path and direct service callers.)
+            if (string.IsNullOrWhiteSpace(dto.Color))
+            {
+                dto.Color = null;
+            }
+
+            DtoValidator.Validate(dto);
+
             var newProject = mapper.Map<Project>(dto);
             newProject.UserId = userId;
 

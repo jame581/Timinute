@@ -130,5 +130,25 @@ namespace Timinute.Server.Tests.Integration
             Assert.Equal(McpActivityResult.Failed, row.Result);
             Assert.Contains("Time entry not found.", row.Detail);
         }
+
+        [Fact]
+        public async Task Write_Tool_With_Invalid_Dto_Is_Rejected_And_Records_Failed_Row()
+        {
+            // A read_write token calling create_project with a malformed color: the DTO's
+            // RegularExpression annotation is enforced at the app-service choke point (the MCP
+            // path has no [ApiController] 422 short-circuit), surfaced as a clean McpException.
+            // Proves DTO validation reaches /mcp end-to-end and is audited as Failed.
+            var pat = await MintPat(PatScope.ReadWrite);
+
+            var responseText = await CallTool(pat, "create_project", """{"name":"Valid Name","color":"not-a-color"}""");
+
+            // The domain validation message (rethrown as McpException) reaches the client, and the
+            // audit Detail records the clean, unwrapped message.
+            Assert.Contains("Color must be a hex color in the form #RRGGBB.", responseText);
+
+            var row = LatestRowFor("create_project");
+            Assert.Equal(McpActivityResult.Failed, row.Result);
+            Assert.Equal("Color must be a hex color in the form #RRGGBB.", row.Detail);
+        }
     }
 }

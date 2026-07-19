@@ -39,6 +39,10 @@ namespace Timinute.Server.Mcp
             {
                 return await projects.CreateAsync(user.UserId, new CreateProjectDto { Name = name, Color = color });
             }
+            catch (AppValidationException ex)
+            {
+                throw new McpException(ex.Message);
+            }
             catch (ProjectNameConflictException ex)
             {
                 throw new McpException(ex.Message);

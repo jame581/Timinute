@@ -72,7 +72,88 @@ namespace Timinute.Server.Tests.Services
                 () => svc.CreateAsync(SeedUserId1, new CreateProjectDto { Name = "Dup" }));
         }
 
+        // R-validation: the MCP tools construct DTOs directly and bypass the [ApiController]
+        // 422 short-circuit, so the app-service is the single choke point that enforces the
+        // DTO Data Annotations. These pin that enforcement at the service surface.
+        [Fact]
+        public async Task ProjectAppService_Create_Rejects_Oversize_Name()
+        {
+            var (factory, mapper) = TestBench.NewProjectStack();
+            var svc = new ProjectAppService(factory, mapper);
+
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => svc.CreateAsync("user-1", new CreateProjectDto { Name = new string('x', 101) }));
+
+            Assert.Contains("Project name must be between 2 and 100 characters.", ex.Message);
+            Assert.Empty(await svc.ListAsync("user-1")); // nothing was persisted
+        }
+
+        [Fact]
+        public async Task ProjectAppService_Create_Rejects_Bad_Color()
+        {
+            var (factory, mapper) = TestBench.NewProjectStack();
+            var svc = new ProjectAppService(factory, mapper);
+
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => svc.CreateAsync("user-1", new CreateProjectDto { Name = "Valid", Color = "not-a-color" }));
+
+            Assert.Contains("Color must be a hex color in the form #RRGGBB.", ex.Message);
+            Assert.Empty(await svc.ListAsync("user-1"));
+        }
+
         // === TimeEntryAppService ===
+
+        [Fact]
+        public async Task TimeEntryAppService_Log_Rejects_MinDuration_Violation()
+        {
+            var context = await TestHelper.GetDefaultApplicationDbContext("AppServiceParity_TE_MinDuration");
+            var (factory, mapper) = TestBench.NewProjectStack(context);
+            var svc = new TimeEntryAppService(factory, mapper, context);
+
+            var ex = await Assert.ThrowsAsync<AppValidationException>(() => svc.LogAsync("ApplicationUser1", new CreateTrackedTaskDto
+            {
+                Name = "Zero duration",
+                StartDate = new DateTimeOffset(2022, 5, 1, 9, 0, 0, TimeSpan.Zero),
+                Duration = TimeSpan.Zero
+            }));
+
+            Assert.Contains("Duration must be greater than zero.", ex.Message);
+        }
+
+        [Fact]
+        public async Task TimeEntryAppService_Log_Rejects_Oversize_Name()
+        {
+            var context = await TestHelper.GetDefaultApplicationDbContext("AppServiceParity_TE_OversizeName");
+            var (factory, mapper) = TestBench.NewProjectStack(context);
+            var svc = new TimeEntryAppService(factory, mapper, context);
+
+            var ex = await Assert.ThrowsAsync<AppValidationException>(() => svc.LogAsync("ApplicationUser1", new CreateTrackedTaskDto
+            {
+                Name = new string('x', 51),
+                StartDate = new DateTimeOffset(2022, 5, 1, 9, 0, 0, TimeSpan.Zero),
+                Duration = TimeSpan.FromHours(1)
+            }));
+
+            Assert.Contains("Name of task must be between 2 and 50 characters long.", ex.Message);
+        }
+
+        [Fact]
+        public async Task TimeEntryAppService_Update_Rejects_Oversize_Name()
+        {
+            var context = await TestHelper.GetDefaultApplicationDbContext("AppServiceParity_TE_UpdateOversize");
+            var (factory, mapper) = TestBench.NewProjectStack(context);
+            var svc = new TimeEntryAppService(factory, mapper, context);
+
+            var ex = await Assert.ThrowsAsync<AppValidationException>(() => svc.UpdateAsync("ApplicationUser1", "TrackedTaskId1", new UpdateTrackedTaskDto
+            {
+                TaskId = "TrackedTaskId1",
+                Name = new string('x', 51),
+                StartDate = new DateTimeOffset(2022, 5, 1, 9, 0, 0, TimeSpan.Zero)
+            }));
+
+            Assert.Contains("Name of task must be between 2 and 50 characters long.", ex.Message);
+        }
+
 
         [Fact]
         public async Task TimeEntryAppService_Log_Scopes_To_User_And_Persists()
