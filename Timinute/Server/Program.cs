@@ -484,6 +484,8 @@ void DependecyInjection()
     builder.Services.AddSingleton<IExportService, ExportService>();
     builder.Services.AddSingleton<IPatTokenService, PatTokenService>();
     builder.Services.AddHostedService<TrashPurgeService>();
+    // Registered outside Mcp:Enabled gate — harmless when MCP is off (table just empty)
+    builder.Services.AddHostedService<McpActivityPurgeService>();
 }
 
 
