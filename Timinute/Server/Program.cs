@@ -3,12 +3,13 @@ using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using Serilog;
+using Serilog.Formatting.Compact;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Timinute.Server;
@@ -18,13 +19,41 @@ using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Server.Services;
+using Timinute.Server.Services.Pat;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Local-dev convenience: let MSSQL_SA_PASSWORD (the same var the container and
+// docker-compose use) drive the app's SA password too, so one variable unifies
+// everything. Guarded to the built-in dev default only — an explicit connection
+// override (production) or the compose string (already password-substituted) has a
+// different password and is left untouched.
+var saPassword = Environment.GetEnvironmentVariable("MSSQL_SA_PASSWORD");
+if (!string.IsNullOrEmpty(saPassword) && !string.IsNullOrEmpty(connectionString))
+{
+    var csb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
+    if (csb.Password == "TiminuteAdmin.")
+    {
+        csb.Password = saPassword;
+        connectionString = csb.ConnectionString;
+    }
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+// A DbContext *factory* alongside the scoped AddDbContext above (Task 8). McpActivitySink
+// needs a fresh context per audit write: on a tool's DbUpdateException the request-scoped
+// context is poisoned and can no longer SaveChanges, so the Failed audit row must be written
+// through an independent context. Registered with a Scoped lifetime deliberately: the default
+// Singleton factory would require Singleton DbContextOptions, but AddDbContext already
+// registered them Scoped (TryAdd, first wins) — a Singleton factory would then fail to resolve
+// the scoped options from the root provider. Matching lifetimes keeps both registrations valid.
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString), ServiceLifetime.Scoped);
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -51,6 +80,11 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = Constants.Claims.Role;
     })
+    // Registered but deliberately NOT wired into ForwardDefaultSelector below — PATs
+    // authenticate only where an endpoint explicitly requests this scheme (the future
+    // /mcp endpoint), never on the general Bearer→JwtBearer path REST controllers use.
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, Timinute.Server.Auth.PatAuthenticationHandler>(
+        Timinute.Server.Auth.PatAuthenticationHandler.SchemeName, displayName: null, _ => { })
     // displayName must stay null — schemes with a display name are listed by the
     // Identity UI as external login providers ("or continue with" buttons).
     .AddPolicyScheme("ApplicationDefinedPolicy", displayName: null, options =>
@@ -65,22 +99,41 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Logging.AddConsole();
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext();
+
+    // Console: human-readable in Development, compact JSON everywhere else
+    // (one JSON object per line — captured by Docker's json-file driver).
+    if (context.HostingEnvironment.IsDevelopment())
+    {
+        loggerConfiguration.WriteTo.Console();
+    }
+    else
+    {
+        loggerConfiguration.WriteTo.Console(new CompactJsonFormatter());
+    }
+
+    // Rolling file sink — opt-in via Serilog:File:Enabled (Docker env-var friendly).
+    if (context.Configuration.GetValue("Serilog:File:Enabled", false))
+    {
+        var path = context.Configuration.GetValue<string>("Serilog:File:Path") ?? "/logs/timinute-.log";
+        var retained = context.Configuration.GetValue("Serilog:File:RetainedFileCountLimit", 14);
+        loggerConfiguration.WriteTo.File(
+            new CompactJsonFormatter(),
+            path,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: retained,
+            fileSizeLimitBytes: 50 * 1024 * 1024,
+            rollOnFileSizeLimit: true);
+    }
+});
 
 builder.Services.AddRazorPages();
 
 builder.Services.AddResponseCaching();
-
-// Request/response line logging for production diagnostics. Off by default;
-// enable with HttpLogging__Enabled=true (Docker env-var friendly). Bodies and
-// auth/cookie headers are deliberately never logged.
-builder.Services.AddHttpLogging(options =>
-{
-    options.LoggingFields = HttpLoggingFields.RequestMethod
-                          | HttpLoggingFields.RequestPath
-                          | HttpLoggingFields.ResponseStatusCode
-                          | HttpLoggingFields.Duration;
-});
 
 builder.Services.AddControllers(options =>
 {
@@ -131,6 +184,45 @@ builder.Services.AddApiVersioning(options =>
 // DI Configuration
 DependecyInjection();
 
+// MCP server (Task 7). Tools live in Server/Mcp and are discovered from this assembly.
+// McpUserContext resolves the PAT principal per call via IHttpContextAccessor; it and the
+// app-services are scoped and resolve inside the per-request DI scope in the default
+// (stateless) HTTP transport. Gated on Mcp:Enabled (default true) so the whole registration
+// — and the /mcp endpoint below — drop out entirely when disabled.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Timinute.Server.Mcp.McpUserContext>();
+
+if (builder.Configuration.GetValue("Mcp:Enabled", true))
+{
+    // Audit sink + central interceptor (Task 8). Scoped: both resolve from the per-request DI
+    // scope via request.Services inside the filter delegate — never captured at registration
+    // time. Kept inside the Mcp:Enabled gate so a disabled MCP leaves zero trace.
+    builder.Services.AddScoped<Timinute.Server.Mcp.McpActivitySink>();
+    builder.Services.AddScoped<Timinute.Server.Mcp.McpActivityInterceptor>();
+
+    builder.Services.AddMcpServer()
+        // Pin Stateless=true explicitly: tools + McpUserContext + the app-services resolve
+        // from the ASP.NET Core per-request DI scope only in stateless mode. It is the
+        // preview package's current default, but pinning it means a version bump can't
+        // silently flip it and break per-request scoping (and the PAT principal lookup).
+        .WithHttpTransport(o => o.Stateless = true)
+        .WithToolsFromAssembly()
+        // Central call-tool filter (Task 8): the authoritative write-scope gate (R3) + one
+        // McpActivityLog audit row per call + a correlated Serilog event. Runs for every
+        // tools/call (SDK wraps registered CallToolFilters around DI-tool dispatch). The
+        // interceptor and McpUserContext are scoped, so resolve them from request.Services
+        // (the per-request scope in stateless mode) inside the delegate body — never inject
+        // them into the filter, which is a plain delegate, not a DI-activated type.
+        .WithRequestFilters(rf => rf.AddCallToolFilter(next => (request, cancellationToken) =>
+        {
+            var toolName = request.Params?.Name ?? "unknown";
+            var services = request.Services!;   // per-HTTP-request DI scope (Stateless = true)
+            var interceptor = services.GetRequiredService<Timinute.Server.Mcp.McpActivityInterceptor>();
+
+            return interceptor.RunAsync(toolName, () => next(request, cancellationToken));
+        }));
+}
+
 // Auto Mapper Configurations
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
@@ -179,10 +271,7 @@ if (app.Configuration.GetValue("DatabaseMigrationOnStartup", false))
 
 app.UseForwardedHeaders();
 
-if (app.Configuration.GetValue("HttpLogging:Enabled", false))
-{
-    app.UseHttpLogging();
-}
+app.UseMiddleware<Timinute.Server.Middleware.CorrelationIdMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -234,6 +323,30 @@ app.UseResponseCaching();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
+// One structured event per request (method, path, status, elapsed ms), enriched
+// with CorrelationId from LogContext. Bodies/headers are never logged. Placed after
+// the static-file middleware so static/framework asset hits short-circuit before
+// reaching it (cutting always-on asset log noise on cold Blazor WASM loads); it stays
+// inside CorrelationIdMiddleware so the CorrelationId LogContext still wraps it.
+app.UseSerilogRequestLogging(options =>
+{
+    // Never log the query string. Password-reset / email-confirmation links and the
+    // OIDC login-callback carry secrets in the query string, so leaking the query into
+    // the console (docker logs) or file sink is an account-takeover vector.
+    //
+    // Serilog derives the RequestPath property — used in BOTH the rendered message and
+    // the structured JSON — from a single value: IHttpRequestFeature.Path (the path
+    // WITHOUT the query) when IncludeQueryInRequestPath is false, or the raw target
+    // (path + query) when true. It defaults to false, but we pin it explicitly so a
+    // future flip can never silently start writing those tokens to logs.
+    //
+    // NOTE: overwriting "RequestPath" via EnrichDiagnosticContext does NOT work on
+    // Serilog.AspNetCore 10.0.0 — the built-in RequestPath property is appended after
+    // the diagnostic-context properties and wins the LogEvent last-writer merge, so a
+    // Set("RequestPath", ...) is silently discarded. This option is the real control.
+    options.IncludeQueryInRequestPath = false;
+});
+
 app.UseRouting();
 
 app.UseIdentityServer();
@@ -243,6 +356,18 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
+
+// MCP endpoint (Task 7). Pinned to the "Pat" authentication scheme only — the general
+// Bearer→JWT path and the Identity cookie never authenticate here, so /mcp is reachable
+// only with a valid tmn_pat_ token. Same Mcp:Enabled gate as the registration above.
+if (app.Configuration.GetValue("Mcp:Enabled", true))
+{
+    app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
+    {
+        AuthenticationSchemes = Timinute.Server.Auth.PatAuthenticationHandler.SchemeName
+    });
+}
+
 app.MapFallbackToFile("index.html");
 
 app.Run();
@@ -353,8 +478,14 @@ void DependecyInjection()
     // DI
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
     builder.Services.AddTransient<IRepositoryFactory, RepositoryFactory>();
+    builder.Services.AddScoped<Timinute.Server.Services.App.IProjectAppService, Timinute.Server.Services.App.ProjectAppService>();
+    builder.Services.AddScoped<Timinute.Server.Services.App.ITimeEntryAppService, Timinute.Server.Services.App.TimeEntryAppService>();
+    builder.Services.AddScoped<Timinute.Server.Services.App.IAnalyticsAppService, Timinute.Server.Services.App.AnalyticsAppService>();
     builder.Services.AddSingleton<IExportService, ExportService>();
+    builder.Services.AddSingleton<IPatTokenService, PatTokenService>();
     builder.Services.AddHostedService<TrashPurgeService>();
+    // Registered outside Mcp:Enabled gate — harmless when MCP is off (table just empty)
+    builder.Services.AddHostedService<McpActivityPurgeService>();
 }
 
 

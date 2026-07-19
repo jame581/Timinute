@@ -367,14 +367,16 @@ FodyWeavers.xsd
 **/keys/
 tempkey.jwk
 
-# Claude Code — all Claude tooling/context stays local to the machine
-.claude/
+# Claude Code — shared tooling (agents, skills, hooks, settings, MCP) is tracked;
+# personal/machine-local context stays local.
+.claude/*
+!.claude/agents/
+!.claude/hooks/
+!.claude/skills/
+!.claude/settings.json
+.claude/settings.local.json
 .claude.local.md
-CLAUDE.md
-.mcp.json
 
-# Claude Code superpowers runtime state
-.superpowers/
 
 # Docker self-host runtime config (copy of .env.example)
 .env

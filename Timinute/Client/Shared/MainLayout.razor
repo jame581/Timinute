@@ -6,7 +6,9 @@
 
 <head>
     <RadzenTheme Theme="material" @rendermode="RenderMode.InteractiveAuto" />
-    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+    @* Radzen.Blazor.js is included once in wwwroot/index.html (the WASM host page).
+       Do not re-add it here — a second include double-declares its globals and throws
+       "Identifier 'Spreadsheet' has already been declared" in the console on every page. *@
 </head>
 
 <CascadingValue Value="Viewport.IsMobile" Name="IsMobile">

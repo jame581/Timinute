@@ -14,6 +14,7 @@ namespace Timinute.Server.Tests.Integration
     // pipeline (routing → auth → model binding → InvalidModelStateResponseFactory).
     // The pre-existing controller tests inject ModelState errors directly and
     // never hit this path (Copilot review PR #40 #6/#7).
+    [Collection("Integration")]
     public class ValidationIntegrationTest : IClassFixture<TiminuteApiFactory>
     {
         private readonly HttpClient client;

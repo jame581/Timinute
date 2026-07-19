@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -15,6 +15,7 @@ using Timinute.Server.Controllers;
 using Timinute.Server.Data;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.Trash;
@@ -505,7 +506,8 @@ namespace Timinute.Server.Tests.Controllers
                 _mapper,
                 new Mock<ILogger<TrackedTaskController>>().Object,
                 taskConfig,
-                applicationDbContext)
+                applicationDbContext,
+                new TimeEntryAppService(new RepositoryFactory(applicationDbContext), _mapper, applicationDbContext))
             {
                 ControllerContext = new ControllerContext
                 {
@@ -603,7 +605,7 @@ namespace Timinute.Server.Tests.Controllers
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
                 .Build();
 
-            ProjectController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration)
+            ProjectController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration, new ProjectAppService(repositoryFactory, _mapper))
             {
                 ControllerContext = new ControllerContext
                 {

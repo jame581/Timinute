@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-14 — v2.3 released on master (PR #50, tag `v2.3`): Enhanced analytics + tech-debt sweep, plus Duende 8 / Radzen 11 package updates._
+_Last reviewed: 2026-07-19 — v2.4 (`feature/v2.4-logging-mcp`, PR #65): Serilog structured request logging + correlation ids, and an MCP server (7 tools, PAT auth, AI activity audit log) — see below._
 
 ## Current Feature Set
 
@@ -74,7 +74,7 @@ Status reviewed 2026-07-13.
 |------|--------|-------|
 | Build & Test workflow disabled | ✅ done | Was registered but `disabled_manually`; re-enabled 2026-07-12 (id 20059071). PR #48 is the green-run acceptance check. |
 | Constants class growing large — split per domain | ✅ done | PR #48 (v2.3) — partial-class split (`Constants.Roles/Claims/Api`) + auth magic strings (`Timinute.ServerAPI`, authority fallback, `Default120`) consolidated |
-| Request/response logging middleware | ✅ done | PR #48 (v2.3) — built-in `AddHttpLogging` (method/path/status/duration, never headers/bodies), off by default, `HttpLogging__Enabled` env-var gated |
+| Request/response logging middleware | ✅ done | PR #48 (v2.3) — built-in `AddHttpLogging` (method/path/status/duration, never headers/bodies), off by default, `HttpLogging__Enabled` env-var gated. **v2.4:** replaced AddHttpLogging with Serilog (UseSerilogRequestLogging) + per-request correlation id; console (JSON in prod) always on, rolling file sink opt-in. |
 | DB indexes on UserId, ProjectId | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId`, `IX_TrackedTasks_ProjectId`, `IX_Projects_UserId` |
 | Composite indexes for common analytics queries | ✅ done | Shipped in PR #46 (v2.2) — `IX_TrackedTasks_UserId_StartDate` |
 | Unique constraint: project names per user | ✅ done | Shipped in PR #46 (v2.2) — filtered unique `IX_Projects_UserId_Name` (`[DeletedAt] IS NULL`) + 409 handling |
@@ -86,6 +86,7 @@ Status reviewed 2026-07-13.
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
 | `:has()` browser-support fragility on landing nav | ✅ done | PR #35 review fix — switched to `[href*="github.com"]` |
 | Per-render `IsActive` / `SelectedDayTasks` allocations | ✅ done | PR #35 review fix |
+| Radzen dialogs not skinned to Aurora (render light/Material) | 🔲 open | Found during v2.4 complex-testing browser pass (2026-07-19). `DialogService`-opened dialogs (e.g. the `New project` dialog, task add/edit modals) render with Radzen's default **Material light** theme — white background, bright-blue `Submit` button — inconsistent with the Aurora dark theme and jarring in dark mode. `MainLayout` sets `<RadzenTheme Theme="material" />` unconditionally. Fix options: switch to a Radzen dark theme synced to the theme toggle, or (preferred) replace remaining `DialogService` dialogs with Aurora-native components as the tokens/AiActivity pages already do. |
 
 ---
 
@@ -94,6 +95,13 @@ Status reviewed 2026-07-13.
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
+
+## Recently shipped (v2.4, `feature/v2.4-logging-mcp`, PR #65)
+
+| Feature | PRs |
+|---------|-----|
+| Support logging — replaced the v2.3 `AddHttpLogging` middleware with Serilog (`UseSerilogRequestLogging`, one structured event per request, query string never logged) plus a per-request `X-Correlation-Id` (`CorrelationIdMiddleware`). Console sink always on (compact JSON outside Development); rolling daily file sink opt-in via `Serilog__File__Enabled`. Spec: `docs/superpowers/specs/2026-07-17-v2.4-support-logging-design.md`. | — |
+| MCP server — hosts a [Model Context Protocol](https://modelcontextprotocol.io/) server at `/mcp` (stateless Streamable HTTP, `ModelContextProtocol.AspNetCore`) authenticated by a new `PersonalAccessToken` entity + `"Pat"` auth scheme (`tmn_pat_…`, SHA-256 hash + prefix at rest, confined to `/mcp` only). Seven tools across three `[McpServerToolType]` classes — `list_projects`, `create_project`, `search_time_entries`, `log_time`, `update_time_entry`, `delete_time_entry`, `get_analytics_summary` — backed by shared `*AppService` classes so controllers and MCP tools share one ownership/validation path. A central `McpActivityInterceptor` (call-tool filter) is the authoritative `read`/`read_write` scope gate and writes one `McpActivityLog` row per call through a separate `IDbContextFactory`-created context (so a tool's own `DbUpdateException` can't suppress the audit write); `McpActivityPurgeService` hard-purges rows after `Mcp__ActivityRetention__Days` (default 90). New Aurora pages: `/settings/tokens` (create/scope/revoke, token shown once) and `/settings/ai-activity` (per-call audit log). Whole feature gated by `Mcp__Enabled` (default `true`) — disabling it drops the DI registrations and the `/mcp` route entirely. Spec: `docs/superpowers/specs/2026-07-17-v2.4-mcp-server-design.md`. User guide: `docs/MCP.md`. | — |
 
 ## Recently shipped (v2.3.1, 2026-07-14)
 
