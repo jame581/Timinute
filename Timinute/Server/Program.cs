@@ -174,6 +174,21 @@ builder.Services.AddApiVersioning(options =>
 // DI Configuration
 DependecyInjection();
 
+// MCP server (Task 7). Tools live in Server/Mcp and are discovered from this assembly.
+// McpUserContext resolves the PAT principal per call via IHttpContextAccessor; it and the
+// app-services are scoped and resolve inside the per-request DI scope in the default
+// (stateless) HTTP transport. Gated on Mcp:Enabled (default true) so the whole registration
+// — and the /mcp endpoint below — drop out entirely when disabled.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Timinute.Server.Mcp.McpUserContext>();
+
+if (builder.Configuration.GetValue("Mcp:Enabled", true))
+{
+    builder.Services.AddMcpServer()
+        .WithHttpTransport()
+        .WithToolsFromAssembly();
+}
+
 // Auto Mapper Configurations
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
@@ -307,6 +322,18 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
+
+// MCP endpoint (Task 7). Pinned to the "Pat" authentication scheme only — the general
+// Bearer→JWT path and the Identity cookie never authenticate here, so /mcp is reachable
+// only with a valid tmn_pat_ token. Same Mcp:Enabled gate as the registration above.
+if (app.Configuration.GetValue("Mcp:Enabled", true))
+{
+    app.MapMcp("/mcp").RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
+    {
+        AuthenticationSchemes = Timinute.Server.Auth.PatAuthenticationHandler.SchemeName
+    });
+}
+
 app.MapFallbackToFile("index.html");
 
 app.Run();
