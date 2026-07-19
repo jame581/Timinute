@@ -12,7 +12,7 @@ For a local dev run that's `https://localhost:7047/mcp`; for a self-hosted insta
 
 ## 1. Create a token
 
-Go to **Settings → API Tokens** (`/settings/tokens`) and click **New token**. Give it a name (e.g. "Claude Code"), pick a scope, and optionally an expiry (30 days / 90 days / 1 year / no expiry), then create it.
+Open **API Tokens** (under **Account** in the sidebar, `/settings/tokens`) and click **New token**. Give it a name (e.g. "Claude Code"), pick a scope, and optionally an expiry (30 days / 90 days / 1 year / no expiry), then create it.
 
 The token is shown **once**, in full, right after creation — copy it immediately. Timinute never stores or displays the plaintext again; only a prefix (for identifying the token in the list) and its SHA-256 hash are kept. If you lose it, revoke it and create a new one.
 
@@ -71,7 +71,7 @@ All seven only ever see and touch the data belonging to the account the token wa
 
 ## AI activity log
 
-Every tool call — success or failure — is recorded and viewable at **Settings → AI activity** (`/settings/ai-activity`): timestamp, tool name, a one-line summary, a Success/Failed pill, and (for failures) a short detail message. This is the audit trail for anything an assistant did on your behalf. Rows older than 90 days are purged automatically by a background job that runs once a day.
+Every tool call — success or failure — is recorded and viewable on the **AI activity** page (linked from the tokens page, `/settings/ai-activity`): timestamp, tool name, a one-line summary, a Success/Failed pill, and (for failures) a short detail message. This is the audit trail for anything an assistant did on your behalf. Rows older than 90 days are purged automatically by a background job that runs once a day.
 
 ## Security notes
 
@@ -79,6 +79,6 @@ Every tool call — success or failure — is recorded and viewable at **Setting
 - **Revocation is immediate.** Revoking a token (from the API Tokens page) takes effect on its very next request — every call re-validates the token against the database, there's no caching window to wait out.
 - **Optional expiry.** Set a token to expire in 30 days, 90 days, or a year, or leave it with no expiry.
 - **PAT works only at `/mcp`.** A personal access token authenticates nowhere else — not the REST API, not the web login. Sending one to any other endpoint is rejected the same as no credential at all.
-- **Off switch.** Setting `Mcp__Enabled=false` removes the MCP server entirely: no endpoint, no background services, no trace. See [`docs/DOCKER.md`](DOCKER.md#mcp-server) for the full configuration reference.
+- **Off switch.** Setting `Mcp__Enabled=false` removes the `/mcp` endpoint and the MCP tool/audit registrations entirely. The AI-activity purge job keeps running regardless (it's registered unconditionally) — harmless with MCP off, since the activity table just stays empty or shrinks toward empty. See [`docs/DOCKER.md`](DOCKER.md#mcp-server) for the full configuration reference.
 - **Revoked tokens are retained, not deleted.** A revoked token stays in your token list's history as an inert row (it can never authenticate again) so you retain an audit trail of what existed and when it was revoked; it's simply excluded from the active list.
 - **Use TLS in production.** The bearer token crosses the wire on every request; over plain HTTP it's sent in cleartext. Put a TLS-terminating reverse proxy in front of any internet-facing deployment (see [`docs/DOCKER.md`](DOCKER.md)).
