@@ -1,6 +1,6 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Timinute.Server.Controllers;
+using Timinute.Server.Helpers;
 using Timinute.Server.Models;
 using Timinute.Server.Repository;
 using Timinute.Shared.Dtos.Project;
@@ -15,6 +15,14 @@ namespace Timinute.Server.Services.App
     /// </summary>
     public class ProjectNameConflictException : Exception
     {
+        public ProjectNameConflictException()
+        {
+        }
+
+        public ProjectNameConflictException(Exception? innerException)
+            : base("A project with this name already exists.", innerException)
+        {
+        }
     }
 
     public interface IProjectAppService
@@ -68,9 +76,9 @@ namespace Timinute.Server.Services.App
             {
                 await projects.Insert(newProject);
             }
-            catch (DbUpdateException ex) when (ProjectController.IsUniqueConstraintViolation(ex))
+            catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueConstraintViolation(ex))
             {
-                throw new ProjectNameConflictException();
+                throw new ProjectNameConflictException(ex);
             }
 
             return mapper.Map<ProjectDto>(newProject);

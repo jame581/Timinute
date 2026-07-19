@@ -27,16 +27,12 @@ namespace Timinute.Server.Controllers
         private readonly IConfiguration configuration;
         private readonly IProjectAppService projectAppService;
 
-        // projectAppService is optional so existing unit tests can construct the controller
-        // with the pre-extraction signature; when omitted it is built from the same
-        // repository factory + mapper the controller already receives. Production DI
-        // supplies the registered scoped instance.
-        public ProjectController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<ProjectController> logger, IConfiguration configuration, IProjectAppService? projectAppService = null)
+        public ProjectController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<ProjectController> logger, IConfiguration configuration, IProjectAppService projectAppService)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.configuration = configuration;
-            this.projectAppService = projectAppService ?? new ProjectAppService(repositoryFactory, mapper);
+            this.projectAppService = projectAppService;
 
             projectRepository = repositoryFactory.GetRepository<Project>();
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
@@ -146,9 +142,9 @@ namespace Timinute.Server.Controllers
                 var created = await projectAppService.CreateAsync(userId, project);
                 return Ok(created);
             }
-            catch (ProjectNameConflictException)
+            catch (ProjectNameConflictException ex)
             {
-                logger.LogWarning("Duplicate project name detected for user {UserId}.", userId);
+                logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);
                 return Conflict(new { message = "A project with this name already exists." });
             }
         }
@@ -306,23 +302,13 @@ namespace Timinute.Server.Controllers
             {
                 await projectRepository.Update(updatedProject);
             }
-            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            catch (DbUpdateException ex) when (UniqueConstraintDetector.IsUniqueConstraintViolation(ex))
             {
                 logger.LogWarning(ex, "Duplicate project name detected for user {UserId}.", userId);
                 return Conflict(new { message = "A project with this name already exists." });
             }
 
             return Ok(mapper.Map<ProjectDto>(updatedProject));
-        }
-
-        // internal static so the extracted ProjectAppService reuses the EXACT same
-        // unique-constraint detection instead of duplicating the message matching.
-        internal static bool IsUniqueConstraintViolation(DbUpdateException ex)
-        {
-            var message = ex.InnerException?.Message ?? ex.Message;
-            return message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -16,6 +16,7 @@ using Timinute.Server.Data;
 using Timinute.Server.Models;
 using Timinute.Server.Models.Paging;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
@@ -1139,7 +1140,8 @@ namespace Timinute.Server.Tests.Controllers
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["TrashRetention:Days"] = "30" })
                 .Build();
 
-            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration, applicationDbContext)
+            TrackedTaskController controller = new(repositoryFactory, _mapper, _loggerMock.Object, configuration, applicationDbContext,
+                new TimeEntryAppService(repositoryFactory, _mapper, applicationDbContext))
             {
                 ControllerContext = new ControllerContext
                 {

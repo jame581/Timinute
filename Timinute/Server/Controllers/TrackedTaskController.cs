@@ -30,16 +30,12 @@ namespace Timinute.Server.Controllers
         private readonly IConfiguration configuration;
         private readonly ITimeEntryAppService timeEntryAppService;
 
-        // timeEntryAppService is optional so existing unit tests can construct the
-        // controller with the pre-extraction signature; when omitted it is built from the
-        // same factory + mapper + DbContext the controller already receives. Production DI
-        // supplies the registered scoped instance.
-        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration, ApplicationDbContext dbContext, ITimeEntryAppService? timeEntryAppService = null)
+        public TrackedTaskController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<TrackedTaskController> logger, IConfiguration configuration, ApplicationDbContext dbContext, ITimeEntryAppService timeEntryAppService)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.configuration = configuration;
-            this.timeEntryAppService = timeEntryAppService ?? new TimeEntryAppService(repositoryFactory, mapper, dbContext);
+            this.timeEntryAppService = timeEntryAppService;
 
             taskRepository = repositoryFactory.GetRepository<TrackedTask>();
         }

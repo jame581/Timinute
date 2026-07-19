@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Timinute.Server.Controllers;
 using Timinute.Server.Data;
 using Timinute.Server.Repository;
+using Timinute.Server.Services.App;
 using Timinute.Server.Tests.Helpers;
 using Timinute.Shared.Dtos.Analytics;
 using Xunit;
@@ -75,7 +76,7 @@ namespace Timinute.Server.Tests.Repositories
             }));
 
             return new AnalyticsController(new RepositoryFactory(db), mapper,
-                new Mock<ILogger<AnalyticsController>>().Object, db)
+                new Mock<ILogger<AnalyticsController>>().Object, db, new AnalyticsAppService(db))
             {
                 ControllerContext = new ControllerContext
                 {

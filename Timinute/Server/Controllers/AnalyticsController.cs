@@ -26,16 +26,12 @@ namespace Timinute.Server.Controllers
         private readonly ApplicationDbContext dbContext;
         private readonly IAnalyticsAppService analyticsAppService;
 
-        // analyticsAppService is optional so existing unit tests can construct the
-        // controller with the pre-extraction signature; when omitted it is built from the
-        // same DbContext the controller already receives. Production DI supplies the
-        // registered scoped instance.
-        public AnalyticsController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<AnalyticsController> logger, ApplicationDbContext dbContext, IAnalyticsAppService? analyticsAppService = null)
+        public AnalyticsController(IRepositoryFactory repositoryFactory, IMapper mapper, ILogger<AnalyticsController> logger, ApplicationDbContext dbContext, IAnalyticsAppService analyticsAppService)
         {
             this.mapper = mapper;
             this.logger = logger;
             this.dbContext = dbContext;
-            this.analyticsAppService = analyticsAppService ?? new AnalyticsAppService(dbContext);
+            this.analyticsAppService = analyticsAppService;
 
             projectRepository = repositoryFactory.GetRepository<Project>();
             trackedTaskRepository = repositoryFactory.GetRepository<TrackedTask>();
