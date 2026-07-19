@@ -107,6 +107,18 @@ namespace Timinute.Server.Tests.Integration
         }
 
         [Fact]
+        public async Task Create_With_Whitespace_Only_Name_Is_Rejected()
+        {
+            // A whitespace-only name must never persist as an effectively empty token name.
+            // [Required] rejects it (RequiredAttribute trims before validating), so the
+            // [ApiController] 422 short-circuit fires. This test locks that behavior so a
+            // future DTO change (e.g. AllowEmptyStrings=true) can't silently allow it.
+            var create = await client.PostAsJsonAsync("/Pat", new CreatePatDto { Name = "   ", Scope = "read" });
+
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, create.StatusCode);
+        }
+
+        [Fact]
         public async Task Revoke_Another_Users_Token_Returns_404()
         {
             // Seed a token owned by a different user directly through the DbContext -

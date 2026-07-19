@@ -69,7 +69,10 @@ namespace Timinute.Server.Services.App
             string? search,
             List<string>? tagIds)
         {
-            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+            // Lower-cased so the substring match is case-insensitive on every provider,
+            // not only under a case-insensitive SQL Server collation (the tool advertises
+            // "case-insensitive"; SQLite/ordinal comparisons would otherwise break that promise).
+            var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim().ToLower();
             var normalizedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
             var normalizedTagIds = NormalizeTagIds(tagIds);
 
@@ -77,7 +80,7 @@ namespace Timinute.Server.Services.App
                 && (from == null || t.StartDate >= from.Value.ToUniversalTime())
                 && (to == null || t.StartDate <= to.Value.ToUniversalTime())
                 && (normalizedProjectId == null || t.ProjectId == normalizedProjectId)
-                && (normalizedSearch == null || t.Name.Contains(normalizedSearch))
+                && (normalizedSearch == null || t.Name.ToLower().Contains(normalizedSearch))
                 && (normalizedTagIds == null || t.Tags.Any(tag => normalizedTagIds.Contains(tag.TagId)));
         }
 

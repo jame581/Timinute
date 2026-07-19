@@ -63,6 +63,9 @@ namespace Timinute.Server.Controllers
             var newToken = new PersonalAccessToken
             {
                 UserId = userId,
+                // [Required] rejects whitespace-only names (RequiredAttribute trims before validating),
+                // so the [ApiController] 422 short-circuit fires before this action; Trim() only strips
+                // surrounding padding from an otherwise-valid name.
                 Name = dto.Name.Trim(),
                 TokenHash = hash,
                 Prefix = prefix,

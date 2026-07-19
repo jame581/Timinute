@@ -50,7 +50,10 @@ namespace Timinute.Server.Services
 
         public static async Task<int> PurgeOnce(ApplicationDbContext db, int retentionDays, CancellationToken ct)
         {
-            var cutoff = DateTimeOffset.UtcNow.AddDays(-retentionDays);
+            // A retention window must be at least 1 day. Clamping guards against a misconfigured
+            // (negative or zero) value moving the cutoff to now/the future, which would purge every row.
+            var days = Math.Max(1, retentionDays);
+            var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
             var old = await db.McpActivityLogs.Where(a => a.Timestamp < cutoff).ToListAsync(ct);
             db.McpActivityLogs.RemoveRange(old);
             await db.SaveChangesAsync(ct);

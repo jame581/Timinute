@@ -831,6 +831,23 @@ namespace Timinute.Server.Tests.Controllers
         }
 
         [Fact]
+        public async Task Search_Tasks_By_Name_Is_Case_Insensitive()
+        {
+            TrackedTaskController controller = await CreateController();
+            var pagingParams = new PagingParameters { PageSize = 100, PageNumber = 1 };
+
+            // Lower-cased query must still match the seeded "Task 1" - the shared predicate
+            // lower-cases both sides so the match is case-insensitive on every provider.
+            var actionResult = await controller.SearchTrackedTasks(pagingParams, null, null, null, "task 1");
+
+            var okResult = actionResult.Result as OkObjectResult;
+            var tasks = okResult!.Value as IEnumerable<TrackedTaskDto>;
+            Assert.NotNull(tasks);
+            Assert.Single(tasks!);
+            Assert.Equal("TrackedTaskId1", tasks!.First().TaskId);
+        }
+
+        [Fact]
         public async Task Search_Tasks_By_TagId_Returns_Matching_Tasks()
         {
             ApplicationDbContext applicationDbContext = await TestHelper.GetDefaultApplicationDbContext(_databaseName + "SearchTagMatch");

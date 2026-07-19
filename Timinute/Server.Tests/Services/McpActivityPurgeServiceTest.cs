@@ -48,5 +48,26 @@ namespace Timinute.Server.Tests.Services
             Assert.Equal(new[] { "boundary" }, remaining);
             Assert.Equal(1, count);
         }
+
+        [Fact]
+        public async Task PurgeOnce_Negative_Retention_Does_Not_Purge_Recent_Rows()
+        {
+            var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+            // A misconfigured negative retention must never move the cutoff into the future
+            // and wipe recent rows; it is clamped to a >=1-day window.
+            db.McpActivityLogs.AddRange(
+                new McpActivityLog { UserId = "u", Tool = "today", Timestamp = DateTimeOffset.UtcNow },
+                new McpActivityLog { UserId = "u", Tool = "ancient", Timestamp = DateTimeOffset.UtcNow.AddDays(-200) });
+            await db.SaveChangesAsync();
+
+            var count = await McpActivityPurgeService.PurgeOnce(db, retentionDays: -5, CancellationToken.None);
+
+            var remaining = db.McpActivityLogs.Select(a => a.Tool).ToList();
+            Assert.Contains("today", remaining);
+            Assert.DoesNotContain("ancient", remaining);
+            Assert.Equal(1, count);
+        }
     }
 }
