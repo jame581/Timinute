@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Timinute.Server.Data;
@@ -78,6 +79,22 @@ namespace Timinute.Server.Auth
 
             return AuthenticateResult.Success(
                 new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));
+        }
+
+        // Emit an RFC 9110 WWW-Authenticate header on the 401 so MCP (and any HTTP) clients
+        // get a well-formed challenge instead of a bare 401. Minimal on purpose: "Bearer",
+        // adding error="invalid_token" only when a token was actually presented and rejected
+        // (AuthenticateResult.Failure is set), versus simply absent. No OAuth
+        // resource-metadata / WWW-Authenticate parameters beyond that.
+        protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
+        {
+            Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+            var result = await HandleAuthenticateOnceAsync();
+            var challenge = result?.Failure is not null
+                ? "Bearer error=\"invalid_token\""
+                : "Bearer";
+            Response.Headers.WWWAuthenticate = challenge;
         }
 
         // Best-effort LastUsedAt stamp: must never fail the request, and must never leave

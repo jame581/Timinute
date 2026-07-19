@@ -45,6 +45,10 @@ namespace Timinute.Server.Tests.Integration
                 new StringContent("{}", Encoding.UTF8, "application/json"));
 
             Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+
+            // RFC 9110: the 401 must carry a WWW-Authenticate challenge starting with "Bearer".
+            Assert.True(res.Headers.WwwAuthenticate.Count > 0, "Missing WWW-Authenticate header.");
+            Assert.StartsWith("Bearer", res.Headers.WwwAuthenticate.ToString());
         }
 
         [Fact]

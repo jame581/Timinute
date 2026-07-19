@@ -29,7 +29,7 @@ namespace Timinute.Server.Mcp
             [Description("Optional inclusive start of the range (filters on entry start date).")] DateTimeOffset? from = null,
             [Description("Optional inclusive end of the range (filters on entry start date).")] DateTimeOffset? to = null,
             [Description("Optional project id to filter by.")] string? projectId = null,
-            [Description("Optional case-sensitive substring to match against the entry name.")] string? search = null)
+            [Description("Optional case-insensitive substring to match against the entry name.")] string? search = null)
         {
             return await timeEntries.SearchAsync(user.UserId, new TimeEntryQuery
             {

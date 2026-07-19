@@ -185,7 +185,11 @@ builder.Services.AddScoped<Timinute.Server.Mcp.McpUserContext>();
 if (builder.Configuration.GetValue("Mcp:Enabled", true))
 {
     builder.Services.AddMcpServer()
-        .WithHttpTransport()
+        // Pin Stateless=true explicitly: tools + McpUserContext + the app-services resolve
+        // from the ASP.NET Core per-request DI scope only in stateless mode. It is the
+        // preview package's current default, but pinning it means a version bump can't
+        // silently flip it and break per-request scoping (and the PAT principal lookup).
+        .WithHttpTransport(o => o.Stateless = true)
         .WithToolsFromAssembly();
 }
 
