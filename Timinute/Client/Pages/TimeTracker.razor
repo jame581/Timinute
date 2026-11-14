@@ -1,6 +1,5 @@
 @page "/timetracker"
 @attribute [Authorize]
-@using Blazored.SessionStorage
 @using Timinute.Client.Helpers
 @using Timinute.Client.Models
 @using Timinute.Shared.Dtos.Project
@@ -8,7 +7,8 @@
 @implements IDisposable
 
 @inject IHttpClientFactory ClientFactory
-@inject ISessionStorageService SessionStorage
+@inject Timinute.Client.Services.TimerService Timer
+@inject Radzen.DialogService DialogService
 @inject Radzen.NotificationService Notifier
 @inject Timinute.Client.Services.ProjectColorService ColorService
 
@@ -40,6 +40,11 @@
                     {
                         <ProjectPill Name="@SelectedProject.Name" Color="@ColorService.GetColor(SelectedProject)" />
                     }
+                    else if (Timer.Current is { ProjectName: { } runningProjectName } running)
+                    {
+                        @* Running timer's project isn't in this page's list (e.g. created on another device). *@
+                        <ProjectPill Name="@runningProjectName" Color="@(running.ProjectColor ?? ColorService.GetColorById(running.ProjectId))" />
+                    }
                     else
                     {
                         <span class="aurora-tracker-card__no-project">No project</span>
@@ -49,7 +54,10 @@
             </div>
 
             <div class="aurora-tracker-card__right">
-                <button class="aurora-tracker-card__reset" type="button" title="Reset" @onclick="ResetTracker" disabled="@Running">
+                <button class="aurora-tracker-card__reset" type="button"
+                        title="@(Running ? "Discard timer" : "Reset")"
+                        aria-label="@(Running ? "Discard timer" : "Reset")"
+                        @onclick="ResetOrDiscard">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 1 0 3-6.7" />
                         <path d="M3 4v5h5" />
@@ -140,12 +148,13 @@
 </div>
 
 @code {
-    private bool Running;
+    private bool Running => Timer.Current != null;
     private string TaskName = "";
     private string SelectedProjectId = "";
-    private DateTimeOffset? StartedAt;
-    private TimeSpan Elapsed;
-    private string CurrentTaskId = "";
+    private DateTimeOffset? StartedAt => Timer.Current?.StartDate.ToLocalTime();
+    private TimeSpan Elapsed => Timer.Elapsed;
+    private bool busy;
+    private bool disposed;
 
     private List<ProjectDto> Projects = new();
     private List<TrackedTaskDto> TodayTasks = new();
@@ -172,9 +181,19 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Timer.Changed += OnTimerChanged;
         await LoadProjects();
         await LoadTodayTasks();
-        await ResumeIfPersisted();
+        try
+        {
+            // First run refreshes as part of init; on later visits re-read so the page never
+            // opens on state up to one poll interval old.
+            var alreadyReady = Timer.IsReady;
+            await Timer.InitializeAsync();
+            if (alreadyReady) await Timer.RefreshAsync();
+        }
+        catch { /* offline: the service retries on its next poll */ }
+        SyncFromTimer();
     }
 
     private async Task LoadProjects()
@@ -207,28 +226,56 @@
         catch { TodayTasks = new(); }
     }
 
-    private async Task ResumeIfPersisted()
+    // Mirrors the server timer into the form: while running, the inputs show (and lock) its name/project.
+    private void SyncFromTimer()
     {
-        var saved = await SessionStorage.GetItemAsync<TrackedTask>("trackedTask");
-        if (saved == null) return;
-        Running = true;
-        CurrentTaskId = saved.TaskId;
-        TaskName = saved.Name;
-        SelectedProjectId = saved.ProjectId ?? "";
-        StartedAt = saved.StartDate;
-        Elapsed = DateTime.Now - saved.StartDate;
-        StartTickTimer();
-    }
-
-    private async Task ToggleTracker()
-    {
-        if (Running)
+        if (Timer.Current is { } current)
         {
-            await StopTracker();
+            TaskName = current.Name;
+            SelectedProjectId = current.ProjectId ?? "";
+            StartTickTimer();
         }
         else
         {
-            await StartTracker();
+            StopTickTimer();
+        }
+    }
+
+    // Raised from the poll timer / JS callback, i.e. off the renderer's context: marshal everything.
+    private void OnTimerChanged() => _ = InvokeAsync(async () =>
+    {
+        if (disposed) return;
+        var wasRunning = tickTimer != null;
+        SyncFromTimer();
+        if (wasRunning && !Running)
+        {
+            // Stopped here or elsewhere: clear the form and show the new entry in today's list.
+            TaskName = "";
+            SelectedProjectId = "";
+            StateHasChanged();
+            await LoadTodayTasks();
+        }
+        if (!disposed) StateHasChanged();
+    });
+
+    private async Task ToggleTracker()
+    {
+        if (busy) return;
+        busy = true;
+        try
+        {
+            if (Running)
+            {
+                await StopTracker();
+            }
+            else
+            {
+                await StartTracker();
+            }
+        }
+        finally
+        {
+            busy = false;
         }
     }
 
@@ -240,41 +287,16 @@
             return;
         }
 
-        var client = ClientFactory.CreateClient(Constants.API.ClientName);
-        var startedAt = DateTime.Now;
-        var dto = new CreateTrackedTaskDto
-        {
-            Name = TaskName,
-            StartDate = startedAt,
-            // Backend requires Duration > 0; placeholder updated on stop.
-            Duration = TimeSpan.FromSeconds(1),
-            ProjectId = string.IsNullOrEmpty(SelectedProjectId) ? null : SelectedProjectId,
-        };
-
         try
         {
-            var resp = await client.PostAsJsonAsync(Constants.API.TrackedTask.Create, dto);
-            resp.EnsureSuccessStatusCode();
-            var created = await resp.Content.ReadFromJsonAsync<TrackedTaskDto>();
-
-            if (created != null)
+            if (await Timer.StartAsync(TaskName.Trim(), SelectedProjectId))
             {
-                CurrentTaskId = created.TaskId;
-                StartedAt = startedAt;
-                Elapsed = TimeSpan.Zero;
-                Running = true;
-
-                var saved = new TrackedTask
-                {
-                    TaskId = CurrentTaskId,
-                    Name = TaskName,
-                    StartDate = startedAt,
-                    Duration = TimeSpan.Zero,
-                    ProjectId = dto.ProjectId
-                };
-                await SessionStorage.SetItemAsync("trackedTask", saved);
-                StartTickTimer();
                 Notifier.Notify(Radzen.NotificationSeverity.Success, "Tracking", "Tracker started", 2000);
+            }
+            else
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Warning, "Already running",
+                    "A timer is already running on another tab or device. It's shown here now.", 4000);
             }
         }
         catch (Exception ex)
@@ -285,55 +307,53 @@
 
     private async Task StopTracker()
     {
-        StopTickTimer();
-        var client = ClientFactory.CreateClient(Constants.API.ClientName);
-
-        var startedAt = StartedAt ?? DateTimeOffset.Now;
-        // Server rejects EndDate <= StartDate; ensure a minimum 1-second span.
-        var effective = Elapsed < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1) : Elapsed;
-        var endedAt = startedAt.LocalDateTime + effective;
-
-        var dto = new UpdateTrackedTaskDto
-        {
-            TaskId = CurrentTaskId,
-            Name = TaskName,
-            ProjectId = string.IsNullOrEmpty(SelectedProjectId) ? null : SelectedProjectId,
-            StartDate = startedAt.LocalDateTime,
-            EndDate = endedAt
-        };
-
         try
         {
-            var resp = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, dto);
-            resp.EnsureSuccessStatusCode();
-            Notifier.Notify(Radzen.NotificationSeverity.Success, "Tracking", "Tracker stopped", 2000);
+            var result = await Timer.StopAsync();
+            if (result == null)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Info, "Already stopped", "This timer was stopped on another tab or device.", 4000);
+            }
+            else if (result.ProjectCleared)
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Warning, "Tracker stopped",
+                    "The project was deleted while the timer ran, so the entry was saved without a project.", 5000);
+            }
+            else
+            {
+                Notifier.Notify(Radzen.NotificationSeverity.Success, "Tracking", "Tracker stopped", 2000);
+            }
         }
         catch (Exception ex)
         {
             Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not stop", ex.Message, 4000);
         }
-        finally
-        {
-            // Clear session storage unconditionally — UI is being reset, leaving it would
-            // resurrect a phantom session on next page load.
-            await SessionStorage.RemoveItemAsync("trackedTask");
-        }
-
-        Running = false;
-        CurrentTaskId = "";
-        TaskName = "";
-        SelectedProjectId = "";
-        StartedAt = null;
-        Elapsed = TimeSpan.Zero;
-        await LoadTodayTasks();
     }
 
-    private void ResetTracker()
+    private async Task ResetOrDiscard()
     {
-        if (Running) return;
-        TaskName = "";
-        SelectedProjectId = "";
-        Elapsed = TimeSpan.Zero;
+        if (!Running)
+        {
+            TaskName = "";
+            SelectedProjectId = "";
+            return;
+        }
+
+        var confirmed = await DialogService.Confirm(
+            $"Discard {FormatTotalDuration(Elapsed)} of tracking? No entry will be saved.",
+            "Discard timer",
+            new Radzen.ConfirmOptions { OkButtonText = "Discard", CancelButtonText = "Keep tracking" });
+        if (confirmed != true) return;
+
+        try
+        {
+            await Timer.DiscardAsync();
+            Notifier.Notify(Radzen.NotificationSeverity.Info, "Timer discarded", "Nothing was saved.", 2500);
+        }
+        catch (Exception ex)
+        {
+            Notifier.Notify(Radzen.NotificationSeverity.Error, "Could not discard", ex.Message, 4000);
+        }
     }
 
     private void StartTickTimer()
@@ -358,9 +378,8 @@
 
     private async void OnTick(object? sender, System.Timers.ElapsedEventArgs e)
     {
-        if (Running && StartedAt.HasValue)
+        if (Running)
         {
-            Elapsed = DateTime.Now - StartedAt.Value;
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -392,6 +411,8 @@
 
     public void Dispose()
     {
+        disposed = true;
+        Timer.Changed -= OnTimerChanged;
         StopTickTimer();
     }
 }

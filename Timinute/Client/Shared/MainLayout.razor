@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject Timinute.Client.Services.ViewportService Viewport
 @inject Timinute.Client.Services.ThemeService Theme
+@inject Timinute.Client.Services.TimerService Timer
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState
 
 <head>
@@ -48,6 +49,7 @@
     }
 
     private bool themeSynced;
+    private bool timerInitialized;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -70,6 +72,26 @@
         // ThemeService.SyncFromServerAsync is itself idempotent — concurrent
         // callers share the same in-flight Task — so per-render retries are
         // cheap.
+        if (!timerInitialized)
+        {
+            var authState = await AuthState.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                // The running timer lives on the server; start mirroring it. Retried on the next
+                // render if it fails (offline at boot); InitializeAsync itself is idempotent.
+                try
+                {
+                    await Timer.InitializeAsync();
+                    timerInitialized = true;
+                }
+                catch
+                {
+                    // Deliberately swallowed: timerInitialized stays false, so the next render
+                    // retries; meanwhile the tracker shows no timer rather than an error.
+                }
+            }
+        }
+
         if (!themeSynced)
         {
             var auth = await AuthState.GetAuthenticationStateAsync();

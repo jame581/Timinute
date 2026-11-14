@@ -85,6 +85,19 @@ namespace Timinute.Client.Helpers
                 public static string Purge(string id) => $"{Api}/{id}/purge";
             }
 
+            public static class Timer
+            {
+                public const string Api = "Timer";
+
+                public const string Get = Api;
+
+                public const string Start = $"{Api}/start";
+
+                public const string Stop = $"{Api}/stop";
+
+                public const string Discard = Api;
+            }
+
             public static class Tag
             {
                 public const string Api = "Tag";

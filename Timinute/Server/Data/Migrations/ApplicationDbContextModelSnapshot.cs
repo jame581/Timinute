@@ -453,6 +453,28 @@ namespace Timinute.Server.Data.Migrations
                     b.ToTable("Projects");
                 });
 
+            modelBuilder.Entity("Timinute.Server.Models.RunningTimer", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProjectId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("StartDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("RunningTimers");
+                });
+
             modelBuilder.Entity("Timinute.Server.Models.Tag", b =>
                 {
                     b.Property<string>("TagId")
@@ -730,6 +752,17 @@ namespace Timinute.Server.Data.Migrations
                         .WithMany("Projects")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Timinute.Server.Models.RunningTimer", b =>
+                {
+                    b.HasOne("Timinute.Server.Models.ApplicationUser", "User")
+                        .WithOne()
+                        .HasForeignKey("Timinute.Server.Models.RunningTimer", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
