@@ -53,6 +53,11 @@ namespace Timinute.Server
             CreateMap<UserPreferences, UserPreferencesDto>();
             CreateMap<UserPreferencesDto, UserPreferences>();
             CreateMap<UpdateUserPreferencesDto, UserPreferences>();
+
+            // ProjectName/ProjectColor are filled by TimerAppService (no navigation on RunningTimer).
+            CreateMap<RunningTimer, Timinute.Shared.Dtos.Timer.RunningTimerDto>()
+                .ForMember(d => d.ProjectName, o => o.Ignore())
+                .ForMember(d => d.ProjectColor, o => o.Ignore());
         }
     }
 }

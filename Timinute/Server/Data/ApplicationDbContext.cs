@@ -21,6 +21,7 @@ namespace Timinute.Server.Data
         public DbSet<Tag> Tags { get; set; } = null!;
         public DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; } = null!;
         public DbSet<McpActivityLog> McpActivityLogs { get; set; } = null!;
+        public DbSet<RunningTimer> RunningTimers { get; set; } = null!;
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -178,6 +179,15 @@ namespace Timinute.Server.Data
             builder.Entity<McpActivityLog>().Property(t => t.Result).HasConversion<string>().HasMaxLength(16);
             builder.Entity<McpActivityLog>().Property(t => t.TokenId).HasMaxLength(64);
             builder.Entity<McpActivityLog>().HasIndex(t => new { t.UserId, t.Timestamp });
+
+            // RunningTimer — one in-progress stopwatch per user (PK = UserId). No FK to Project:
+            // a project deleted mid-run must not block the stop (TimerAppService re-checks it then).
+            builder.Entity<RunningTimer>().HasKey(t => t.UserId);
+            builder.Entity<RunningTimer>().Property(t => t.Name).HasMaxLength(50).IsRequired();
+            builder.Entity<RunningTimer>().Property(t => t.ProjectId).HasMaxLength(450);
+            builder.Entity<RunningTimer>().Property(t => t.StartDate).IsRequired();
+            builder.Entity<RunningTimer>()
+                .HasOne(t => t.User).WithOne().HasForeignKey<RunningTimer>(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
 
             FillDataToDB(builder);
 
