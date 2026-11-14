@@ -1,0 +1,36 @@
+@implements IDisposable
+@inject Timinute.Client.Services.TimerService Timer
+
+@* Desktop topbar pill: shows a running timer from any page, links to the tracker. *@
+@if (Timer.Current is { } current)
+{
+    <a class="aurora-timer-indicator" href="timetracker"
+       title="@($"Tracking: {current.Name}")"
+       aria-label="@($"Timer running for {Format(Timer.Elapsed)}: {current.Name}. Open tracker.")">
+        <span class="aurora-timer-indicator__dot aurora-pulse" aria-hidden="true"></span>
+        <span class="aurora-timer-indicator__time aurora-mono">@Format(Timer.Elapsed)</span>
+    </a>
+}
+
+@code {
+    private System.Timers.Timer? refresh;
+
+    protected override void OnInitialized()
+    {
+        Timer.Changed += OnChanged;
+        // h:mm only needs a repaint every 15 s.
+        refresh = new System.Timers.Timer(15000) { AutoReset = true };
+        refresh.Elapsed += (_, _) => { if (Timer.Current != null) _ = InvokeAsync(StateHasChanged); };
+        refresh.Start();
+    }
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    internal static string Format(TimeSpan elapsed) => $"{(int)elapsed.TotalHours}:{elapsed.Minutes:00}";
+
+    public void Dispose()
+    {
+        Timer.Changed -= OnChanged;
+        refresh?.Dispose();
+    }
+}
