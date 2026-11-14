@@ -31,6 +31,8 @@ builder.Services.AddScoped<Timinute.Client.Services.TokenService>();
 builder.Services.AddScoped<Timinute.Client.Services.McpActivityService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<Timinute.Client.Services.TimerService>();
+builder.Services.AddScoped<Timinute.Client.Services.INotificationInterop, Timinute.Client.Services.NotificationInterop>();
+builder.Services.AddScoped<Timinute.Client.Services.TimerNotificationService>();
 builder.Services.AddSingleton<Timinute.Client.Services.AnalyticsService>();
 builder.Services.AddTransient<Timinute.Client.Services.AnalyticsCacheInvalidationHandler>();
 
