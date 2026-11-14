@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -26,7 +27,10 @@ namespace Timinute.Server.Tests.Integration
                 services.RemoveAll(typeof(DbContextOptions<ApplicationDbContext>));
                 services.RemoveAll(typeof(IDbContextOptionsConfiguration<ApplicationDbContext>));
                 services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseInMemoryDatabase("ValidationIntegration_DB"));
+                    options.UseInMemoryDatabase("ValidationIntegration_DB")
+                        // TimerAppService.StopAsync opens an explicit transaction; InMemory has no
+                        // transactions and throws by default. Atomicity is covered on SQLite instead.
+                        .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
 
                 // Route [Authorize] through the test scheme instead of the
                 // JWT/cookie policy scheme.

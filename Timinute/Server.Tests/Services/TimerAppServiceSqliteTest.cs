@@ -232,6 +232,49 @@ namespace Timinute.Server.Tests.Services
         }
 
         [Fact]
+        public async Task Stop_DeleteFailsAfterLog_RollsBackTask_AndReportsNotFound()
+        {
+            // LogAsync saves the TrackedTask, then a competing stop (simulated by raw SQL inside the
+            // same transaction) removes the timer row, so our delete hits 0 rows. The transaction must
+            // roll the task back, and the caller gets "not found" rather than a 500.
+            var (factory, mapper) = TestBench.NewProjectStack(db);
+            var real = new TimeEntryAppService(factory, mapper, db);
+            var racing = new Mock<ITimeEntryAppService>();
+            racing.Setup(s => s.LogAsync(It.IsAny<string>(), It.IsAny<CreateTrackedTaskDto>()))
+                  .Returns(async (string userId, CreateTrackedTaskDto dto) =>
+                  {
+                      var created = await real.LogAsync(userId, dto);
+                      await db.Database.ExecuteSqlRawAsync("DELETE FROM RunningTimers");
+                      return created;
+                  });
+            await NewService().StartAsync(User1, new StartTimerDto { Name = "Raced stop" });
+            clock.Advance(TimeSpan.FromMinutes(5));
+
+            await Assert.ThrowsAsync<TimerNotFoundException>(() => NewService(racing.Object).StopAsync(User1, new StopTimerDto()));
+
+            db.ChangeTracker.Clear();
+            Assert.False(await db.TrackedTasks.AnyAsync(t => t.Name == "Raced stop"));
+        }
+
+        [Fact]
+        public async Task Stop_ProjectTrashedBetweenChecks_SavesWithoutProject()
+        {
+            var created = new TrackedTaskDto { Name = "Late trash" };
+            var entries = new Mock<ITimeEntryAppService>();
+            entries.SetupSequence(s => s.LogAsync(User1, It.IsAny<CreateTrackedTaskDto>()))
+                   .ThrowsAsync(new ProjectOwnershipException())
+                   .ReturnsAsync(created);
+            await NewService().StartAsync(User1, new StartTimerDto { Name = "Late trash", ProjectId = OwnProjectId });
+
+            var result = await NewService(entries.Object).StopAsync(User1, new StopTimerDto());
+
+            Assert.True(result.ProjectCleared);
+            entries.Verify(s => s.LogAsync(User1, It.Is<CreateTrackedTaskDto>(d => d.ProjectId == null)), Times.Once);
+            db.ChangeTracker.Clear();
+            Assert.False(await db.RunningTimers.AnyAsync());
+        }
+
+        [Fact]
         public async Task Stop_NoTimer_ThrowsNotFound()
         {
             await Assert.ThrowsAsync<TimerNotFoundException>(() => NewService().StopAsync(User1, new StopTimerDto()));

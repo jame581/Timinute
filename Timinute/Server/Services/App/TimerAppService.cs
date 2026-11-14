@@ -149,16 +149,30 @@ namespace Timinute.Server.Services.App
                 projectCleared = true;
             }
 
-            var created = await timeEntries.LogAsync(userId, new CreateTrackedTaskDto
+            TrackedTaskDto created;
+            try
             {
-                Name = timer.Name,
-                StartDate = timer.StartDate,
-                Duration = duration,
-                ProjectId = projectId,
-            });
+                created = await timeEntries.LogAsync(userId, NewEntry(timer, duration, projectId));
+            }
+            catch (ProjectOwnershipException) when (projectId != null)
+            {
+                // Trashed between our check and LogAsync's own — same rule: keep the time, drop the project.
+                created = await timeEntries.LogAsync(userId, NewEntry(timer, duration, projectId: null));
+                projectCleared = true;
+            }
 
             db.RunningTimers.Remove(timer);
-            await db.SaveChangesAsync();
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // A concurrent stop (another tab/device) already removed the timer. Disposing the
+                // uncommitted transaction rolls back the task we just logged, so nothing is duplicated.
+                throw new TimerNotFoundException();
+            }
+
             await transaction.CommitAsync();
 
             return new StopTimerResultDto { TrackedTask = created, ProjectCleared = projectCleared };
@@ -172,6 +186,14 @@ namespace Timinute.Server.Services.App
             db.RunningTimers.Remove(timer);
             await db.SaveChangesAsync();
         }
+
+        private static CreateTrackedTaskDto NewEntry(RunningTimer timer, TimeSpan duration, string? projectId) => new()
+        {
+            Name = timer.Name,
+            StartDate = timer.StartDate,
+            Duration = duration,
+            ProjectId = projectId,
+        };
 
         // The soft-delete global query filter applies, so a trashed project counts as gone.
         private Task<bool> OwnsLiveProjectAsync(string userId, string projectId) =>
