@@ -27,10 +27,11 @@ namespace Timinute.Client.Tests.Services
         private static readonly DateTimeOffset Start = new(2026, 11, 14, 8, 0, 0, TimeSpan.Zero);
 
         private readonly FakeTimeProvider clock = new(Start);
-        private readonly FakeInterop interop = new();
+        private readonly FakeNotificationInterop interop = new();
         private readonly List<HttpRequestMessage> requests = new();
         private readonly TimerService timer;
         private readonly TimerNotificationService service;
+        private readonly UserProfileService profile;
 
         private RunningTimerDto? running = new() { Name = "API review", StartDate = Start };
         private UserPreferencesDto prefs = new() { LongTimerWarningHours = 8.0m, IdleWarningMinutes = 15 };
@@ -56,7 +57,8 @@ namespace Timinute.Client.Tests.Services
                    .Returns(() => new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") });
 
             timer = new TimerService(factory.Object, new Mock<ISessionStorageService>().Object, new Mock<IJSRuntime>().Object, clock);
-            service = new TimerNotificationService(timer, new UserProfileService(factory.Object), interop, clock);
+            profile = new UserProfileService(factory.Object);
+            service = new TimerNotificationService(timer, profile, interop, clock);
         }
 
         private static HttpResponseMessage Json<T>(T body) => new(HttpStatusCode.OK) { Content = JsonContent.Create(body, options: WebJson) };
@@ -132,6 +134,34 @@ namespace Timinute.Client.Tests.Services
 
             var item = Assert.Single(service.Items);
             Assert.Equal(Start.AddHours(9), item.TimerStart);
+        }
+
+        [Fact]
+        public async Task Changing_Threshold_Forgets_Old_Dismissal()
+        {
+            prefs.LongTimerWarningHours = 2.0m;
+            await At(TimeSpan.FromHours(8)); // 4th multiple of 2 h, dismissed below
+            service.Dismiss(service.Items.Single().Id);
+
+            prefs.LongTimerWarningHours = 4.0m;
+            await profile.InvalidateAsync();
+            await At(TimeSpan.FromHours(9));
+
+            Assert.Single(service.Items);
+        }
+
+        [Fact]
+        public async Task Turning_Idle_Off_Clears_Idle_Items()
+        {
+            await At(TimeSpan.FromHours(1));
+            await service.OnIdleEnded(Iso(Start.AddMinutes(20)), Iso(Start.AddMinutes(50)));
+            Assert.Single(service.Items);
+
+            prefs.IdleWarningMinutes = 0;
+            await profile.InvalidateAsync();
+            await At(TimeSpan.FromHours(1.1));
+
+            Assert.Empty(service.Items);
         }
 
         [Fact]
@@ -295,25 +325,6 @@ namespace Timinute.Client.Tests.Services
             for (var i = 0; i < 100 && raised == 0; i++) await Task.Delay(20);
 
             Assert.True(raised > 0);
-        }
-
-        private sealed class FakeInterop : INotificationInterop
-        {
-            public bool OptIn { get; set; }
-            public string Permission { get; set; } = "default";
-            public string RequestResult { get; set; } = "granted";
-            public List<(string Title, string Body, string Tag)> Shown { get; } = new();
-            public bool IdleWatching { get; private set; }
-            public int IdleMinutes { get; private set; }
-
-            public Task<bool> GetBrowserOptInAsync() => Task.FromResult(OptIn);
-            public Task SetBrowserOptInAsync(bool on) { OptIn = on; return Task.CompletedTask; }
-            public Task<string> GetPermissionAsync() => Task.FromResult(Permission);
-            public Task<string> RequestPermissionAsync() { Permission = RequestResult; return Task.FromResult(RequestResult); }
-            public Task ShowAsync(string title, string body, string tag) { Shown.Add((title, body, tag)); return Task.CompletedTask; }
-            public Task RegisterAsync(DotNetObjectReference<TimerNotificationService> target) => Task.CompletedTask;
-            public Task StartIdleWatchAsync(int idleMinutes) { IdleWatching = true; IdleMinutes = idleMinutes; return Task.CompletedTask; }
-            public Task StopIdleWatchAsync() { IdleWatching = false; return Task.CompletedTask; }
         }
     }
 }

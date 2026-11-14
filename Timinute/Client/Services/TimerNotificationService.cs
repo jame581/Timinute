@@ -25,6 +25,7 @@ namespace Timinute.Client.Services
 
         private DateTimeOffset? trackedStart;
         private int dismissedMultiple;
+        private decimal trackedThreshold;
         private int idleWatchMinutes;
         private bool initialized;
         private ITimer? loop;
@@ -91,6 +92,18 @@ namespace Timinute.Client.Services
                 dismissedMultiple = 0;
                 keptIdle.Clear();
                 items.RemoveAll(i => i.TimerStart != current.StartDate);
+            }
+
+            if (prefs.LongTimerWarningHours != trackedThreshold)
+            {
+                // New threshold: old dismissals counted multiples of the old one.
+                trackedThreshold = prefs.LongTimerWarningHours;
+                dismissedMultiple = 0;
+            }
+
+            if (prefs.IdleWarningMinutes <= 0)
+            {
+                items.RemoveAll(i => i.Rule == BellRule.Idle);
             }
 
             items.RemoveAll(i => i.Rule == BellRule.LongRunning);
@@ -190,9 +203,12 @@ namespace Timinute.Client.Services
         [JSInvokable]
         public Task OnOpenBellRequested()
         {
-            OpenRequested?.Invoke();
+            RequestOpen();
             return Task.CompletedTask;
         }
+
+        /// <summary>Asks the bell to open (browser-notification click, mobile sheet row).</summary>
+        public void RequestOpen() => OpenRequested?.Invoke();
 
         /// <returns>False when the browser doesn't support notifications or permission was denied.</returns>
         public async Task<bool> SetBrowserEnabledAsync(bool on)
@@ -234,6 +250,17 @@ namespace Timinute.Client.Services
             if (loop != null)
             {
                 await loop.DisposeAsync();
+            }
+
+            try
+            {
+                await interop.StopIdleWatchAsync();
+            }
+            catch (JSException)
+            {
+            }
+            catch (JSDisconnectedException)
+            {
             }
 
             selfRef?.Dispose();

@@ -6,6 +6,7 @@
 @inject IJSRuntime JS
 @inject Timinute.Client.Services.MobileSheetService Sheet
 @inject Timinute.Client.Services.ThemeService Theme
+@inject Timinute.Client.Services.TimerNotificationService Notifications
 
 <header class="aurora-topbar">
     <div class="aurora-topbar__left">
@@ -35,6 +36,8 @@
                 <AuroraIcons Name="@(isDarkResolved ? "sun" : "moon")" Size="16" />
             </button>
 
+            <NotificationBell />
+
             <button class="aurora-quick-add" @onclick="OpenQuickAdd">
                 <AuroraIcons Name="plus" Size="16" />
                 <span>Quick add</span>
@@ -42,8 +45,14 @@
         }
         else
         {
-            <button type="button" class="aurora-topbar__avatar" @onclick="OpenSheet" aria-label="More">
+            <NotificationBell ShowTrigger="false" ReturnFocus="FocusAvatar" />
+            <button type="button" class="aurora-topbar__avatar" @onclick="OpenSheet" @ref="avatarEl"
+                    aria-label="@(Notifications.Items.Count > 0 ? $"More, {Notifications.Items.Count} notifications" : "More")">
                 @Initials
+                @if (Notifications.Items.Count > 0)
+                {
+                    <span class="aurora-topbar__avatar-dot" aria-hidden="true"></span>
+                }
             </button>
         }
     </div>
@@ -98,6 +107,7 @@
     {
         Navigation.LocationChanged += OnLocationChanged;
         Theme.Changed += OnThemeChanged;
+        Notifications.Changed += OnNotificationsChanged;
         var auth = await AuthState.GetAuthenticationStateAsync();
         var user = auth.User;
         if (user.Identity?.IsAuthenticated == true)
@@ -203,6 +213,11 @@
         });
     }
 
+    private void OnNotificationsChanged()
+    {
+        if (IsMobile) _ = InvokeAsync(StateHasChanged);
+    }
+
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         Resolve();
@@ -251,10 +266,15 @@
 
     private void OpenSheet() => Sheet.Show();
 
+    private ElementReference avatarEl;
+
+    private ValueTask FocusAvatar() => avatarEl.FocusAsync(preventScroll: true);
+
     public async ValueTask DisposeAsync()
     {
         Navigation.LocationChanged -= OnLocationChanged;
         Theme.Changed -= OnThemeChanged;
+        Notifications.Changed -= OnNotificationsChanged;
         if (shortcutsModule is not null)
         {
             try

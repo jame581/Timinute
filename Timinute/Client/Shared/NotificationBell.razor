@@ -1,0 +1,223 @@
+@implements IDisposable
+@using Timinute.Client.Models
+@inject Timinute.Client.Services.TimerNotificationService Notifications
+@inject NavigationManager Navigation
+@inject Radzen.NotificationService Toasts
+
+@* Topbar bell + popover for running-timer warnings. On mobile the trigger lives in the
+   overflow sheet (ShowTrigger=false) and the popover opens via RequestOpen. *@
+<div class="aurora-bell @(ShowTrigger ? "" : "aurora-bell--sheet")" @onkeydown="OnKeyDown">
+    @if (ShowTrigger)
+    {
+        <button type="button"
+                class="aurora-bell__btn"
+                @ref="triggerEl"
+                aria-haspopup="dialog"
+                aria-expanded="@(isOpen ? "true" : "false")"
+                aria-controls="aurora-bell-panel"
+                aria-label="@TriggerLabel"
+                title="Notifications"
+                @onclick="Toggle">
+            <AuroraIcons Name="bell" Size="16" />
+            @if (Count > 0)
+            {
+                <span class="aurora-bell__badge" aria-hidden="true">@Count</span>
+            }
+        </button>
+    }
+
+    @if (isOpen)
+    {
+        <div class="aurora-bell__scrim" @onclick="Close"></div>
+        <section id="aurora-bell-panel"
+                 class="aurora-bell__panel"
+                 role="dialog"
+                 aria-modal="@(ShowTrigger ? null : "true")"
+                 aria-labelledby="aurora-bell-title"
+                 tabindex="-1"
+                 @ref="panelEl">
+            <h2 class="aurora-bell__title" id="aurora-bell-title">Notifications</h2>
+
+            @if (Count == 0)
+            {
+                <p class="aurora-bell__empty">Nothing needs your attention</p>
+            }
+            else
+            {
+                <ul class="aurora-bell__list" role="list">
+                    @foreach (var item in Notifications.Items)
+                    {
+                        <li class="aurora-bell__item" @key="item.Id">
+                            <span class="aurora-bell__icon" aria-hidden="true">
+                                <AuroraIcons Name="@(item.Rule == BellRule.Idle ? "moon" : "clock")" Size="16" />
+                            </span>
+                            <div class="aurora-bell__body">
+                                <div class="aurora-bell__item-title">@item.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(item.Detail))
+                                {
+                                    <div class="aurora-bell__item-detail">@item.Detail</div>
+                                }
+                                <div class="aurora-bell__actions">
+                                    @if (item.Rule == BellRule.LongRunning)
+                                    {
+                                        <AuroraButton Variant="primary" Class="aurora-bell__action" Disabled="@isBusy" OnClick="StopNow">Stop now</AuroraButton>
+                                        <AuroraButton Variant="ghost" Class="aurora-bell__action" OnClick="OpenTracker">Open tracker</AuroraButton>
+                                        <AuroraButton Variant="ghost" Class="aurora-bell__action" Disabled="@isBusy" OnClick="@(() => Dismiss(item.Id))">Dismiss</AuroraButton>
+                                    }
+                                    else
+                                    {
+                                        <AuroraButton Variant="primary" Class="aurora-bell__action" Disabled="@isBusy" OnClick="@(() => StopAtIdle(item.Id))">Stop at @FormatTime(item.IdleStart)</AuroraButton>
+                                        <AuroraButton Variant="ghost" Class="aurora-bell__action" Disabled="@isBusy" OnClick="@(() => Keep(item.Id))">Keep</AuroraButton>
+                                    }
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public bool ShowTrigger { get; set; } = true;
+
+    /// <summary>Without a trigger (mobile), where focus goes when the panel closes.</summary>
+    [Parameter] public Func<ValueTask>? ReturnFocus { get; set; }
+
+    private bool isOpen;
+    private bool isBusy;
+    private bool focusPanel;
+    private bool focusTrigger;
+    private ElementReference triggerEl;
+    private ElementReference panelEl;
+
+    private int Count => Notifications.Items.Count;
+
+    private string TriggerLabel => Count switch
+    {
+        0 => "Notifications",
+        1 => "Notifications, 1 item",
+        _ => $"Notifications, {Count} items",
+    };
+
+    protected override void OnInitialized()
+    {
+        Notifications.Changed += OnChanged;
+        Notifications.OpenRequested += OnOpenRequested;
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
+        _ = InvokeAsync(() =>
+        {
+            if (!isOpen) return;
+            isOpen = false;
+            StateHasChanged();
+        });
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusPanel && isOpen)
+        {
+            focusPanel = false;
+            try { await panelEl.FocusAsync(preventScroll: true); } catch (Microsoft.JSInterop.JSException) { }
+        }
+        else if (focusTrigger)
+        {
+            focusTrigger = false;
+            try
+            {
+                if (ShowTrigger) await triggerEl.FocusAsync(preventScroll: true);
+                else if (ReturnFocus != null) await ReturnFocus();
+            }
+            catch (Microsoft.JSInterop.JSException) { }
+        }
+    }
+
+    private void Toggle()
+    {
+        if (isOpen) Close();
+        else Open();
+    }
+
+    private void Open()
+    {
+        isOpen = true;
+        focusPanel = true;
+    }
+
+    private void Close()
+    {
+        if (!isOpen) return;
+        isOpen = false;
+        focusTrigger = true;
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") Close();
+    }
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnOpenRequested() => _ = InvokeAsync(() =>
+    {
+        Open();
+        StateHasChanged();
+    });
+
+    private async Task StopNow() => await RunAsync(() => Notifications.StopNowAsync(), "Timer stopped");
+
+    private async Task StopAtIdle(string id) => await RunAsync(() => Notifications.StopAtIdleStartAsync(id), "Timer stopped at the start of the idle time");
+
+    // The focused action button disappears with its item: keep focus inside the panel
+    // so Escape and Tab still work.
+    private void Dismiss(string id)
+    {
+        Notifications.Dismiss(id);
+        focusPanel = true;
+    }
+
+    private void Keep(string id)
+    {
+        Notifications.KeepIdle(id);
+        focusPanel = true;
+    }
+
+    private void OpenTracker()
+    {
+        Close();
+        Navigation.NavigateTo("timetracker");
+    }
+
+    private async Task RunAsync(Func<Task> action, string success)
+    {
+        if (isBusy) return;
+        isBusy = true;
+        try
+        {
+            await action();
+            focusPanel = true;
+            Toasts.Notify(Radzen.NotificationSeverity.Success, success, string.Empty, 2500);
+        }
+        catch (Exception ex)
+        {
+            Toasts.Notify(Radzen.NotificationSeverity.Error, "Could not stop the timer", ex.Message, 4000);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private static string FormatTime(DateTimeOffset? utc) =>
+        utc?.ToLocalTime().ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+
+    public void Dispose()
+    {
+        Notifications.Changed -= OnChanged;
+        Notifications.OpenRequested -= OnOpenRequested;
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}

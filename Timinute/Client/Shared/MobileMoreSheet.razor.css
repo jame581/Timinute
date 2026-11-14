@@ -99,3 +99,16 @@
     background: color-mix(in srgb, var(--danger) 12%, transparent);
     color: var(--danger);
 }
+
+.mms__count {
+    display: inline-block;
+    min-width: 20px;
+    margin-left: 8px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font: 600 12px/20px var(--font-sans);
+    text-align: center;
+    vertical-align: 1px;
+}

@@ -137,6 +137,7 @@
 /* Mobile-only avatar trigger that opens MobileMoreSheet. Rendered only
    when IsMobile is true (markup gates this with @if). */
 .aurora-topbar__avatar {
+    position: relative;
     width: 38px;
     height: 38px;
     border-radius: 999px;
@@ -151,6 +152,17 @@
     box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
     -webkit-tap-highlight-color: transparent;
     transition: filter .15s ease, transform .08s ease;
+}
+
+.aurora-topbar__avatar-dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--bg);
 }
 
 .aurora-topbar__avatar:hover {
