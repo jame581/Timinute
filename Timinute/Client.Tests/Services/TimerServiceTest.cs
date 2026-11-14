@@ -196,6 +196,52 @@ namespace Timinute.Client.Tests.Services
         }
 
         [Fact]
+        public async Task Legacy_PutServerError_KeepsKey_ForRetry()
+        {
+            session.Setup(s => s.GetItemAsync<TrackedTask>("trackedTask", default))
+                   .ReturnsAsync(new TrackedTask { TaskId = "legacy-3", Name = "Old tab", StartDate = Now.AddHours(-3).LocalDateTime });
+            var service = CreateService(req => req.Method == HttpMethod.Put
+                ? new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                : new HttpResponseMessage(HttpStatusCode.NoContent));
+
+            await service.InitializeAsync();
+
+            session.Verify(s => s.RemoveItemAsync("trackedTask", default), Times.Never);
+        }
+
+        [Fact]
+        public async Task Legacy_ProjectGone_RetriesWithoutProject_ThenRemovesKey()
+        {
+            session.Setup(s => s.GetItemAsync<TrackedTask>("trackedTask", default))
+                   .ReturnsAsync(new TrackedTask { TaskId = "legacy-4", Name = "Old tab", ProjectId = "trashed", StartDate = Now.AddHours(-1).LocalDateTime });
+            var bodies = new List<UpdateTrackedTaskDto>();
+            var service = CreateService(req =>
+            {
+                if (req.Method != HttpMethod.Put) return new HttpResponseMessage(HttpStatusCode.NoContent);
+                var body = req.Content!.ReadFromJsonAsync<UpdateTrackedTaskDto>(WebJson).GetAwaiter().GetResult()!;
+                bodies.Add(body);
+                return body.ProjectId == null ? Json(new TrackedTaskDto()) : new HttpResponseMessage(HttpStatusCode.NotFound);
+            });
+
+            await service.InitializeAsync();
+
+            Assert.Equal(2, bodies.Count);
+            Assert.Null(bodies[1].ProjectId);
+            session.Verify(s => s.RemoveItemAsync("trackedTask", default), Times.Once);
+        }
+
+        [Fact]
+        public async Task IsReady_OnlyAfterSuccessfulInit()
+        {
+            var service = CreateService(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+            Assert.False(service.IsReady);
+
+            await service.InitializeAsync();
+
+            Assert.True(service.IsReady);
+        }
+
+        [Fact]
         public async Task Poll_Refreshes_Every_60_Seconds()
         {
             var service = CreateService(_ => new HttpResponseMessage(HttpStatusCode.NoContent));

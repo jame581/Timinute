@@ -43,6 +43,9 @@ namespace Timinute.Client.Services
 
         public RunningTimerDto? Current { get; private set; }
 
+        /// <summary>True once <see cref="InitializeAsync"/> has completed successfully.</summary>
+        public bool IsReady => initTask?.IsCompletedSuccessfully == true;
+
         public event Action? Changed;
 
         /// <summary>Elapsed time on the server's clock (device clock corrected by the Date-header offset).</summary>
@@ -202,7 +205,8 @@ namespace Timinute.Client.Services
         }
 
         // v2.4 kept the running timer only in this tab's sessionStorage, backed by a 1-second
-        // placeholder task. Stop it exactly the way v2.4 would have, so nothing is lost on upgrade.
+        // placeholder task. Stop it the way v2.4 would have, so nothing is lost on upgrade; the key
+        // is only cleared once the stop is saved (or can never be), so a transient failure retries.
         private async Task MigrateLegacySessionTimerAsync()
         {
             TrackedTask? legacy;
@@ -217,30 +221,47 @@ namespace Timinute.Client.Services
 
             if (legacy == null) return;
 
+            var start = new DateTimeOffset(legacy.StartDate);
+            var end = clock.GetUtcNow().ToLocalTime();
+            if (end <= start) end = start.AddSeconds(1);
+
+            bool done;
             try
             {
-                var start = new DateTimeOffset(legacy.StartDate);
-                var end = clock.GetUtcNow().ToLocalTime();
-                if (end <= start) end = start.AddSeconds(1);
-
-                var client = clientFactory.CreateClient(Constants.API.ClientName);
-                using var response = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, new UpdateTrackedTaskDto
+                var status = await PutLegacyStopAsync(legacy, start, end, legacy.ProjectId);
+                if (status == HttpStatusCode.NotFound && legacy.ProjectId != null)
                 {
-                    TaskId = legacy.TaskId,
-                    Name = legacy.Name,
-                    ProjectId = legacy.ProjectId,
-                    StartDate = start,
-                    EndDate = end,
-                });
+                    // The project was trashed meanwhile: keep the time, drop the project.
+                    status = await PutLegacyStopAsync(legacy, start, end, projectId: null);
+                }
+
+                // Done on success, or on a permanent client error (the task itself is gone/invalid).
+                // A 5xx or network failure leaves the key so the next InitializeAsync retries.
+                done = (int)status < 500;
             }
-            catch
+            catch (HttpRequestException)
             {
-                // Best effort, like v2.4's own stop: the key is cleared regardless.
+                done = false;
             }
-            finally
+
+            if (done)
             {
                 await sessionStorage.RemoveItemAsync(LegacySessionKey);
             }
+        }
+
+        private async Task<HttpStatusCode> PutLegacyStopAsync(TrackedTask legacy, DateTimeOffset start, DateTimeOffset end, string? projectId)
+        {
+            var client = clientFactory.CreateClient(Constants.API.ClientName);
+            using var response = await client.PutAsJsonAsync(Constants.API.TrackedTask.Update, new UpdateTrackedTaskDto
+            {
+                TaskId = legacy.TaskId,
+                Name = legacy.Name,
+                ProjectId = projectId,
+                StartDate = start,
+                EndDate = end,
+            });
+            return response.StatusCode;
         }
 
         private async Task RegisterVisibilityAsync()

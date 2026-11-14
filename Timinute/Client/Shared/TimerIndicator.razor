@@ -14,13 +14,14 @@
 
 @code {
     private System.Timers.Timer? refresh;
+    private bool disposed;
 
     protected override void OnInitialized()
     {
         Timer.Changed += OnChanged;
         // h:mm only needs a repaint every 15 s.
         refresh = new System.Timers.Timer(15000) { AutoReset = true };
-        refresh.Elapsed += (_, _) => { if (Timer.Current != null) _ = InvokeAsync(StateHasChanged); };
+        refresh.Elapsed += (_, _) => { if (!disposed && Timer.Current != null) _ = InvokeAsync(StateHasChanged); };
         refresh.Start();
     }
 
@@ -30,6 +31,7 @@
 
     public void Dispose()
     {
+        disposed = true;
         Timer.Changed -= OnChanged;
         refresh?.Dispose();
     }

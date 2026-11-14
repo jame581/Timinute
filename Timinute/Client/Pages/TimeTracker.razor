@@ -40,6 +40,11 @@
                     {
                         <ProjectPill Name="@SelectedProject.Name" Color="@ColorService.GetColor(SelectedProject)" />
                     }
+                    else if (Timer.Current is { ProjectName: { } runningProjectName } running)
+                    {
+                        @* Running timer's project isn't in this page's list (e.g. created on another device). *@
+                        <ProjectPill Name="@runningProjectName" Color="@(running.ProjectColor ?? ColorService.GetColorById(running.ProjectId))" />
+                    }
                     else
                     {
                         <span class="aurora-tracker-card__no-project">No project</span>
@@ -181,8 +186,11 @@
         await LoadTodayTasks();
         try
         {
-            // Refreshes on first run; afterwards the 60 s poll and focus hook keep it current.
+            // First run refreshes as part of init; on later visits re-read so the page never
+            // opens on state up to one poll interval old.
+            var alreadyReady = Timer.IsReady;
             await Timer.InitializeAsync();
+            if (alreadyReady) await Timer.RefreshAsync();
         }
         catch { /* offline: the service retries on its next poll */ }
         SyncFromTimer();
