@@ -1,7 +1,7 @@
 # DB password unification — one env var for container and app
 
 _Date: 2026-07-17_
-_Status: design approved, pending implementation_
+_Status: shipped in v2.4 (PR #65, 2026-07-19) — `MSSQL_SA_PASSWORD` drives the container, the app and docker-compose._
 
 ## Purpose
 
