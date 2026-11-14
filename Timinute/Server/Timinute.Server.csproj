@@ -49,4 +49,8 @@
     <Folder Include="Data\Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Timinute.Server.Tests" />
+  </ItemGroup>
+
 </Project>
