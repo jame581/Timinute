@@ -86,6 +86,8 @@
                 }
                 catch
                 {
+                    // Deliberately swallowed: timerInitialized stays false, so the next render
+                    // retries; meanwhile the tracker shows no timer rather than an error.
                 }
             }
         }
