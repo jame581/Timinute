@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Radzen;
+using System.Globalization;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
@@ -15,12 +16,19 @@ namespace Timinute.Client.Components.TrackedTasks
         [Parameter]
         public EventCallback<TrackedTask> OnTrackedTaskAdded { get; set; }
 
+        // Keeps what the user typed, so an unparseable value is reported instead of silently
+        // submitting the last valid duration.
+        private string? durationText;
+        private bool durationParseFailed;
+
         public string DurationProxy
         {
-            get => NewTrackedTask.Duration.ToString();
+            get => durationText ?? NewTrackedTask.Duration.ToString();
             set
             {
-                if (TimeSpan.TryParse(value, out TimeSpan timeSpan))
+                durationText = value;
+                durationParseFailed = !TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out var timeSpan);
+                if (!durationParseFailed)
                 {
                     NewTrackedTask.Duration = timeSpan;
                 }
@@ -64,9 +72,11 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private async Task HandleValidSubmit()
         {
-            durationError = NewTrackedTask.Duration <= TimeSpan.Zero
-                ? "Enter a duration above zero, e.g. 1:30:00."
-                : null;
+            durationError = durationParseFailed
+                ? "Enter the duration as hours:minutes:seconds, e.g. 1:30:00."
+                : NewTrackedTask.Duration <= TimeSpan.Zero
+                    ? "Enter a duration above zero, e.g. 1:30:00."
+                    : null;
             if (durationError != null) return;
 
             saving = true;
@@ -91,6 +101,7 @@ namespace Timinute.Client.Components.TrackedTasks
                 notificationService.Notify(NotificationSeverity.Success, "Success", "Tracked task saved", 3000);
 
                 NewTrackedTask = new() { StartDate = DateTime.Now };
+                durationText = null;
 
                 Dialogs.Close(Entry, true);
             }

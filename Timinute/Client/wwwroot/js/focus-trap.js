@@ -58,7 +58,15 @@ export function release(el) {
         document.removeEventListener('keydown', onKeyDown, true);
         document.documentElement.classList.remove('aurora-modal-open');
     }
-    if (returnTo && typeof returnTo.focus === 'function' && document.contains(returnTo)) {
+
+    // With another dialog still open, focus must stay inside the (new) topmost one: use the
+    // opener only if it lives there, otherwise the panel itself. Never focus behind a modal.
+    const top = traps.length > 0 ? traps[traps.length - 1].el : null;
+    const usable = returnTo && typeof returnTo.focus === 'function' && document.contains(returnTo);
+    if (top) {
+        if (top.contains(document.activeElement)) return;
+        (usable && top.contains(returnTo) ? returnTo : top).focus({ preventScroll: true });
+    } else if (usable) {
         returnTo.focus({ preventScroll: true });
     }
 }

@@ -81,5 +81,20 @@ namespace Timinute.Client.Tests.Components
             Assert.False(open.IsCompleted);
             await Task.CompletedTask;
         }
+
+        [Fact]
+        public void Quick_Add_Reports_Unparseable_Duration_Instead_Of_Saving()
+        {
+            var cut = Render<Timinute.Client.Components.TrackedTasks.AddTrackedTask>();
+
+            cut.Find("input[placeholder='What did you work on?']").Change("Release notes");
+            var duration = cut.Find("input[placeholder='1:30:00']");
+            duration.Change("1:30:00");
+            duration.Change("ninety minutes");
+            cut.Find("form").Submit();
+
+            cut.WaitForAssertion(() => Assert.Contains("hours:minutes:seconds", cut.Find(".aurora-form__error").TextContent));
+            Assert.Equal("ninety minutes", cut.Find("input[placeholder='1:30:00']").GetAttribute("value"));
+        }
     }
 }
