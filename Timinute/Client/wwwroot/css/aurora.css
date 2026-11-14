@@ -121,3 +121,111 @@
         opacity: 1;
     }
 }
+
+/* Page scroll is locked while an AuroraModal is open (toggled by js/focus-trap.js). */
+html.aurora-modal-open,
+html.aurora-modal-open body {
+    overflow: hidden;
+}
+
+/* Shared form styling for dialog bodies (AuroraModal content lives outside .aurora-app,
+   and each form is its own component, so these are global rather than scoped). */
+.aurora-form {
+    display: grid;
+    gap: 16px;
+}
+
+.aurora-form__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+}
+
+.aurora-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.aurora-field__label {
+    font: 500 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-field__hint {
+    font: 400 12px var(--font-sans);
+    color: var(--text-dim);
+}
+
+.aurora-input {
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0 12px;
+    font: 400 14px var(--font-sans);
+    transition: border-color .15s;
+}
+
+.aurora-input:hover {
+    border-color: var(--border-st);
+}
+
+.aurora-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+}
+
+/* Blazor marks edited fields .valid/.modified and failing ones .invalid; app.css gives them
+   green/red outlines meant for the old Bootstrap forms. */
+.aurora-input.valid.modified {
+    outline: none;
+}
+
+.aurora-input.invalid {
+    outline: none;
+    border-color: var(--danger);
+}
+
+.aurora-form .validation-message,
+.aurora-form__error {
+    font: 400 12px var(--font-sans);
+    color: var(--danger);
+}
+
+.aurora-form__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.aurora-form__actions-start {
+    margin-right: auto;
+}
+
+.aurora-confirm__message {
+    margin: 0 0 8px;
+    font: 400 14px/1.55 var(--font-sans);
+    color: var(--text);
+}
+
+@media (max-width: 768px) {
+    .aurora-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .aurora-form__actions > * {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .aurora-form__actions-start {
+        margin-right: 0;
+    }
+}

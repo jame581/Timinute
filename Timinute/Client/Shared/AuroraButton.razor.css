@@ -60,3 +60,17 @@
 .aurora-btn--sub:hover:not(:disabled) {
     background: var(--surface);
 }
+
+.aurora-btn--danger {
+    background: var(--danger);
+    color: #fff;
+}
+
+.aurora-btn--danger:hover:not(:disabled) {
+    filter: brightness(.92);
+}
+
+.aurora-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}

@@ -1,0 +1,20 @@
+@implements IDisposable
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
+
+@* Renders every open AuroraDialogService dialog, bottom to top. Lives once in MainLayout. *@
+@for (var i = 0; i < Dialogs.Stack.Count; i++)
+{
+    var entry = Dialogs.Stack[i];
+    <AuroraModal @key="entry.Id" Title="@entry.Title" Width="@entry.Width" Depth="i"
+                 OnClose="() => Dialogs.Close(entry)">
+        <DynamicComponent Type="entry.ComponentType" Parameters="@(entry.Parameters!)" />
+    </AuroraModal>
+}
+
+@code {
+    protected override void OnInitialized() => Dialogs.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Dialogs.Changed -= OnChanged;
+}
