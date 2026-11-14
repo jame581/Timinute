@@ -1,6 +1,7 @@
 // Focus management for AuroraModal: keeps Tab inside the open dialog, focuses its first
-// control on open, restores focus to the opener on close, and locks page scroll while any
-// dialog is open. Nested dialogs stack: only the topmost one traps.
+// control on open and restores focus to the opener on close. While any dialog is open,
+// <html> carries .aurora-modal-open (topbar-shortcuts.js checks it). Nested dialogs stack:
+// only the topmost one traps.
 
 const traps = [];
 

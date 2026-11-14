@@ -4,6 +4,7 @@ using Radzen;
 using System.Net.Http.Json;
 using Timinute.Client.Helpers;
 using Timinute.Client.Models;
+using Timinute.Client.Services;
 using Timinute.Shared.Dtos.Project;
 using Timinute.Shared.Dtos.TrackedTask;
 
@@ -28,7 +29,11 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private readonly List<Project> projects = new();
         
-        private string? SelectedProjectId { get; set; }
+        private string SelectedProjectId { get; set; } = "";
+
+        private readonly string idPrefix = $"entry-{Guid.NewGuid():N}";
+        private string? durationError;
+        private bool saving;
 
         private HttpClient client;
 
@@ -43,7 +48,10 @@ namespace Timinute.Client.Components.TrackedTasks
         private NotificationService notificationService { get; set; } = null!;
 
         [Inject]
-        private DialogService DialogService { get; set; } = null!;
+        private AuroraDialogService Dialogs { get; set; } = null!;
+
+        [CascadingParameter]
+        public DialogEntry? Entry { get; set; }
 
         #endregion
 
@@ -56,12 +64,18 @@ namespace Timinute.Client.Components.TrackedTasks
 
         private async Task HandleValidSubmit()
         {
+            durationError = NewTrackedTask.Duration <= TimeSpan.Zero
+                ? "Enter a duration above zero, e.g. 1:30:00."
+                : null;
+            if (durationError != null) return;
+
+            saving = true;
             var client = ClientFactory.CreateClient(Constants.API.ClientName);
 
             CreateTrackedTaskDto createTrackedTaskDto = new()
             {
                 Name = NewTrackedTask.Name,
-                ProjectId = SelectedProjectId,
+                ProjectId = string.IsNullOrWhiteSpace(SelectedProjectId) ? null : SelectedProjectId,
                 StartDate = NewTrackedTask.StartDate,
                 Duration = NewTrackedTask.Duration,
                 TagIds = NewTrackedTask.TagIds
@@ -78,11 +92,15 @@ namespace Timinute.Client.Components.TrackedTasks
 
                 NewTrackedTask = new() { StartDate = DateTime.Now };
 
-                DialogService.Close(true);
+                Dialogs.Close(Entry, true);
             }
             catch (Exception ex)
             {
                 notificationService.Notify(NotificationSeverity.Error, "Something happened", ex.Message, 5000);
+            }
+            finally
+            {
+                saving = false;
             }
         }
 
@@ -90,15 +108,6 @@ namespace Timinute.Client.Components.TrackedTasks
         {
             NewTrackedTask.TagIds = tagIds;
             return Task.CompletedTask;
-        }
-
-        private void HandleInvalidSubmit(EditContext context)
-        {
-            var errorMessages = context.GetValidationMessages();
-            foreach (var errorMessage in errorMessages)
-            {
-                notificationService.Notify(NotificationSeverity.Error, "Validation error", errorMessage, 5000);
-            }
         }
 
         private async Task LoadProjects()

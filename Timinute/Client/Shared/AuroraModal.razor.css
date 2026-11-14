@@ -10,7 +10,7 @@
 .aurora-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(20, 18, 40, .42);
+    background: var(--scrim);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     animation: aurora-modal-fade .18s ease-out;
@@ -27,7 +27,7 @@
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: var(--r-2xl);
-    box-shadow: 0 30px 60px -20px rgba(20, 18, 40, .35);
+    box-shadow: var(--shadow-modal);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;

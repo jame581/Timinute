@@ -6,8 +6,10 @@
 {
     var entry = Dialogs.Stack[i];
     <AuroraModal @key="entry.Id" Title="@entry.Title" Width="@entry.Width" Depth="i"
-                 OnClose="() => Dialogs.Close(entry)">
-        <DynamicComponent Type="entry.ComponentType" Parameters="@(entry.Parameters!)" />
+                 OnClose="() => Dialogs.Close(entry, null)">
+        <CascadingValue Value="entry" IsFixed="true">
+            <DynamicComponent Type="entry.ComponentType" Parameters="@(entry.Parameters!)" />
+        </CascadingValue>
     </AuroraModal>
 }
 

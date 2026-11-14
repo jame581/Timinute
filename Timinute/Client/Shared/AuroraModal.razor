@@ -2,9 +2,10 @@
 @inject IJSRuntime JS
 
 @* Aurora modal shell: backdrop + panel on Aurora tokens. Centered card on desktop, bottom sheet
-   at <=768px. Escape, the close button and a backdrop click all call OnClose. *@
+   at <=768px. Escape and the close button call OnClose. A backdrop click deliberately does
+   not: the old Radzen dialogs ignored it too, and a mis-tap must not discard a half-filled form. *@
 <div class="aurora-modal__layer" style="z-index: @(1000 + Depth * 2)">
-    <div class="aurora-modal__backdrop" @onclick="RequestClose"></div>
+    <div class="aurora-modal__backdrop"></div>
     <div class="aurora-modal"
          role="dialog"
          aria-modal="true"

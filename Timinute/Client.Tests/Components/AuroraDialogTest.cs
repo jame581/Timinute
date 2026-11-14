@@ -82,16 +82,47 @@ namespace Timinute.Client.Tests.Components
         }
 
         [Fact]
-        public async Task Close_Button_And_Backdrop_Close_With_Null()
+        public async Task Close_Button_Closes_With_Null_But_Backdrop_Does_Not()
         {
             var host = Render<AuroraDialogHost>();
-            var first = dialogs.OpenAsync<Probe>("One");
-            host.WaitForElement(".aurora-modal__close").Click();
-            Assert.Null(await first);
+            var open = dialogs.OpenAsync<Probe>("One");
 
-            var second = dialogs.OpenAsync<Probe>("Two");
-            host.WaitForElement(".aurora-modal__backdrop").Click();
-            Assert.Null(await second);
+            // The backdrop has no click handler at all, so a mis-tap can't discard a form.
+            Assert.Throws<MissingEventHandlerException>(() => host.WaitForElement(".aurora-modal__backdrop").Click());
+            Assert.False(open.IsCompleted);
+
+            host.Find(".aurora-modal__close").Click();
+            Assert.Null(await open);
+        }
+
+        [Fact]
+        public async Task Navigation_Closes_Every_Dialog()
+        {
+            var nav = Services.GetRequiredService<NavigationManager>();
+            var routed = new AuroraDialogService(nav);
+            var first = routed.OpenAsync<Probe>("One");
+            var second = routed.ConfirmAsync("Sure?", "Two");
+
+            nav.NavigateTo("/projects");
+
+            Assert.Null(await first);
+            Assert.False(await second);
+            Assert.Empty(routed.Stack);
+        }
+
+        [Fact]
+        public async Task Late_Close_Of_A_Dismissed_Entry_Does_Not_Close_Another_Dialog()
+        {
+            var first = dialogs.OpenAsync<Probe>("First");
+            var entry = dialogs.Stack[0];
+            dialogs.Close(entry, null);                 // dismissed while its save was in flight
+            var second = dialogs.OpenAsync<Probe>("Second");
+
+            dialogs.Close(entry, true);                 // the save finishes and closes "its" dialog
+
+            Assert.Null(await first);
+            Assert.False(second.IsCompleted);
+            Assert.Equal("Second", dialogs.Stack.Single().Title);
         }
 
         [Theory]

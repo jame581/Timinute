@@ -8,7 +8,7 @@
 
 @inject IHttpClientFactory ClientFactory
 @inject Timinute.Client.Services.TimerService Timer
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 @inject Radzen.NotificationService Notifier
 @inject Timinute.Client.Services.ProjectColorService ColorService
 
@@ -339,11 +339,13 @@
             return;
         }
 
-        var confirmed = await DialogService.Confirm(
+        var confirmed = await Dialogs.ConfirmAsync(
             $"Discard {FormatTotalDuration(Elapsed)} of tracking? No entry will be saved.",
             "Discard timer",
-            new Radzen.ConfirmOptions { OkButtonText = "Discard", CancelButtonText = "Keep tracking" });
-        if (confirmed != true) return;
+            okText: "Discard",
+            cancelText: "Keep tracking",
+            danger: true);
+        if (!confirmed) return;
 
         try
         {

@@ -9,7 +9,7 @@
 
 @inject IHttpClientFactory ClientFactory
 @inject Radzen.NotificationService Notifier
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 @inject Timinute.Client.Services.UndoNotificationService UndoNotifier
 @inject Timinute.Client.Services.ProjectColorService ColorService
 
@@ -168,21 +168,19 @@
 
     private async Task OpenAdd()
     {
-        await DialogService.OpenAsync<AddProject>(
-            "New project",
-            new Dictionary<string, object?>(),
-            new Radzen.DialogOptions { Width = "640px" });
+        await Dialogs.OpenAsync<AddProject>("New project");
         await Reload();
     }
 
     private async Task DeleteProject(ProjectDto p)
     {
-        var confirm = await DialogService.Confirm(
+        var confirm = await Dialogs.ConfirmAsync(
             $"Move project '{p.Name}' to trash? Its tracked tasks will move with it.",
-            "Confirm",
-            new Radzen.ConfirmOptions { OkButtonText = "Move to trash", CancelButtonText = "Cancel" });
+            "Move to trash",
+            okText: "Move to trash",
+            danger: true);
 
-        if (confirm != true) return;
+        if (!confirm) return;
 
         var client = ClientFactory.CreateClient(Constants.API.ClientName);
         try

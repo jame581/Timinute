@@ -8,7 +8,7 @@
 
 @inject IHttpClientFactory ClientFactory
 @inject Radzen.NotificationService Notifier
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 
 <PageTitle>Calendar</PageTitle>
 
@@ -129,14 +129,14 @@
 
     private async Task OnEmptyCellClicked(DateTime slot)
     {
-        var result = await DialogService.OpenAsync<AddTrackedTaskForm>(
+        var result = await Dialogs.OpenAsync<AddTrackedTaskForm>(
             "Add tracked task",
             new Dictionary<string, object?>
             {
                 ["Start"] = slot,
                 ["End"] = slot.AddHours(1)
             },
-            new Radzen.DialogOptions { Width = "640px" });
+            width: "600px");
 
         if (result is TrackedTask data)
         {
@@ -168,10 +168,10 @@
     private async Task OnEventClicked(TrackedTaskDto task)
     {
         var model = new TrackedTask(task);
-        var result = await DialogService.OpenAsync<EditTrackedTaskForm>(
+        var result = await Dialogs.OpenAsync<EditTrackedTaskForm>(
             "Edit tracked task",
             new Dictionary<string, object?> { ["TrackedTask"] = model },
-            new Radzen.DialogOptions { Width = "640px" });
+            width: "600px");
 
         if (result is TrackedTask updated)
         {

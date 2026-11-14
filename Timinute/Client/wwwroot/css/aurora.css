@@ -32,6 +32,7 @@
     --success: #10B981;
     --warning: #F59E0B;
     --danger: #EF4444;
+    --danger-fill: #DC2626;   /* solid destructive buttons: white text at >= 4.5:1 */
     --chip: #F0EBDD;
 
     /* Radii */
@@ -45,6 +46,8 @@
     /* Shadows */
     --shadow-card: 0 1px 0 var(--border), 0 8px 24px -12px rgba(20, 18, 40, .08);
     --shadow-hero-mark: 0 4px 14px rgba(91, 91, 245, .55);
+    --shadow-modal: 0 30px 60px -20px rgba(20, 18, 40, .35);
+    --scrim: rgba(20, 18, 40, .42);
 
     /* Hero gradient */
     --gradient-hero: linear-gradient(135deg, #5B5BF5, #8B6FFF 60%, #C77BFF);
@@ -81,6 +84,9 @@
     --accent-so: #1F1E3D;
     --accent-ink: #B5B5FF;
     --danger: #F87171;
+    --danger-fill: #B91C1C;
+    --shadow-modal: 0 30px 60px -20px rgba(0, 0, 0, .7);
+    --scrim: rgba(3, 2, 10, .66);
     /* Category palette stays the same in dark — same hues, the surface darkens around them. */
 }
 
@@ -120,12 +126,6 @@
         animation: none;
         opacity: 1;
     }
-}
-
-/* Page scroll is locked while an AuroraModal is open (toggled by js/focus-trap.js). */
-html.aurora-modal-open,
-html.aurora-modal-open body {
-    overflow: hidden;
 }
 
 /* Shared form styling for dialog bodies (AuroraModal content lives outside .aurora-app,
