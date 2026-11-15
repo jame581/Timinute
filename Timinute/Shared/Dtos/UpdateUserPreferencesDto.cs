@@ -21,7 +21,7 @@ namespace Timinute.Shared.Dtos
 
         // Nullable for the same reason as Theme: [Required] must catch an omitted field.
         // 0 turns the warning off.
-        [Required, Range(typeof(decimal), "0.0", "24.0")]
+        [Required, Range(typeof(decimal), "0.0", "24.0", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
         public decimal? LongTimerWarningHours { get; set; }
 
         [Required, Range(0, 240)]
