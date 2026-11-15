@@ -7,6 +7,8 @@ export function registerCmdKFocus(selector) {
     if (handler) return;
     handler = function (e) {
         if ((e.metaKey || e.ctrlKey) && e.key && e.key.toLowerCase() === 'k') {
+            // Don't pull focus behind an open dialog (focus-trap.js sets this class).
+            if (document.documentElement.classList.contains('aurora-modal-open')) return;
             const input = document.querySelector(selector);
             if (input) {
                 e.preventDefault();

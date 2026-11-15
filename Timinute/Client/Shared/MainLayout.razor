@@ -7,6 +7,8 @@
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState
 
 <head>
+    @* Only RadzenNotification toasts still use Radzen; dialogs are AuroraModal. The theme
+       stylesheet stays loaded because the toasts take their colors and layout from it. *@
     <RadzenTheme Theme="material" @rendermode="RenderMode.InteractiveAuto" />
     @* Radzen.Blazor.js is included once in wwwroot/index.html (the WASM host page).
        Do not re-add it here — a second include double-declares its globals and throws
@@ -43,7 +45,7 @@
 @* Shared polite announcer: new bell items are read out without moving focus. *@
 <div class="aurora-sr-only" aria-live="polite" aria-atomic="true">@liveMessage</div>
 
-<RadzenDialog />
+<AuroraDialogHost />
 <RadzenNotification />
 
 @code {

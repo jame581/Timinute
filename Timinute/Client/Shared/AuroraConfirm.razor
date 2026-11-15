@@ -1,0 +1,22 @@
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
+
+@* Body of AuroraDialogService.ConfirmAsync. Destructive confirms start focused on Cancel. *@
+<p class="aurora-confirm__message">@Message</p>
+<div class="aurora-form__actions">
+    <AuroraButton Variant="ghost" Class="aurora-confirm__cancel" OnClick="() => Dialogs.Close(Entry, false)"
+                  data-autofocus="@(Danger ? true : null)">
+        @CancelText
+    </AuroraButton>
+    <AuroraButton Variant="@(Danger ? "danger" : "primary")" Class="aurora-confirm__ok" OnClick="() => Dialogs.Close(Entry, true)"
+                  data-autofocus="@(Danger ? null : true)">
+        @OkText
+    </AuroraButton>
+</div>
+
+@code {
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public string OkText { get; set; } = "OK";
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public bool Danger { get; set; }
+    [CascadingParameter] public Timinute.Client.Services.DialogEntry? Entry { get; set; }
+}

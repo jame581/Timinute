@@ -32,6 +32,7 @@
     --success: #10B981;
     --warning: #F59E0B;
     --danger: #EF4444;
+    --danger-fill: #DC2626;   /* solid destructive buttons: white text at >= 4.5:1 */
     --chip: #F0EBDD;
 
     /* Radii */
@@ -45,6 +46,8 @@
     /* Shadows */
     --shadow-card: 0 1px 0 var(--border), 0 8px 24px -12px rgba(20, 18, 40, .08);
     --shadow-hero-mark: 0 4px 14px rgba(91, 91, 245, .55);
+    --shadow-modal: 0 30px 60px -20px rgba(20, 18, 40, .35);
+    --scrim: rgba(20, 18, 40, .42);
 
     /* Hero gradient */
     --gradient-hero: linear-gradient(135deg, #5B5BF5, #8B6FFF 60%, #C77BFF);
@@ -81,6 +84,9 @@
     --accent-so: #1F1E3D;
     --accent-ink: #B5B5FF;
     --danger: #F87171;
+    --danger-fill: #B91C1C;
+    --shadow-modal: 0 30px 60px -20px rgba(0, 0, 0, .7);
+    --scrim: rgba(3, 2, 10, .66);
     /* Category palette stays the same in dark — same hues, the surface darkens around them. */
 }
 
@@ -132,5 +138,107 @@
     .aurora-pulse {
         animation: none;
         opacity: 1;
+    }
+}
+
+/* Shared form styling for dialog bodies (AuroraModal content lives outside .aurora-app,
+   and each form is its own component, so these are global rather than scoped). */
+.aurora-form {
+    display: grid;
+    gap: 16px;
+}
+
+.aurora-form__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+}
+
+.aurora-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.aurora-field__label {
+    font: 500 13px var(--font-sans);
+    color: var(--text-mu);
+}
+
+.aurora-field__hint {
+    font: 400 12px var(--font-sans);
+    color: var(--text-dim);
+}
+
+.aurora-input {
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0 12px;
+    font: 400 14px var(--font-sans);
+    transition: border-color .15s;
+}
+
+.aurora-input:hover {
+    border-color: var(--border-st);
+}
+
+.aurora-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+}
+
+/* Blazor marks edited fields .valid/.modified and failing ones .invalid; app.css gives them
+   green/red outlines meant for the old Bootstrap forms. */
+.aurora-input.valid.modified {
+    outline: none;
+}
+
+.aurora-input.invalid {
+    outline: none;
+    border-color: var(--danger);
+}
+
+.aurora-form .validation-message,
+.aurora-form__error {
+    font: 400 12px var(--font-sans);
+    color: var(--danger);
+}
+
+.aurora-form__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.aurora-form__actions-start {
+    margin-right: auto;
+}
+
+.aurora-confirm__message {
+    margin: 0 0 8px;
+    font: 400 14px/1.55 var(--font-sans);
+    color: var(--text);
+}
+
+@media (max-width: 768px) {
+    .aurora-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .aurora-form__actions > * {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .aurora-form__actions-start {
+        margin-right: 0;
     }
 }

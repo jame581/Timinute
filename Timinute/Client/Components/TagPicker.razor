@@ -27,7 +27,7 @@
     }
     else
     {
-        <div class="tag-picker__dropdown">
+        <div class="tag-picker__dropdown" @onkeydown="OnDropdownKeyDown" @onkeydown:stopPropagation="true">
             <input class="tag-picker__search" type="text" placeholder="Search tags…"
                    @bind="searchText" @bind:event="oninput" @ref="searchInput" />
 
@@ -98,20 +98,36 @@
         }
     }
 
-    private async Task OpenDropdown()
+    private bool focusSearch;
+
+    private void OpenDropdown()
     {
         showDropdown = true;
         searchText = string.Empty;
         createColor = "#6366F1";
-        await Task.Delay(10);
+        // Focus once the input exists (after this render) instead of after a timed delay, which
+        // re-rendered mid-interaction and raced with clicks on the options.
+        focusSearch = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!focusSearch || !showDropdown) return;
+        focusSearch = false;
         try
         {
             await searchInput.FocusAsync();
         }
         catch
         {
-            // Ignore focus failures when the input is not available yet.
+            // Ignore focus failures when the input is not available.
         }
+    }
+
+    // Escape closes just this dropdown; stopPropagation keeps it from also closing a host dialog.
+    private void OnDropdownKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") CloseDropdown();
     }
 
     private void CloseDropdown()

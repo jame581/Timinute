@@ -1,5 +1,5 @@
 @code {
-    [Parameter] public string Variant { get; set; } = "primary"; // primary | ghost | soft | sub
+    [Parameter] public string Variant { get; set; } = "primary"; // primary | ghost | soft | sub | danger | danger-ghost
     [Parameter] public string? Type { get; set; } = "button";
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public string? Class { get; set; }
@@ -7,9 +7,12 @@
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    /// <summary>Passed through to the button (e.g. data-autofocus, aria-*).</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? Attributes { get; set; }
+
     private string VariantClass => $"aurora-btn aurora-btn--{Variant}";
 }
 
-<button type="@Type" class="@VariantClass @Class" disabled="@Disabled" title="@Title" @onclick="OnClick">
+<button @attributes="Attributes" type="@Type" class="@VariantClass @Class" disabled="@Disabled" title="@Title" @onclick="OnClick">
     @ChildContent
 </button>

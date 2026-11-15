@@ -20,7 +20,7 @@ builder.Services.AddRadzenComponents();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Timinute.ServerAPI"));
 
 builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<Timinute.Client.Services.AuroraDialogService>();
 builder.Services.AddScoped<Timinute.Client.Services.UndoNotificationService>();
 builder.Services.AddScoped<Timinute.Client.Services.ProjectColorService>();
 builder.Services.AddScoped<Timinute.Client.Services.ViewportService>();

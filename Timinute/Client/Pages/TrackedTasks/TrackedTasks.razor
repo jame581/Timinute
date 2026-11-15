@@ -10,7 +10,7 @@
 
 @inject IHttpClientFactory ClientFactory
 @inject Radzen.NotificationService Notifier
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 @inject Timinute.Client.Services.UndoNotificationService UndoNotifier
 @inject Timinute.Client.Services.ProjectColorService ColorService
 
@@ -228,10 +228,10 @@
     private async Task EditTask(TrackedTaskDto task)
     {
         var model = new TrackedTask(task);
-        var result = await DialogService.OpenAsync<EditTrackedTaskForm>(
+        var result = await Dialogs.OpenAsync<EditTrackedTaskForm>(
             "Edit task",
             new Dictionary<string, object?> { ["TrackedTask"] = model },
-            new Radzen.DialogOptions { Width = "640px" });
+            width: "600px");
 
         if (result is TrackedTask updated)
         {
@@ -286,10 +286,7 @@
 
     private async Task OpenNewEntry()
     {
-        await DialogService.OpenAsync<AddTrackedTask>(
-            "New entry",
-            new Dictionary<string, object?>(),
-            new Radzen.DialogOptions { Width = "640px" });
+        await Dialogs.OpenAsync<AddTrackedTask>("New entry", width: "600px");
         await Reload();
     }
 

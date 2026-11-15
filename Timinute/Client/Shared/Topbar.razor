@@ -2,7 +2,7 @@
 @using Timinute.Shared.Dtos
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthState
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 @inject IJSRuntime JS
 @inject Timinute.Client.Services.MobileSheetService Sheet
 @inject Timinute.Client.Services.ThemeService Theme
@@ -258,10 +258,7 @@
 
     private async Task OpenQuickAdd()
     {
-        await DialogService.OpenAsync<Timinute.Client.Components.TrackedTasks.AddTrackedTask>(
-            "Quick add",
-            new Dictionary<string, object?>(),
-            new Radzen.DialogOptions { Width = "640px" });
+        await Dialogs.OpenAsync<Timinute.Client.Components.TrackedTasks.AddTrackedTask>("Quick add", width: "600px");
     }
 
     private void OpenSheet() => Sheet.Show();
