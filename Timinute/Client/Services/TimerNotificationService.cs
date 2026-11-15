@@ -23,6 +23,10 @@ namespace Timinute.Client.Services
         private readonly HashSet<string> notified = new();
         private readonly HashSet<string> keptIdle = new();
 
+        // The 30 s tick, TimerService.Changed and explicit calls can overlap across awaits;
+        // run one evaluation at a time so the item list is never updated by two at once.
+        private readonly SemaphoreSlim evaluateGate = new(1, 1);
+
         private DateTimeOffset? trackedStart;
         private int dismissedMultiple;
         private decimal trackedThreshold;
@@ -70,6 +74,19 @@ namespace Timinute.Client.Services
         }
 
         public async Task EvaluateAsync()
+        {
+            await evaluateGate.WaitAsync();
+            try
+            {
+                await EvaluateCoreAsync();
+            }
+            finally
+            {
+                evaluateGate.Release();
+            }
+        }
+
+        private async Task EvaluateCoreAsync()
         {
             var current = timer.Current;
             var prefs = await GetPreferencesAsync();
