@@ -1,0 +1,71 @@
+@using Timinute.Client.Models
+
+@* Shared Aurora fields for the scheduler's add/edit dialogs. Must sit inside an EditForm. *@
+<div class="aurora-field">
+    <label class="aurora-field__label" for="@($"{idPrefix}-name")">Name</label>
+    <InputText id="@($"{idPrefix}-name")" class="aurora-input" @bind-Value="Model.Name" placeholder="What did you work on?" />
+    <ValidationMessage For="() => Model.Name" />
+</div>
+
+<div class="aurora-form__grid">
+    <div class="aurora-field">
+        <label class="aurora-field__label" for="@($"{idPrefix}-start")">Start</label>
+        <InputDate id="@($"{idPrefix}-start")" class="aurora-input" Type="InputDateType.DateTimeLocal" step="1" DisplayName="Start" @bind-Value="Model.StartDate" />
+        <ValidationMessage For="() => Model.StartDate" />
+    </div>
+    <div class="aurora-field">
+        <label class="aurora-field__label" for="@($"{idPrefix}-end")">End</label>
+        <InputDate id="@($"{idPrefix}-end")" class="aurora-input" Type="InputDateType.DateTimeLocal" step="1" DisplayName="End" @bind-Value="Model.EndDate" />
+        <ValidationMessage For="() => Model.EndDate" />
+    </div>
+</div>
+@if (!string.IsNullOrEmpty(RangeError))
+{
+    <div class="aurora-form__error" role="alert">@RangeError</div>
+}
+
+<div class="aurora-field">
+    <label class="aurora-field__label" for="@($"{idPrefix}-project")">Project</label>
+    <select id="@($"{idPrefix}-project")" class="aurora-input" @bind="ProjectIdProxy">
+        <option value="">No project</option>
+        @foreach (var project in Projects)
+        {
+            <option value="@project.ProjectId">@project.Name</option>
+        }
+    </select>
+</div>
+
+@if (ShowTags)
+{
+    <div class="aurora-field" role="group" aria-labelledby="@($"{idPrefix}-tags")">
+        <span class="aurora-field__label" id="@($"{idPrefix}-tags")">Tags</span>
+        <TagPicker SelectedTagIds="Model.TagIds" SelectedTagIdsChanged="OnTagIdsChanged" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public TrackedTask Model { get; set; } = null!;
+    [Parameter] public IReadOnlyList<Project> Projects { get; set; } = Array.Empty<Project>();
+    [Parameter] public bool ShowTags { get; set; }
+    [Parameter] public string? RangeError { get; set; }
+
+    private readonly string idPrefix = $"task-{Guid.NewGuid():N}";
+
+    private string ProjectIdProxy
+    {
+        get => Model.ProjectId ?? "";
+        set => Model.ProjectId = string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    private Task OnTagIdsChanged(List<string> tagIds)
+    {
+        Model.TagIds = tagIds;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Null when the range is valid, else the message to show under the dates.</summary>
+    public static string? ValidateRange(TrackedTask model) =>
+        model.EndDate is not { } end ? "End is required."
+        : end <= model.StartDate ? "End must be after start."
+        : null;
+}

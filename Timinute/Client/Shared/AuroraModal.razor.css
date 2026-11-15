@@ -1,0 +1,148 @@
+.aurora-modal__layer {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.aurora-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--scrim);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: aurora-modal-fade .18s ease-out;
+}
+
+.aurora-modal {
+    position: relative;
+    width: min(var(--aurora-modal-width, 560px), 100%);
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2xl);
+    box-shadow: var(--shadow-modal);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    animation: aurora-modal-in .2s cubic-bezier(.2, .8, .2, 1);
+}
+
+.aurora-modal *,
+.aurora-modal *::before,
+.aurora-modal *::after {
+    box-sizing: border-box;
+}
+
+.aurora-modal:focus {
+    outline: none;
+}
+
+.aurora-modal__handle {
+    display: none;
+}
+
+.aurora-modal__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 20px 4px 24px;
+}
+
+.aurora-modal__title {
+    flex: 1;
+    margin: 0;
+    font: 600 17px/1.3 var(--font-sans);
+    letter-spacing: -0.2px;
+    color: var(--text);
+}
+
+.aurora-modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text-mu);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.aurora-modal__close:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.aurora-modal__close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.aurora-modal__body {
+    padding: 12px 24px 24px;
+}
+
+@keyframes aurora-modal-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes aurora-modal-in {
+    from { transform: translateY(8px) scale(.98); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+
+@keyframes aurora-modal-sheet-in {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+
+/* Bottom sheet on phones, matching MobileMoreSheet. */
+@media (max-width: 768px) {
+    .aurora-modal__layer {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .aurora-modal {
+        width: 100%;
+        max-height: 92dvh;
+        border-radius: 22px 22px 0 0;
+        border-bottom: none;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        animation-name: aurora-modal-sheet-in;
+    }
+
+    .aurora-modal__handle {
+        display: block;
+        width: 36px;
+        height: 4px;
+        border-radius: var(--r-pill);
+        background: var(--border-st);
+        margin: 10px auto 0;
+    }
+
+    .aurora-modal__header {
+        padding: 12px 16px 4px 20px;
+    }
+
+    .aurora-modal__body {
+        padding: 12px 20px 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aurora-modal,
+    .aurora-modal__backdrop {
+        animation: none;
+    }
+}

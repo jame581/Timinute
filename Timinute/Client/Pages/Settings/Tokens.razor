@@ -6,7 +6,7 @@
 
 @inject Timinute.Client.Services.TokenService TokenApi
 @inject Radzen.NotificationService Notifier
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 @inject Microsoft.JSInterop.IJSRuntime JS
 @inject NavigationManager Navigation
 
@@ -221,12 +221,13 @@
 
     private async Task RevokeAsync(PersonalAccessTokenDto t)
     {
-        var confirm = await DialogService.Confirm(
+        var confirm = await Dialogs.ConfirmAsync(
             $"Revoke token '{t.Name}'? Any AI assistant using it will lose access immediately.",
             "Revoke token",
-            new Radzen.ConfirmOptions { OkButtonText = "Revoke", CancelButtonText = "Cancel" });
+            okText: "Revoke",
+            danger: true);
 
-        if (confirm != true)
+        if (!confirm)
         {
             return;
         }
