@@ -47,6 +47,9 @@ namespace Timinute.Client.Services
 
         public bool BrowserEnabled { get; private set; }
 
+        /// <summary>How many browser notifications are remembered as shown for the current timer.</summary>
+        public int NotifiedCount => notified.Count;
+
         public event Action? Changed;
 
         /// <summary>Raised when a browser notification is clicked: the bell should open.</summary>
@@ -96,6 +99,7 @@ namespace Timinute.Client.Services
                 trackedStart = null;
                 dismissedMultiple = 0;
                 keptIdle.Clear();
+                notified.Clear();
                 items.Clear();
                 await SetIdleWatchAsync(0);
                 Changed?.Invoke();
@@ -109,6 +113,8 @@ namespace Timinute.Client.Services
                 dismissedMultiple = 0;
                 keptIdle.Clear();
                 items.RemoveAll(i => i.TimerStart != current.StartDate);
+                var marker = $":{current.StartDate.UtcTicks}:";
+                notified.RemoveWhere(id => !id.Contains(marker, StringComparison.Ordinal));
             }
 
             if (prefs.LongTimerWarningHours != trackedThreshold)

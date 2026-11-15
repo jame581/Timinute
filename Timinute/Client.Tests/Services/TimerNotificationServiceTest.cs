@@ -278,6 +278,20 @@ namespace Timinute.Client.Tests.Services
         }
 
         [Fact]
+        public async Task Stopping_Timer_Forgets_Shown_Notifications()
+        {
+            interop.Permission = "granted";
+            await service.SetBrowserEnabledAsync(true);
+            await At(TimeSpan.FromHours(8));
+            Assert.Equal(1, service.NotifiedCount);
+
+            running = null;
+            await At(TimeSpan.FromHours(8.1));
+
+            Assert.Equal(0, service.NotifiedCount);
+        }
+
+        [Fact]
         public async Task BrowserDisabled_NoJsShow()
         {
             await At(TimeSpan.FromHours(8));
