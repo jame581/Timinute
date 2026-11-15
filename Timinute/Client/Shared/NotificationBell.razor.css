@@ -1,0 +1,188 @@
+.aurora-bell {
+    position: relative;
+    display: inline-flex;
+}
+
+.aurora-bell__btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    color: var(--text-mu);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.aurora-bell__btn:hover,
+.aurora-bell__btn[aria-expanded="true"] {
+    background: var(--accent-so);
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.aurora-bell__btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.aurora-bell__badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font: 600 11px/18px var(--font-sans);
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* Transparent layer: a click anywhere outside the panel closes it. */
+.aurora-bell__scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+.aurora-bell__panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 41;
+    width: 360px;
+    max-height: min(480px, 70vh);
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: 0 30px 60px -20px rgba(20, 18, 40, .28);
+    padding: 14px 6px 6px;
+    font-family: var(--font-sans);
+    color: var(--text);
+    animation: aurora-bell-in .16s ease-out;
+}
+
+.aurora-bell__panel:focus {
+    outline: none;
+}
+
+.aurora-bell__panel:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@keyframes aurora-bell-in {
+    from { transform: translateY(-4px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.aurora-bell__title {
+    margin: 0 10px 8px;
+    font: 600 14px var(--font-sans);
+    letter-spacing: -0.2px;
+}
+
+.aurora-bell__empty {
+    margin: 0;
+    padding: 18px 10px 20px;
+    font-size: 13px;
+    color: var(--text-mu);
+    text-align: center;
+}
+
+.aurora-bell__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.aurora-bell__item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    padding: 12px 10px;
+    border-top: 1px solid var(--border);
+}
+
+.aurora-bell__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--accent-so);
+    color: var(--accent);
+}
+
+.aurora-bell__body {
+    min-width: 0;
+}
+
+.aurora-bell__item-title {
+    font: 600 13.5px var(--font-sans);
+    line-height: 1.35;
+}
+
+.aurora-bell__item-detail {
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--text-mu);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.aurora-bell__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+::deep .aurora-bell__action {
+    padding: 6px 12px;
+    font-size: 12.5px;
+}
+
+/* Mobile: no trigger in the topbar; the panel is a modal sheet in the same place and layer
+   as the overflow sheet it is opened from (above the bottom tab bar). */
+.aurora-bell--sheet .aurora-bell__scrim {
+    z-index: 60;
+    background: rgba(20, 18, 40, .42);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.aurora-bell--sheet .aurora-bell__panel {
+    position: fixed;
+    top: auto;
+    left: 16px;
+    right: 16px;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    z-index: 61;
+    width: auto;
+    max-height: calc(100dvh - 140px);
+    border-radius: 22px;
+    padding: 16px 8px 8px;
+    animation-name: aurora-bell-up;
+}
+
+@keyframes aurora-bell-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aurora-bell__panel {
+        animation: none;
+    }
+}

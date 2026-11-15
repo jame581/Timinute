@@ -1,46 +1,39 @@
-<div class="row">
-    <EditForm class="row g-3 align-items-end" Model="@NewProject" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
-        <DataAnnotationsValidator />
+<EditForm Model="@NewProject" OnValidSubmit="@HandleValidSubmit" class="aurora-form">
+    <DataAnnotationsValidator />
 
-        <div class="col-auto">
-            <label for="name" class="col-form-label">Project Name:</label>
-        </div>
+    <div class="aurora-field">
+        <label class="aurora-field__label" for="@nameId">Name</label>
+        <InputText id="@nameId" class="aurora-input" DisplayName="Project name" @bind-Value="NewProject.Name" placeholder="e.g. Website redesign" />
+        <ValidationMessage For="() => NewProject.Name" />
+    </div>
 
-        <div class="col-auto">
-            <InputText type="text" class="form-control" DisplayName="Project Name" id="name" @bind-Value="NewProject.Name" placeholder="Enter project name..." />
-        </div>
-
-        <div class="col-auto">
-            <label class="col-form-label">Color:</label>
-        </div>
-
-        <div class="col-auto d-flex" style="gap: 8px;">
+    <div class="aurora-field">
+        <span class="aurora-field__label" id="@colorLabelId">Color</span>
+        <div class="aurora-color-swatches" role="group" aria-labelledby="@colorLabelId">
             @foreach (var swatch in Palette)
             {
                 var isSelected = string.Equals(NewProject.Color, swatch, System.StringComparison.OrdinalIgnoreCase);
                 <button type="button"
                         class="aurora-color-swatch @(isSelected ? "is-selected" : "")"
                         style="background-color: @swatch;"
-                        title="@swatch"
+                        aria-pressed="@(isSelected ? "true" : "false")"
+                        aria-label="@ColorName(swatch)"
+                        title="@ColorName(swatch)"
                         @onclick="() => SelectColor(swatch)">
                     @if (isSelected)
                     {
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M4 12l5 5L20 6"></path>
                         </svg>
                     }
                 </button>
             }
         </div>
+        <span class="aurora-field__hint">Leave unselected to pick the next color automatically.</span>
+    </div>
 
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary mb-3">Submit</button>
-        </div>
-
-        <div class="col-md-4" style="margin-top:10px">
-            <ValidationSummary />
-        </div>
-
-    </EditForm>
-</div>
-
+    <div class="aurora-form__actions">
+        <AuroraButton Variant="ghost" OnClick="() => Dialogs.Close(Entry, null)">Cancel</AuroraButton>
+        <AuroraButton Type="submit" Disabled="saving">Create project</AuroraButton>
+    </div>
+</EditForm>

@@ -1,6 +1,7 @@
 @implements IDisposable
 @inject Timinute.Client.Services.MobileSheetService Sheet
 @inject NavigationManager Navigation
+@inject Timinute.Client.Services.TimerNotificationService Notifications
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
 
 @if (Sheet.IsOpen)
@@ -14,6 +15,22 @@
            @ref="sheetEl"
            @onkeydown="HandleKeyDown">
         <div class="mms__handle" aria-hidden="true"></div>
+
+        <button type="button" class="mms__row" @onclick="OpenNotifications">
+            <span class="mms__icon">
+                <AuroraIcons Name="bell" Size="20" />
+            </span>
+            <span class="mms__label">
+                Notifications
+                @if (Notifications.Items.Count > 0)
+                {
+                    <span class="mms__count">@Notifications.Items.Count</span>
+                }
+            </span>
+            <span class="mms__chevron" aria-hidden="true">
+                <AuroraIcons Name="arrowR" Size="16" />
+            </span>
+        </button>
 
         @foreach (var item in Items)
         {
@@ -57,6 +74,18 @@
     protected override void OnInitialized()
     {
         Sheet.OnChange += OnChange;
+        Notifications.Changed += OnNotificationsChanged;
+    }
+
+    private void OnNotificationsChanged()
+    {
+        if (Sheet.IsOpen) _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenNotifications()
+    {
+        Sheet.Hide();
+        Notifications.RequestOpen();
     }
 
     private void OnChange()
@@ -103,5 +132,6 @@
     public void Dispose()
     {
         Sheet.OnChange -= OnChange;
+        Notifications.Changed -= OnNotificationsChanged;
     }
 }

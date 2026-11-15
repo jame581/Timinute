@@ -8,7 +8,7 @@
 
 @inject IHttpClientFactory ClientFactory
 @inject Radzen.NotificationService Notifier
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 
 <PageTitle>Tags</PageTitle>
 
@@ -237,12 +237,13 @@
 
             if (taskCount > 0)
             {
-                var confirm = await DialogService.Confirm(
+                var confirm = await Dialogs.ConfirmAsync(
                     $"This tag is used on {taskCount} task{(taskCount == 1 ? string.Empty : "s")}. Deleting it will remove the tag from those tasks. Continue?",
                     "Delete tag",
-                    new Radzen.ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+                    okText: "Delete",
+                    danger: true);
 
-                if (confirm != true)
+                if (!confirm)
                 {
                     return;
                 }

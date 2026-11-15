@@ -1,0 +1,85 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* Aurora modal shell: backdrop + panel on Aurora tokens. Centered card on desktop, bottom sheet
+   at <=768px. Escape and the close button call OnClose. A backdrop click deliberately does
+   not: the old Radzen dialogs ignored it too, and a mis-tap must not discard a half-filled form. *@
+<div class="aurora-modal__layer" style="z-index: @(1000 + Depth * 2)">
+    <div class="aurora-modal__backdrop"></div>
+    <div class="aurora-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="@titleId"
+         tabindex="-1"
+         style="@(Width is null ? null : $"--aurora-modal-width: {Width}")"
+         @ref="panel"
+         @onkeydown="OnKeyDown">
+        <div class="aurora-modal__handle" aria-hidden="true"></div>
+        <header class="aurora-modal__header">
+            <h2 id="@titleId" class="aurora-modal__title">@Title</h2>
+            <button type="button" class="aurora-modal__close" aria-label="Close" @onclick="RequestClose">
+                <AuroraIcons Name="close" Size="18" />
+            </button>
+        </header>
+        <div class="aurora-modal__body">
+            @ChildContent
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public string? Width { get; set; }
+
+    /// <summary>Position in the dialog stack; later dialogs layer above earlier ones.</summary>
+    [Parameter] public int Depth { get; set; }
+
+    private readonly string titleId = $"aurora-modal-title-{Guid.NewGuid():N}";
+    private ElementReference panel;
+    private IJSObjectReference? focusTrap;
+    private bool closing;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            focusTrap = await JS.InvokeAsync<IJSObjectReference>("import", "./js/focus-trap.js");
+            if (focusTrap != null)
+            {
+                await focusTrap.InvokeVoidAsync("trap", panel);
+            }
+        }
+        catch (JSException)
+        {
+            // Without the trap the dialog still works; focus just isn't managed.
+        }
+    }
+
+    private async Task RequestClose()
+    {
+        if (closing) return;
+        closing = true;
+        await OnClose.InvokeAsync();
+    }
+
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key == "Escape" ? RequestClose() : Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (focusTrap == null) return;
+        try
+        {
+            await focusTrap.InvokeVoidAsync("release", panel);
+            await focusTrap.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+    }
+}

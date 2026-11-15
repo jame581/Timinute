@@ -1,55 +1,47 @@
-﻿<div class="row">
-    <h3 class="text-center">Add Tracked Task</h3>
-    <EditForm Model="@NewTrackedTask" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
-        <DataAnnotationsValidator />
+<EditForm Model="@NewTrackedTask" OnValidSubmit="@HandleValidSubmit" class="aurora-form">
+    <DataAnnotationsValidator />
 
-        <div class="mb-3 mt-3 row">
-            <div class="col-auto">
-                <label>
-                    Task Name:
-                    <InputText type="text" class="form-control" DisplayName="Task Name" id="name" @bind-Value="NewTrackedTask.Name" placeholder="Enter task name..." />
-                </label>
+    <div class="aurora-field">
+        <label class="aurora-field__label" for="@($"{idPrefix}-name")">Name</label>
+        <InputText id="@($"{idPrefix}-name")" class="aurora-input" DisplayName="Name" @bind-Value="NewTrackedTask.Name" placeholder="What did you work on?" />
+        <ValidationMessage For="() => NewTrackedTask.Name" />
+    </div>
 
-            </div>
-            <div class="col-auto">
-                <label for="project">
-                    Select project
-                    <InputSelect id="project" class="form-select" @bind-Value="SelectedProjectId">
-                        <option selected>None</option>
-                        @foreach (var project in projects)
-                        {
-                            <option value="@project.ProjectId">@project.Name</option>
-                        }
-                    </InputSelect>
-                </label>
-
-            </div>
-            <div class="col-12 mt-2">
-                <label>
-                    Tags:
-                    <TagPicker SelectedTagIds="NewTrackedTask.TagIds" SelectedTagIdsChanged="OnTagIdsChanged" />
-                </label>
-            </div>
-            <div class="col-auto">
-                <label>
-                    Start Date:
-                    <InputDate class="form-control" DisplayName="Date" @bind-Value="NewTrackedTask.StartDate" placeholder="Start Date..." />
-                </label>
-            </div>
-            <div class="col-auto">
-                <label>
-                    Duration:
-                    <InputText type="text" class="form-control" DisplayName="Duration" @bind-Value="@DurationProxy" />
-                </label>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary mt-4">Submit</button>
-            </div>
+    <div class="aurora-form__grid">
+        <div class="aurora-field">
+            <label class="aurora-field__label" for="@($"{idPrefix}-start")">Start</label>
+            <InputDate id="@($"{idPrefix}-start")" class="aurora-input" Type="InputDateType.DateTimeLocal" step="1" DisplayName="Start" @bind-Value="NewTrackedTask.StartDate" />
+            <ValidationMessage For="() => NewTrackedTask.StartDate" />
         </div>
-
-        <div class="mb-3 mt-3 row">
-            <ValidationSummary />
+        <div class="aurora-field">
+            <label class="aurora-field__label" for="@($"{idPrefix}-duration")">Duration</label>
+            <InputText id="@($"{idPrefix}-duration")" class="aurora-input aurora-mono" DisplayName="Duration" @bind-Value="DurationProxy" placeholder="1:30:00" />
+            <span class="aurora-field__hint">Hours:minutes:seconds</span>
         </div>
+    </div>
+    @if (!string.IsNullOrEmpty(durationError))
+    {
+        <div class="aurora-form__error" role="alert">@durationError</div>
+    }
 
-    </EditForm>
-</div>
+    <div class="aurora-field">
+        <label class="aurora-field__label" for="@($"{idPrefix}-project")">Project</label>
+        <select id="@($"{idPrefix}-project")" class="aurora-input" @bind="SelectedProjectId">
+            <option value="">No project</option>
+            @foreach (var project in projects)
+            {
+                <option value="@project.ProjectId">@project.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="aurora-field" role="group" aria-labelledby="@($"{idPrefix}-tags")">
+        <span class="aurora-field__label" id="@($"{idPrefix}-tags")">Tags</span>
+        <TagPicker SelectedTagIds="NewTrackedTask.TagIds" SelectedTagIdsChanged="OnTagIdsChanged" />
+    </div>
+
+    <div class="aurora-form__actions">
+        <AuroraButton Variant="ghost" OnClick="() => Dialogs.Close(Entry, null)">Cancel</AuroraButton>
+        <AuroraButton Type="submit" Disabled="saving">Save entry</AuroraButton>
+    </div>
+</EditForm>

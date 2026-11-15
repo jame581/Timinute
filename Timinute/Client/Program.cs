@@ -20,7 +20,7 @@ builder.Services.AddRadzenComponents();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Timinute.ServerAPI"));
 
 builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<Timinute.Client.Services.AuroraDialogService>();
 builder.Services.AddScoped<Timinute.Client.Services.UndoNotificationService>();
 builder.Services.AddScoped<Timinute.Client.Services.ProjectColorService>();
 builder.Services.AddScoped<Timinute.Client.Services.ViewportService>();
@@ -29,6 +29,10 @@ builder.Services.AddScoped<Timinute.Client.Services.UserProfileService>();
 builder.Services.AddScoped<Timinute.Client.Services.ThemeService>();
 builder.Services.AddScoped<Timinute.Client.Services.TokenService>();
 builder.Services.AddScoped<Timinute.Client.Services.McpActivityService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<Timinute.Client.Services.TimerService>();
+builder.Services.AddScoped<Timinute.Client.Services.INotificationInterop, Timinute.Client.Services.NotificationInterop>();
+builder.Services.AddScoped<Timinute.Client.Services.TimerNotificationService>();
 builder.Services.AddSingleton<Timinute.Client.Services.AnalyticsService>();
 builder.Services.AddTransient<Timinute.Client.Services.AnalyticsCacheInvalidationHandler>();
 

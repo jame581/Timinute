@@ -91,6 +91,8 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(ThemePreference.System, profile.Preferences.Theme);
             Assert.Equal(32.0m, profile.Preferences.WeeklyGoalHours);
             Assert.Equal(8.0m, profile.Preferences.WorkdayHoursPerDay);
+            Assert.Equal(8.0m, profile.Preferences.LongTimerWarningHours);
+            Assert.Equal(15, profile.Preferences.IdleWarningMinutes);
         }
 
         [Fact]
@@ -156,6 +158,8 @@ namespace Timinute.Server.Tests.Controllers
                 Theme = ThemePreference.Dark,
                 WeeklyGoalHours = 37.5m,
                 WorkdayHoursPerDay = 7.5m,
+                LongTimerWarningHours = 2.5m,
+                IdleWarningMinutes = 0,
             };
 
             var actionResult = await controller.UpdatePreferences(dto);
@@ -172,6 +176,10 @@ namespace Timinute.Server.Tests.Controllers
             Assert.Equal(ThemePreference.Dark, user.Preferences!.Theme);
             Assert.Equal(37.5m, user.Preferences.WeeklyGoalHours);
             Assert.Equal(7.5m, user.Preferences.WorkdayHoursPerDay);
+            Assert.Equal(2.5m, saved.LongTimerWarningHours);
+            Assert.Equal(0, saved.IdleWarningMinutes);
+            Assert.Equal(2.5m, user.Preferences.LongTimerWarningHours);
+            Assert.Equal(0, user.Preferences.IdleWarningMinutes);
         }
 
         [Fact]

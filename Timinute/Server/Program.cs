@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Asp.Versioning;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -481,6 +482,8 @@ void DependecyInjection()
     builder.Services.AddScoped<Timinute.Server.Services.App.IProjectAppService, Timinute.Server.Services.App.ProjectAppService>();
     builder.Services.AddScoped<Timinute.Server.Services.App.ITimeEntryAppService, Timinute.Server.Services.App.TimeEntryAppService>();
     builder.Services.AddScoped<Timinute.Server.Services.App.IAnalyticsAppService, Timinute.Server.Services.App.AnalyticsAppService>();
+    builder.Services.AddScoped<Timinute.Server.Services.App.ITimerAppService, Timinute.Server.Services.App.TimerAppService>();
+    builder.Services.TryAddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<IExportService, ExportService>();
     builder.Services.AddSingleton<IPatTokenService, PatTokenService>();
     builder.Services.AddHostedService<TrashPurgeService>();

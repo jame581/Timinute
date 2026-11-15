@@ -1,6 +1,6 @@
 @implements IDisposable
 @inject NavigationManager Navigation
-@inject Radzen.DialogService DialogService
+@inject Timinute.Client.Services.AuroraDialogService Dialogs
 
 <nav class="mtb" aria-label="Primary mobile navigation">
     @foreach (var item in LeftItems)
@@ -78,9 +78,6 @@
 
     private async Task OpenQuickAdd()
     {
-        await DialogService.OpenAsync<Timinute.Client.Components.TrackedTasks.AddTrackedTask>(
-            "Quick add",
-            new Dictionary<string, object?>(),
-            new Radzen.DialogOptions { Width = "min(560px, 92vw)" });
+        await Dialogs.OpenAsync<Timinute.Client.Components.TrackedTasks.AddTrackedTask>("Quick add", width: "600px");
     }
 }

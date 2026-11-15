@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Timinute.Shared.Dtos;
 using Timinute.Shared.Dtos.Tag;
 using Timinute.Shared.Dtos.TrackedTask;
 using Xunit;
@@ -76,6 +77,38 @@ namespace Timinute.Server.Tests.Integration
             var response = await client.GetAsync($"/Analytics/summary?From={from}&To={to}&TzOffsetMinutes=0");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        // Timer-notification preferences (v2.5). Sent as raw JSON so a field can be omitted.
+        private static object Prefs(object longHours, object? idleMinutes, bool includeIdle = true) => includeIdle
+            ? new { theme = "Dark", weeklyGoalHours = 32.0m, workdayHoursPerDay = 8.0m, longTimerWarningHours = longHours, idleWarningMinutes = idleMinutes }
+            : new { theme = "Dark", weeklyGoalHours = 32.0m, workdayHoursPerDay = 8.0m, longTimerWarningHours = longHours };
+
+        [Fact]
+        public async Task Put_Preferences_LongTimer_25_Returns_422()
+        {
+            var response = await client.PutAsJsonAsync("/User/me/preferences", Prefs(25.0m, 15));
+
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+            Assert.Contains("LongTimerWarningHours", await response.Content.ReadAsStringAsync());
+        }
+
+        [Fact]
+        public async Task Put_Preferences_Idle_Negative_Returns_422()
+        {
+            var response = await client.PutAsJsonAsync("/User/me/preferences", Prefs(8.0m, -1));
+
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+            Assert.Contains("IdleWarningMinutes", await response.Content.ReadAsStringAsync());
+        }
+
+        [Fact]
+        public async Task Put_Preferences_Missing_IdleField_Returns_422()
+        {
+            var response = await client.PutAsJsonAsync("/User/me/preferences", Prefs(8.0m, null, includeIdle: false));
+
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+            Assert.Contains("IdleWarningMinutes", await response.Content.ReadAsStringAsync());
         }
     }
 }

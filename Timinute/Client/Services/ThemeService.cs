@@ -100,6 +100,8 @@ namespace Timinute.Client.Services
                 Theme = value,
                 WeeklyGoalHours = fullPrefs.WeeklyGoalHours,
                 WorkdayHoursPerDay = fullPrefs.WorkdayHoursPerDay,
+                LongTimerWarningHours = fullPrefs.LongTimerWarningHours,
+                IdleWarningMinutes = fullPrefs.IdleWarningMinutes,
             };
             var response = await client.PutAsJsonAsync("User/me/preferences", dto);
             response.EnsureSuccessStatusCode();

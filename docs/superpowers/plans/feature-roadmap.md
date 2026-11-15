@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-07-19 — v2.4 (`feature/v2.4-logging-mcp`, PR #65): Serilog structured request logging + correlation ids, and an MCP server (7 tools, PAT auth, AI activity audit log) — see below._
+_Last reviewed: 2026-11-15 — v2.5 (PRs #77–#82): server-side running timer, timer warnings in a working notification bell (long-running + idle, opt-in browser notifications), Aurora-native dialogs, dependency hygiene, favicon — see below._
 
 ## Current Feature Set
 
@@ -37,7 +37,7 @@ _Last reviewed: 2026-07-19 — v2.4 (`feature/v2.4-logging-mcp`, PR #65): Serilo
 
 | Feature | Description | Complexity | Notes |
 |---------|-------------|------------|-------|
-| Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | Topbar bell is hidden on desktop (visual placeholder only) waiting for this |
+| Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | 🟡 partly shipped (v2.5, #80): topbar bell with long-running and idle timer warnings, "Stop at idle start", opt-in browser notifications per device, thresholds in Profile. Still open: task reminders, Web Push with the app closed. |
 | Time tracking enhancements | Pomodoro timer, time estimates/goals, break tracking | L | None |
 
 ## Pending — P2 (Nice-to-Have)
@@ -86,7 +86,8 @@ Status reviewed 2026-07-13.
 | Move `<style>` blocks → scoped `.razor.css` | ✅ done | PR #34 |
 | `:has()` browser-support fragility on landing nav | ✅ done | PR #35 review fix — switched to `[href*="github.com"]` |
 | Per-render `IsActive` / `SelectedDayTasks` allocations | ✅ done | PR #35 review fix |
-| Radzen dialogs not skinned to Aurora (render light/Material) | 🔲 open | Found during v2.4 complex-testing browser pass (2026-07-19). `DialogService`-opened dialogs (e.g. the `New project` dialog, task add/edit modals) render with Radzen's default **Material light** theme — white background, bright-blue `Submit` button — inconsistent with the Aurora dark theme and jarring in dark mode. `MainLayout` sets `<RadzenTheme Theme="material" />` unconditionally. Fix options: switch to a Radzen dark theme synced to the theme toggle, or (preferred) replace remaining `DialogService` dialogs with Aurora-native components as the tokens/AiActivity pages already do. |
+| Running timer lived only in the browser tab | ✅ done (v2.5, PR A) | Found while scoping v2.5 notifications (2026-11-14). Starting the stopwatch created a 1-second placeholder `TrackedTask` and kept "running" only in that tab's `sessionStorage`: closing the tab lost the tracked time, and other tabs/devices couldn't see the timer. Fixed with a server-side `RunningTimer` (one per user, PK `UserId`) behind `/Timer`; stopping converts it to a `TrackedTask` inside one transaction. A v2.4 session timer is stopped once on upgrade. Spec: `docs/superpowers/specs/2026-11-14-v2.5-timer-notifications-design.md`. |
+| Radzen dialogs not skinned to Aurora (render light/Material) | ✅ done (v2.5) | All 18 `DialogService` dialogs moved to Aurora-native `AuroraModal` / `AuroraDialogService` (bottom sheet ≤768px, focus trap, Escape, closes on navigation), and the four dialog forms were rebuilt on Aurora fields with native date/select inputs. `RadzenDialog` is gone; `RadzenTheme` stays only for `RadzenNotification` toasts. Correction: Tokens/AiActivity did **not** already use Aurora dialogs — `Tokens.razor` used `DialogService.Confirm`. |
 
 ---
 
@@ -95,6 +96,17 @@ Status reviewed 2026-07-13.
 | Feature | Description | Complexity | Source |
 |---------|-------------|------------|--------|
 | Direct-merge-to-develop policy | The soft-delete feature was merged direct via `271ffd7` without a PR (individually reviewed but no audit trail). Going forward, only housekeeping (templates, screenshots, tiny fixes) gets direct pushes; feature work goes through PR for the CI signal + reviewability. Status: followed since v2.0.1 — every feature ships via PR. | — | PR #37 release review M-3 (process, not code) |
+
+## Recently shipped (v2.5, 2026-11-15)
+
+| Feature | PRs |
+|---------|-----|
+| Dependency hygiene — security NuGet bumps within majors (Client ASP.NET packages held on 10.0.x, CsvHelper held on 33.x), Radzen 13, AutoMapper 17, Dependabot retargeted to `develop`. | [#77](https://github.com/jame581/Timinute/pull/77) |
+| Server-side running timer — new `RunningTimer` entity (one per user, PK `UserId`) behind `/Timer` (`GET`, `start`, `stop` with optional `endAt`); stopping converts it to a `TrackedTask` in one transaction. The tracker survives reload, tab close and other devices; a v2.4 session timer is stopped once on upgrade. Topbar running indicator. Migration `AddRunningTimer`. | [#78](https://github.com/jame581/Timinute/pull/78) |
+| Aurora-native dialogs — `AuroraModal` / `AuroraDialogService` replace every Radzen dialog (focus trap, Escape, bottom sheet on mobile, close on navigation); `RadzenDialog` removed. | [#79](https://github.com/jame581/Timinute/pull/79) |
+| Notification bell — long-running timer warning (threshold in Profile, default 8 h, re-fires at multiples after Dismiss) and idle warning (default 15 min) with **Stop at idle start** / **Keep**; opt-in per-device browser notifications (tag-collapsed across tabs, click opens the bell); mobile entry in the More sheet; shared `aria-live` announcer. Migration `AddTimerNotificationPreferences`. | [#80](https://github.com/jame581/Timinute/pull/80) |
+| Fix — `PUT /User/me/preferences` returned 500 on comma-decimal server cultures (cs-CZ, de-DE): decimal `[Range]` limits now parse in invariant culture. This was also why the theme toggle snapped back. | [#81](https://github.com/jame581/Timinute/pull/81) |
+| Favicon and app icons from the Aurora mark (SVG + ICO, maskable PWA icons, theme colour). | [#82](https://github.com/jame581/Timinute/pull/82) |
 
 ## Recently shipped (v2.4, `feature/v2.4-logging-mcp`, PR #65)
 

@@ -9,6 +9,7 @@
 @inject Microsoft.AspNetCore.Components.WebAssembly.Authentication.SignOutSessionStateManager SignOutManager
 @inject Timinute.Client.Services.ThemeService ThemeService
 @inject Timinute.Client.Services.UserProfileService UserProfileService
+@inject Timinute.Client.Services.TimerNotificationService TimerNotifications
 @inject Radzen.NotificationService NotificationService
 
 <PageTitle>User profile</PageTitle>
@@ -98,6 +99,45 @@
                 </div>
             </div>
 
+            <div class="aurora-prefs__row">
+                <label class="aurora-prefs__label" for="pref-long-timer">Warn when a timer runs longer than</label>
+                <div class="aurora-prefs__input-wrap">
+                    <input id="pref-long-timer" type="number" step="0.5" min="0" max="24"
+                           class="aurora-prefs__input"
+                           aria-describedby="pref-long-timer-hint"
+                           @bind="DraftLongTimerWarningHours" />
+                    <span class="aurora-prefs__suffix">h</span>
+                </div>
+                <span id="pref-long-timer-hint" class="aurora-prefs__hint">0 turns it off</span>
+            </div>
+
+            <div class="aurora-prefs__row">
+                <label class="aurora-prefs__label" for="pref-idle">Idle warning after</label>
+                <div class="aurora-prefs__input-wrap">
+                    <input id="pref-idle" type="number" step="1" min="0" max="240"
+                           class="aurora-prefs__input"
+                           aria-describedby="pref-idle-hint"
+                           @bind="DraftIdleWarningMinutes" />
+                    <span class="aurora-prefs__suffix">min</span>
+                </div>
+                <span id="pref-idle-hint" class="aurora-prefs__hint">0 turns it off</span>
+            </div>
+
+            <div class="aurora-prefs__row aurora-prefs__row--wrap">
+                <span class="aurora-prefs__label" id="pref-browser-label">Browser notifications on this device</span>
+                <button type="button"
+                        class="aurora-prefs__switch @(TimerNotifications.BrowserEnabled ? "is-on" : "")"
+                        role="switch"
+                        aria-checked="@(TimerNotifications.BrowserEnabled ? "true" : "false")"
+                        aria-labelledby="pref-browser-label"
+                        aria-disabled="@(isBrowserBusy ? "true" : null)"
+                        @onclick="ToggleBrowserNotifications">
+                    <span class="aurora-prefs__switch-knob" aria-hidden="true"></span>
+                </button>
+                @* Always rendered so screen readers announce the text when it appears. *@
+                <p class="aurora-prefs__note" role="status">@browserHint</p>
+            </div>
+
             <div class="aurora-prefs__footer">
                 <AuroraButton Variant="primary" OnClick="SavePreferences" Disabled="@isSaving">
                     @(isSaving ? "Saving…" : "Save preferences")
@@ -115,8 +155,16 @@
     private ThemePreference CurrentTheme = ThemePreference.System;
     private decimal DraftWeeklyGoalHours = 32.0m;
     private decimal DraftWorkdayHoursPerDay = 8.0m;
+    private decimal DraftLongTimerWarningHours = 8.0m;
+    private int DraftIdleWarningMinutes = 15;
     private bool isSaving;
     private bool isThemeBusy;
+    private bool isBrowserBusy;
+    private string? browserHint;
+
+    public const string BrowserDeniedHint =
+        "Your browser is blocking notifications for this site. Allow them in the site settings (the icon next to the address), then turn this on again.";
+    public const string BrowserUnsupportedHint = "This browser doesn't support notifications.";
 
     private string Initials =>
         Me == null ? "?" :
@@ -157,6 +205,8 @@
                 CurrentTheme = Me.Preferences.Theme;
                 DraftWeeklyGoalHours = Me.Preferences.WeeklyGoalHours;
                 DraftWorkdayHoursPerDay = Me.Preferences.WorkdayHoursPerDay;
+                DraftLongTimerWarningHours = Me.Preferences.LongTimerWarningHours;
+                DraftIdleWarningMinutes = Me.Preferences.IdleWarningMinutes;
 
                 // Apply the theme locally; UserProfileService already holds
                 // the cached profile so MainLayout won't re-fetch.
@@ -200,6 +250,30 @@
         }
     }
 
+    private async Task ToggleBrowserNotifications()
+    {
+        if (isBrowserBusy) return;
+        isBrowserBusy = true;
+        try
+        {
+            var turnOn = !TimerNotifications.BrowserEnabled;
+            browserHint = null;
+            if (!await TimerNotifications.SetBrowserEnabledAsync(turnOn))
+            {
+                var permission = await TimerNotifications.GetBrowserPermissionAsync();
+                browserHint = permission == "unsupported" ? BrowserUnsupportedHint : BrowserDeniedHint;
+            }
+        }
+        catch (Microsoft.JSInterop.JSException)
+        {
+            browserHint = BrowserUnsupportedHint;
+        }
+        finally
+        {
+            isBrowserBusy = false;
+        }
+    }
+
     private async Task SavePreferences()
     {
         if (Me?.Preferences == null || isSaving) return;
@@ -213,6 +287,8 @@
                 Theme = CurrentTheme,
                 WeeklyGoalHours = DraftWeeklyGoalHours,
                 WorkdayHoursPerDay = DraftWorkdayHoursPerDay,
+                LongTimerWarningHours = DraftLongTimerWarningHours,
+                IdleWarningMinutes = DraftIdleWarningMinutes,
             };
             // NOTE: invalidate after any mutation that changes /User/me's payload —
             // keeps Profile/Dashboard/Topbar consistent. ThemeService.SetAsync does
@@ -240,7 +316,12 @@
                 CurrentTheme = saved.Theme;
                 DraftWeeklyGoalHours = saved.WeeklyGoalHours;
                 DraftWorkdayHoursPerDay = saved.WorkdayHoursPerDay;
+                DraftLongTimerWarningHours = saved.LongTimerWarningHours;
+                DraftIdleWarningMinutes = saved.IdleWarningMinutes;
             }
+
+            // Apply the new thresholds to the running timer straight away.
+            try { await TimerNotifications.EvaluateAsync(); } catch { /* next 30 s tick retries */ }
 
             NotificationService.Notify(Radzen.NotificationSeverity.Success, "Preferences saved", string.Empty, 2500);
         }
