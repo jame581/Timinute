@@ -142,6 +142,8 @@ docker run -v timinute-keys:/keys ...
 
 > **v2.1 migration note:** `AddUserPreferences` adds three columns to `AspNetUsers` (`Preferences_Theme nvarchar(8)`, `Preferences_WeeklyGoalHours decimal(4,1)`, `Preferences_WorkdayHoursPerDay decimal(4,1)`) with sensible defaults applied to existing rows in one statement. No data loss, no separate UPDATE pass.
 
+> **v2.5 migration note:** two migrations, both additive. `AddRunningTimer` creates a `RunningTimers` table (one row per user while a timer runs, FK to `AspNetUsers` with cascade delete). `AddTimerNotificationPreferences` adds two columns to `AspNetUsers` (`Preferences_LongTimerWarningHours decimal(4,1)` default 8.0, `Preferences_IdleWarningMinutes int` default 15), filled for existing rows in one statement. No data loss. A timer that was running in a v2.4 browser tab is saved as a tracked task the first time that tab loads v2.5.
+
 ## Project layout
 
 ```
