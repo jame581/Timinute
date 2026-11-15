@@ -17,7 +17,7 @@ namespace Timinute.Server.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -683,6 +683,16 @@ namespace Timinute.Server.Data.Migrations
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
 
+                            b1.Property<int>("IdleWarningMinutes")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int")
+                                .HasDefaultValue(15);
+
+                            b1.Property<decimal>("LongTimerWarningHours")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("decimal(4,1)")
+                                .HasDefaultValue(8.0m);
+
                             b1.Property<string>("Theme")
                                 .IsRequired()
                                 .ValueGeneratedOnAdd()
@@ -711,6 +721,8 @@ namespace Timinute.Server.Data.Migrations
                                 new
                                 {
                                     ApplicationUserId = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d",
+                                    IdleWarningMinutes = 15,
+                                    LongTimerWarningHours = 8.0m,
                                     Theme = "System",
                                     WeeklyGoalHours = 32.0m,
                                     WorkdayHoursPerDay = 8.0m
@@ -718,6 +730,8 @@ namespace Timinute.Server.Data.Migrations
                                 new
                                 {
                                     ApplicationUserId = "b2c3d4e5-f6a7-4b5c-8d7e-0f1a2b3c4d5e",
+                                    IdleWarningMinutes = 15,
+                                    LongTimerWarningHours = 8.0m,
                                     Theme = "System",
                                     WeeklyGoalHours = 32.0m,
                                     WorkdayHoursPerDay = 8.0m
@@ -725,6 +739,8 @@ namespace Timinute.Server.Data.Migrations
                                 new
                                 {
                                     ApplicationUserId = "c3d4e5f6-a7b8-4c5d-8e7f-1a2b3c4d5e6f",
+                                    IdleWarningMinutes = 15,
+                                    LongTimerWarningHours = 8.0m,
                                     Theme = "System",
                                     WeeklyGoalHours = 32.0m,
                                     WorkdayHoursPerDay = 8.0m

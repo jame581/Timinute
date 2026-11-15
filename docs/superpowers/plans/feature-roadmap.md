@@ -37,7 +37,7 @@ _Last reviewed: 2026-07-19 — v2.4 (`feature/v2.4-logging-mcp`, PR #65): Serilo
 
 | Feature | Description | Complexity | Notes |
 |---------|-------------|------------|-------|
-| Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | Topbar bell is hidden on desktop (visual placeholder only) waiting for this |
+| Notifications | Idle-time warnings, task reminders via SignalR or browser push | M | 🟡 partly shipped (v2.5, PR B): topbar bell with long-running and idle timer warnings, "Stop at idle start", opt-in browser notifications per device, thresholds in Profile. Still open: task reminders, Web Push with the app closed. |
 | Time tracking enhancements | Pomodoro timer, time estimates/goals, break tracking | L | None |
 
 ## Pending — P2 (Nice-to-Have)

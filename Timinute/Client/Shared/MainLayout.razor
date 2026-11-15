@@ -3,6 +3,7 @@
 @inject Timinute.Client.Services.ViewportService Viewport
 @inject Timinute.Client.Services.ThemeService Theme
 @inject Timinute.Client.Services.TimerService Timer
+@inject Timinute.Client.Services.TimerNotificationService Notifications
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState
 
 <head>
@@ -41,6 +42,9 @@
     </AuthorizeView>
 </CascadingValue>
 
+@* Shared polite announcer: new bell items are read out without moving focus. *@
+<div class="aurora-sr-only" aria-live="polite" aria-atomic="true">@liveMessage</div>
+
 <AuroraDialogHost />
 <RadzenNotification />
 
@@ -48,7 +52,12 @@
     protected override void OnInitialized()
     {
         Viewport.OnChanged += OnViewportChanged;
+        Notifications.Changed += OnNotificationsChanged;
     }
+
+    private readonly HashSet<string> announced = new();
+    private string liveMessage = "";
+    private bool notificationsInitialized;
 
     private bool themeSynced;
     private bool timerInitialized;
@@ -85,6 +94,14 @@
                 {
                     await Timer.InitializeAsync();
                     timerInitialized = true;
+
+                    // Warnings (bell, idle watch, browser notifications) need the timer first.
+                    if (!notificationsInitialized)
+                    {
+                        notificationsInitialized = true;
+                        try { await Notifications.InitializeAsync(); }
+                        catch { /* the 30 s loop and timer changes still re-evaluate */ }
+                    }
                 }
                 catch
                 {
@@ -108,6 +125,18 @@
         }
     }
 
+    private void OnNotificationsChanged()
+    {
+        var current = Notifications.Items;
+        var fresh = current.FirstOrDefault(i => !announced.Contains(i.Id));
+        announced.IntersectWith(current.Select(i => i.Id));
+        foreach (var item in current) announced.Add(item.Id);
+        if (fresh == null) return;
+
+        liveMessage = $"{fresh.Title}. {fresh.Detail}";
+        InvokeAsync(StateHasChanged);
+    }
+
     private void OnViewportChanged()
     {
         InvokeAsync(StateHasChanged);
@@ -116,5 +145,6 @@
     public void Dispose()
     {
         Viewport.OnChanged -= OnViewportChanged;
+        Notifications.Changed -= OnNotificationsChanged;
     }
 }

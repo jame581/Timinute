@@ -43,15 +43,17 @@ namespace Timinute.Server.Data
 
                 p.Property(x => x.WeeklyGoalHours).HasDefaultValue(32.0m);
                 p.Property(x => x.WorkdayHoursPerDay).HasDefaultValue(8.0m);
+                p.Property(x => x.LongTimerWarningHours).HasDefaultValue(8.0m);
+                p.Property(x => x.IdleWarningMinutes).HasDefaultValue(15);
 
                 // Seed default preferences for the three test users so the
                 // owned-entity rows have a row-per-user once the migration
                 // applies. Production users get their values from the column
                 // DEFAULTs declared above.
                 p.HasData(
-                    new { ApplicationUserId = SeedUserId1, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m },
-                    new { ApplicationUserId = SeedUserId2, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m },
-                    new { ApplicationUserId = SeedUserId3, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m }
+                    new { ApplicationUserId = SeedUserId1, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m, LongTimerWarningHours = 8.0m, IdleWarningMinutes = 15 },
+                    new { ApplicationUserId = SeedUserId2, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m, LongTimerWarningHours = 8.0m, IdleWarningMinutes = 15 },
+                    new { ApplicationUserId = SeedUserId3, Theme = ThemePreference.System, WeeklyGoalHours = 32.0m, WorkdayHoursPerDay = 8.0m, LongTimerWarningHours = 8.0m, IdleWarningMinutes = 15 }
                 );
             });
 

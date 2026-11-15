@@ -33,7 +33,7 @@ namespace Timinute.Server.Tests.Dtos
         [InlineData("en-US")]
         public void Valid_Preferences_Pass_In_Any_Culture(string culture)
         {
-            var dto = new UpdateUserPreferencesDto { Theme = ThemePreference.Dark, WeeklyGoalHours = 32.5m, WorkdayHoursPerDay = 7.5m };
+            var dto = new UpdateUserPreferencesDto { Theme = ThemePreference.Dark, WeeklyGoalHours = 32.5m, WorkdayHoursPerDay = 7.5m, LongTimerWarningHours = 2.5m, IdleWarningMinutes = 15 };
 
             Assert.Empty(ValidateIn(culture, dto));
         }
@@ -43,9 +43,9 @@ namespace Timinute.Server.Tests.Dtos
         [InlineData("en-US")]
         public void Out_Of_Range_Fails_In_Any_Culture(string culture)
         {
-            var dto = new UpdateUserPreferencesDto { Theme = ThemePreference.Dark, WeeklyGoalHours = 200m, WorkdayHoursPerDay = 0.25m };
+            var dto = new UpdateUserPreferencesDto { Theme = ThemePreference.Dark, WeeklyGoalHours = 200m, WorkdayHoursPerDay = 0.25m, LongTimerWarningHours = 30m, IdleWarningMinutes = 15 };
 
-            Assert.Equal(2, ValidateIn(culture, dto).Count);
+            Assert.Equal(3, ValidateIn(culture, dto).Count);
         }
     }
 }
