@@ -231,7 +231,7 @@ For multi-replica deployments or DBA-managed schemas, disable the automatic migr
 docker run --rm \
     -e ConnectionStrings__DefaultConnection="Server=your-sql-host,1433;Database=Timinute;..." \
     -e DatabaseMigrationOnStartup=true \
-    ghcr.io/jame581/timinute:2.2.0
+    ghcr.io/jame581/timinute:latest   # use the same tag your app replicas run
 # exits 0 once migrations are done
 
 # Step 2: start (or roll) app replicas with migration disabled

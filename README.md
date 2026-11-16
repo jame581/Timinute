@@ -12,7 +12,8 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 
 ## Highlights
 
-- **Time tracker** with a real-time stopwatch, session-storage persistence across reload, and undo on delete.
+- **Time tracker** with a real-time stopwatch that runs server-side, so it survives reloads, closed tabs, and switching devices. Undo on delete.
+- **Notification bell** — warns you about a timer that has run too long or kept running while you were idle (with "Stop at idle start"), thresholds set in your profile, plus opt-in browser notifications per device.
 - **Calendar** — desktop week view with a current-time line, mobile day view with a 7-day strip selector. Click an empty cell to add, click an event to edit.
 - **Projects** with user-picked colors, monthly stats, and per-project sparklines.
 - **Tags** — user-scoped labels on tasks with a management page, inline tag picker in the task modals, and filter chips on the task list.
@@ -26,6 +27,7 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 - **Mobile responsive** — bottom glass tab bar with FAB, slide-up overflow sheet, full reflow at ≤768px.
 - **Dark mode** — `Light / Dark / System` preference, no flash on reload (synchronous pre-Blazor bootstrap), watches `prefers-color-scheme` for System users. Quick toggle in the desktop topbar.
 - **User preferences** — configurable weekly goal and workday-hours target persisted server-side per user; the Dashboard hero card consumes both for weekly progress and a "Today X.Xh / Yh target" indicator.
+- **Dialogs** — Aurora-native modals with a focus trap and Escape to close, shown as bottom sheets on mobile.
 - **Accessibility** — `prefers-reduced-motion` honored, `aria-current` on active nav, focus-visible outlines, modal sheet semantics.
 
 ## Screenshots
@@ -53,7 +55,7 @@ Originally a demo of modern Blazor; now fully redesigned around the **Aurora** v
 
 ## Tech stack
 
-.NET 10 · Blazor WebAssembly (hosted) · EF Core 10 · SQL Server · Duende IdentityServer · Radzen.Blazor (dialogs/notifications only — design system is custom Aurora) · xUnit + Moq + bUnit (EF InMemory + SQLite test providers).
+.NET 10 · Blazor WebAssembly (hosted) · EF Core 10 · SQL Server · Duende IdentityServer · Radzen.Blazor (toast notifications only — design system and dialogs are custom Aurora) · xUnit + Moq + bUnit (EF InMemory + SQLite test providers).
 
 ## Prerequisites
 

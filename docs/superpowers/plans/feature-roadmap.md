@@ -1,6 +1,6 @@
 # Timinute Feature Roadmap
 
-_Last reviewed: 2026-11-15 — v2.5 (PRs #77–#82): server-side running timer, timer warnings in a working notification bell (long-running + idle, opt-in browser notifications), Aurora-native dialogs, dependency hygiene, favicon — see below._
+_Last reviewed: 2026-11-16 — v2.5 released 2026-11-15 (PRs #77–#83, release #84): server-side running timer, timer warnings in a working notification bell (long-running + idle, opt-in browser notifications), Aurora-native dialogs, dependency hygiene, favicon — see below._
 
 ## Current Feature Set
 
@@ -13,14 +13,19 @@ _Last reviewed: 2026-11-15 — v2.5 (PRs #77–#82): server-side running timer, 
 
 ### Core domain
 - **Projects:** Full CRUD with user-defined Color, user-scoped, search + filter endpoint, paging.
-- **Time tracking:** Full CRUD, real-time stopwatch with seconds-in-accent live timer, session-storage persistence across reload, manual entry, undo toast on delete.
+- **Time tracking:** Full CRUD, real-time stopwatch with seconds-in-accent live timer, server-side running timer (`RunningTimer`, survives reload/tab close/other devices, v2.5), manual entry, undo toast on delete.
+- **Tags:** user-scoped labels on tasks, `/tags` management page, `TagPicker`, filter chips (v2.2).
+- **Notifications:** topbar bell with long-running and idle timer warnings, opt-in per-device browser notifications, thresholds in Profile (v2.5).
+- **MCP server:** `/mcp` with scoped personal access tokens and a per-call AI activity log (v2.4).
+- **Logging:** Serilog request logging + `X-Correlation-Id`, opt-in rolling file sink (v2.4).
 - **Calendar:** Custom Aurora `WeekCalendar` (desktop, 7-day grid + current-time line) and `DayCalendar` (mobile, 7-day strip + day grid). Tap-to-add / tap-to-edit via existing modals.
 - **Soft delete + Trash:** 30-day recovery for projects + tasks, cascade-restore on Project, `TrashPurgeService` background hard-purger.
-- **Analytics:** Project work time, monthly aggregation, top-project stats, hand-built SVG bar chart + donut on the dashboard.
+- **Analytics:** Project work time, monthly aggregation, top-project stats, hand-built SVG bar chart + donut on the dashboard; dedicated `/analytics` page over range-scoped endpoints (v2.3).
 - **Search/filter:** `[HttpGet("search")]` on tasks (date range, project, name, task-count) and projects (name, min-task-count).
 - **Data export:** CSV + Excel for tasks, project summaries, monthly analytics (`ExportController`).
 
-### UI / UX (Aurora design system, v2.1)
+### UI / UX (Aurora design system, v2.1+)
+- **Dialogs:** Aurora-native `AuroraModal` / `AuroraDialogService` (bottom sheet ≤768px, focus trap, Escape); Radzen only for toasts (v2.5).
 - **Design tokens** in `aurora.css` — surfaces, sidebar, accent (indigo), category palette, radii, shadows, fonts (Geist + Geist Mono). Dark-mode token block at `[data-theme="dark"]` mirrored on the Identity Razor pages (`aurora-identity.css`).
 - **In-app shell:** sidebar (desktop) / bottom tab bar with FAB (mobile) + slide-up overflow sheet for off-tab destinations.
 - **Aurora-skinned screens:** Dashboard, Time tracker, Tracked tasks, Calendar, Projects, Profile (with Preferences card), Trash, Login, Register, OIDC redirect-back shells.
@@ -68,7 +73,7 @@ Time tracking enhancements — independent
 
 ## Tech debt
 
-Status reviewed 2026-07-13.
+Status reviewed 2026-11-16.
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -108,7 +113,7 @@ Status reviewed 2026-07-13.
 | Fix — `PUT /User/me/preferences` returned 500 on comma-decimal server cultures (cs-CZ, de-DE): decimal `[Range]` limits now parse in invariant culture. This was also why the theme toggle snapped back. | [#81](https://github.com/jame581/Timinute/pull/81) |
 | Favicon and app icons from the Aurora mark (SVG + ICO, maskable PWA icons, theme colour). | [#82](https://github.com/jame581/Timinute/pull/82) |
 
-## Recently shipped (v2.4, `feature/v2.4-logging-mcp`, PR #65)
+## Recently shipped (v2.4, 2026-07-19, PR #65)
 
 | Feature | PRs |
 |---------|-----|
